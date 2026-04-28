@@ -2,7 +2,7 @@
 
 Flutter rewrite of the Principles app.
 
-Official install page (Android, macOS, iOS, iPadOS): [principles.top](https://principles.top)
+Official install page (Android, macOS, iOS, iPadOS): <a href="https://principles.top" target="_blank" rel="noopener noreferrer">principles.top</a>
 
 ## Overview
 
