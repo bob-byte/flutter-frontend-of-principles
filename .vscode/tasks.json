@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start iOS Simulator",
+            "type": "shell",
+            "command": "UDID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}'); if [ -z \"$UDID\" ]; then echo \"No available iOS simulator found. Install one from Xcode > Settings > Platforms.\"; exit 1; fi; open -a Simulator; xcrun simctl boot \"$UDID\" >/dev/null 2>&1 || true",
+            "presentation": {
+                "reveal": "never"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
