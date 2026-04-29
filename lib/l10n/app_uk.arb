@@ -1,0 +1,122 @@
+{
+  "@@locale": "uk",
+  "@@last_modified": "2026-04-29",
+  "appTitle": "Принципи",
+  "@appTitle": {"description": "Заголовок застосунку"},
+  "settingsTitle": "Налаштування",
+  "@settingsTitle": {"description": "Заголовок екрана налаштувань"},
+  "themeLabel": "Тема",
+  "themeSubtitle": "Перемикайте між темною та світлою",
+  "themeLight": "Світла",
+  "themeDark": "Темна (чорна + помаранчева)",
+  "themeSystem": "Системна",
+  "languageLabel": "Мова",
+  "languageSubtitle": "Використовуйте системну мову або оберіть вручну",
+  "languageSystem": "Системна",
+  "languageEnglish": "Англійська",
+  "languageUkrainian": "Українська",
+  "editHabitTitle": "Редагувати звичку",
+  "habitNameLabel": "Назва звички",
+  "habitDescriptionLabel": "Опис",
+  "saveButton": "Зберегти",
+  "recommendedHabitsButton": "Рекомендовані звички",
+  "openHabitDetailsButton": "Відкрити деталі звички",
+  "habitDetailsFallbackTitle": "Деталі звички",
+  "unarchiveTooltip": "Розархівувати",
+  "archiveTooltip": "Архівувати",
+  "deleteTooltip": "Видалити",
+  "noHabitSelected": "Звичку не вибрано",
+  "overallProgress": "Загальний прогрес",
+  "executionCount": "Кількість виконань: {count}",
+  "@executionCount": {
+    "description": "Лічильник виконань звички",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "longestStreak": "Найдовша серія: {count}",
+  "@longestStreak": {
+    "description": "Значення найдовшої серії",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "topFiveStreaks": "Топ 5 серій",
+  "noStreaksYet": "Серій поки немає",
+  "streakDays": "{days} днів",
+  "@streakDays": {
+    "description": "Кількість днів у серії",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "stabilityTitle": "Стабільність",
+  "noStabilityData": "Немає даних про стабільність",
+  "habitByWeekdays": "Звичка за днями тижня",
+  "calendarTitle": "Календар",
+  "weekdayMon": "Пн",
+  "weekdayTue": "Вт",
+  "weekdayWed": "Ср",
+  "weekdayThu": "Чт",
+  "weekdayFri": "Пт",
+  "weekdaySat": "Сб",
+  "weekdaySun": "Нд",
+  "progressTitle": "Прогрес",
+  "progressNo": "Ні",
+  "progressYes": "Так",
+  "progressNumeric500": "Числове +500",
+  "progressValue": "Значення: {value}",
+  "@progressValue": {
+    "description": "Значення елемента прогресу",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressDateInt": "ДатаInt: {value}",
+  "@progressDateInt": {
+    "description": "Цілочисельна дата елемента прогресу",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "loginTitle": "Вхід",
+  "emailLabel": "Email",
+  "passwordLabel": "Пароль",
+  "signInButton": "Увійти",
+  "goalsTitle": "Цілі",
+  "newGoalLabel": "Нова ціль",
+  "helperTitle": "Чат з помічником",
+  "helperInputHint": "Введіть текст",
+  "invalidCredentialsError": "Невірні облікові дані",
+  "genericErrorOccurred": "Сталася помилка",
+  "chatFallbackAnswer": "Я вас чую. Давайте розіб'ємо це на одну невелику дію на сьогодні.",
+  "@chatFallbackAnswer": {"description": "Резервна відповідь помічника у демо-режимі"},
+  "defaultFrequencyEveryDay": "Щодня",
+  "@defaultFrequencyEveryDay": {"description": "Текст частоти звички за замовчуванням"},
+  "recommendedHabitName1": "Після пробудження записуйте 3 пріоритети",
+  "@recommendedHabitName1": {"description": "Назва стартової рекомендації #1"},
+  "recommendedHabitReason1": "Це перетворює намір на фокус до початку відволікань.",
+  "@recommendedHabitReason1": {"description": "Причина стартової рекомендації #1"},
+  "recommendedHabitName2": "Гуляйте 15 хвилин після обіду",
+  "@recommendedHabitName2": {"description": "Назва стартової рекомендації #2"},
+  "recommendedHabitReason2": "Це покращує енергію та регулярність із мінімальними зусиллями.",
+  "@recommendedHabitReason2": {"description": "Причина стартової рекомендації #2"},
+  "recommendedHabitName3": "Перед сном переглядайте одну виконану задачу",
+  "@recommendedHabitName3": {"description": "Назва стартової рекомендації #3"},
+  "recommendedHabitReason3": "Це закріплює прогрес і підтримує стабільну мотивацію.",
+  "@recommendedHabitReason3": {"description": "Причина стартової рекомендації #3"},
+  "recommendedHabitName4": "Читайте 5 сторінок перед сном",
+  "@recommendedHabitName4": {"description": "Назва стартової рекомендації #4"},
+  "recommendedHabitReason4": "Це створює повторюваний сигнал для навчання та спокою.",
+  "@recommendedHabitReason4": {"description": "Причина стартової рекомендації #4"}
+}

@@ -3,10 +3,9 @@ import 'dart:async';
 class AiChatService {
   final List<String> _history = [];
 
-  Stream<String> streamAnswer(String prompt) async* {
+  Stream<String> streamAnswer(String prompt, {required String fallbackResponse}) async* {
     _history.add(prompt);
-    const response = 'I hear you. Let us break this down into one small action for today.';
-    for (final part in response.split(' ')) {
+    for (final part in fallbackResponse.split(' ')) {
       await Future<void>.delayed(const Duration(milliseconds: 70));
       yield '$part ';
     }

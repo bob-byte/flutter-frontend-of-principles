@@ -21,7 +21,7 @@ class EditHabitViewModel extends ChangeNotifier {
   bool isRecommendationLoading = false;
   final List<RecommendedHabit> recommendations = [];
 
-  Future<void> saveHabit() async {
+  Future<void> saveHabit({required String defaultFrequencyText}) async {
     if (habitName.trim().isEmpty) return;
     isSaving = true;
     notifyListeners();
@@ -31,6 +31,7 @@ class EditHabitViewModel extends ChangeNotifier {
           name: habitName.trim(),
           description: habitDescription.trim(),
         ),
+        defaultFrequencyText: defaultFrequencyText,
       );
     } finally {
       isSaving = false;
@@ -38,7 +39,7 @@ class EditHabitViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> loadRecommendations() async {
+  Future<void> loadRecommendations({required List<RecommendedHabit> localizedFallbacks}) async {
     isRecommendationLoading = true;
     notifyListeners();
     try {
@@ -48,6 +49,7 @@ class EditHabitViewModel extends ChangeNotifier {
         mission: null,
         slogan: null,
         goal: null,
+        localizedFallbacks: localizedFallbacks,
       );
       recommendations
         ..clear()

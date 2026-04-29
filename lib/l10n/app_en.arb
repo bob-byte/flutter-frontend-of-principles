@@ -1,0 +1,127 @@
+{
+  "@@locale": "en",
+  "@@last_modified": "2026-04-29",
+  "appTitle": "Principles",
+  "@appTitle": {"description": "Application title"},
+  "settingsTitle": "Settings",
+  "@settingsTitle": {"description": "Settings screen title"},
+  "themeLabel": "Theme",
+  "@themeLabel": {"description": "Theme setting label"},
+  "themeSubtitle": "Switch between dark and light",
+  "@themeSubtitle": {"description": "Theme setting helper text"},
+  "themeLight": "Light",
+  "themeDark": "Dark (black + orange)",
+  "themeSystem": "System",
+  "languageLabel": "Language",
+  "@languageLabel": {"description": "Language setting label"},
+  "languageSubtitle": "Use system language or choose manually",
+  "@languageSubtitle": {"description": "Language setting helper text"},
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageUkrainian": "Ukrainian",
+  "editHabitTitle": "Edit Habit",
+  "@editHabitTitle": {"description": "Edit habit screen title"},
+  "habitNameLabel": "Habit name",
+  "habitDescriptionLabel": "Description",
+  "saveButton": "Save",
+  "recommendedHabitsButton": "Recommended Habits",
+  "openHabitDetailsButton": "Open habit details",
+  "habitDetailsFallbackTitle": "Habit details",
+  "unarchiveTooltip": "Unarchive",
+  "archiveTooltip": "Archive",
+  "deleteTooltip": "Delete",
+  "noHabitSelected": "No habit selected",
+  "overallProgress": "Overall Progress",
+  "executionCount": "Number of execution: {count}",
+  "@executionCount": {
+    "description": "Completed habit executions counter",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "longestStreak": "Longest streak: {count}",
+  "@longestStreak": {
+    "description": "Longest streak metric value",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "topFiveStreaks": "Top Five Streaks",
+  "noStreaksYet": "No streaks yet",
+  "streakDays": "{days} days",
+  "@streakDays": {
+    "description": "Days count label for streak item",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "stabilityTitle": "Stability",
+  "noStabilityData": "No stability data",
+  "habitByWeekdays": "Habit By Weekdays",
+  "calendarTitle": "Calendar",
+  "weekdayMon": "Mon",
+  "weekdayTue": "Tue",
+  "weekdayWed": "Wed",
+  "weekdayThu": "Thu",
+  "weekdayFri": "Fri",
+  "weekdaySat": "Sat",
+  "weekdaySun": "Sun",
+  "progressTitle": "Progress",
+  "progressNo": "No",
+  "progressYes": "Yes",
+  "progressNumeric500": "Numeric +500",
+  "progressValue": "Value: {value}",
+  "@progressValue": {
+    "description": "Progress item value label",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressDateInt": "DateInt: {value}",
+  "@progressDateInt": {
+    "description": "Progress item integer date label",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "loginTitle": "Login",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signInButton": "Sign in",
+  "goalsTitle": "Goals",
+  "newGoalLabel": "New goal",
+  "helperTitle": "Chat With Helper",
+  "helperInputHint": "Enter text",
+  "invalidCredentialsError": "Invalid credentials",
+  "genericErrorOccurred": "Error occurred",
+  "chatFallbackAnswer": "I hear you. Let us break this down into one small action for today.",
+  "@chatFallbackAnswer": {"description": "Fallback AI helper response used in demo mode"},
+  "defaultFrequencyEveryDay": "Every day",
+  "@defaultFrequencyEveryDay": {"description": "Default habit frequency text"},
+  "recommendedHabitName1": "Write 3 priorities after waking up",
+  "@recommendedHabitName1": {"description": "Seed recommendation title #1"},
+  "recommendedHabitReason1": "It turns intention into focus before distractions start.",
+  "@recommendedHabitReason1": {"description": "Seed recommendation reason #1"},
+  "recommendedHabitName2": "Walk 15 minutes after lunch",
+  "@recommendedHabitName2": {"description": "Seed recommendation title #2"},
+  "recommendedHabitReason2": "It improves energy and consistency with minimal friction.",
+  "@recommendedHabitReason2": {"description": "Seed recommendation reason #2"},
+  "recommendedHabitName3": "Review one completed task before sleep",
+  "@recommendedHabitName3": {"description": "Seed recommendation title #3"},
+  "recommendedHabitReason3": "It reinforces progress and keeps motivation stable.",
+  "@recommendedHabitReason3": {"description": "Seed recommendation reason #3"},
+  "recommendedHabitName4": "Read 5 pages before bed",
+  "@recommendedHabitName4": {"description": "Seed recommendation title #4"},
+  "recommendedHabitReason4": "It creates a repeatable cue for learning and calm.",
+  "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"}
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/login_viewmodel.dart';
@@ -19,8 +20,10 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: Text(l10n.loginTitle)),
       body: Consumer<LoginViewModel>(
         builder: (context, vm, child) => Padding(
           padding: const EdgeInsets.all(16),
@@ -28,11 +31,11 @@ class _LoginViewState extends State<LoginView> {
             children: [
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: l10n.emailLabel),
               ),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
+                decoration: InputDecoration(labelText: l10n.passwordLabel),
                 obscureText: true,
               ),
               const SizedBox(height: 16),
@@ -44,6 +47,7 @@ class _LoginViewState extends State<LoginView> {
                         final success = await vm.login(
                           _emailController.text,
                           _passwordController.text,
+                          invalidCredentialsError: l10n.invalidCredentialsError,
                         );
                         if (!mounted) return;
                         if (success) {
@@ -52,7 +56,7 @@ class _LoginViewState extends State<LoginView> {
                       },
                 child: vm.isBusy
                     ? const CircularProgressIndicator()
-                    : const Text('Sign in'),
+                    : Text(l10n.signInButton),
               ),
               if (vm.error != null) ...[
                 const SizedBox(height: 12),

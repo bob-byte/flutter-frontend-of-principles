@@ -24,7 +24,7 @@ class HelperViewModel extends ChangeNotifier {
   bool isBusy = false;
   StreamSubscription<String>? _subscription;
 
-  Future<void> ask(String prompt) async {
+  Future<void> ask(String prompt, {required String fallbackAnswer, required String errorMessage}) async {
     if (prompt.trim().isEmpty || isBusy) return;
 
     isBusy = true;
@@ -33,7 +33,7 @@ class HelperViewModel extends ChangeNotifier {
     messages.add(assistant);
     notifyListeners();
 
-    _subscription = _aiChatService.streamAnswer(prompt).listen(
+    _subscription = _aiChatService.streamAnswer(prompt, fallbackResponse: fallbackAnswer).listen(
       (chunk) {
         assistant.text += chunk;
         notifyListeners();
@@ -46,7 +46,7 @@ class HelperViewModel extends ChangeNotifier {
       },
       onError: (_) {
         assistant.isComplete = true;
-        assistant.text = assistant.text.isEmpty ? 'Error occurred' : assistant.text;
+        assistant.text = assistant.text.isEmpty ? errorMessage : assistant.text;
         isBusy = false;
         notifyListeners();
       },

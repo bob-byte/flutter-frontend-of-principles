@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/progress_viewmodel.dart';
@@ -23,8 +24,10 @@ class _ProgressViewState extends State<ProgressView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Progress')),
+      appBar: AppBar(title: Text(l10n.progressTitle)),
       body: Consumer<ProgressViewModel>(
         builder: (context, vm, child) => Column(
           children: [
@@ -35,15 +38,15 @@ class _ProgressViewState extends State<ProgressView> {
                 children: [
                   ElevatedButton(
                     onPressed: () => vm.addProgress(0),
-                    child: const Text('No'),
+                    child: Text(l10n.progressNo),
                   ),
                   ElevatedButton(
                     onPressed: () => vm.addProgress(1),
-                    child: const Text('Yes'),
+                    child: Text(l10n.progressYes),
                   ),
                   ElevatedButton(
                     onPressed: () => vm.addProgress(500),
-                    child: const Text('Numeric +500'),
+                    child: Text(l10n.progressNumeric500),
                   ),
                 ],
               ),
@@ -56,8 +59,8 @@ class _ProgressViewState extends State<ProgressView> {
                       itemBuilder: (context, index) {
                         final item = vm.items[index];
                         return ListTile(
-                          title: Text('Value: ${item.value}'),
-                          subtitle: Text('DateInt: ${item.dateAsInt}'),
+                          title: Text(l10n.progressValue(item.value.toString())),
+                          subtitle: Text(l10n.progressDateInt(item.dateAsInt)),
                         );
                       },
                     ),

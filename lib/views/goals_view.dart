@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/goals_viewmodel.dart';
@@ -25,8 +26,10 @@ class _GoalsViewState extends State<GoalsView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Goals')),
+      appBar: AppBar(title: Text(l10n.goalsTitle)),
       body: Consumer<GoalsViewModel>(
         builder: (context, vm, child) => Column(
           children: [
@@ -37,7 +40,7 @@ class _GoalsViewState extends State<GoalsView> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      decoration: const InputDecoration(labelText: 'New goal'),
+                      decoration: InputDecoration(labelText: l10n.newGoalLabel),
                     ),
                   ),
                   IconButton(

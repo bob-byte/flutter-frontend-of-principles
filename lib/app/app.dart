@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/locale/locale_controller.dart';
 import '../core/storage/local_db.dart';
 import '../core/storage/secure_store.dart';
 import '../core/sync/sync_service.dart';
@@ -41,6 +44,7 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => SecureStore()),
         Provider(create: (_) => LocalDb()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
+        ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
         Provider(create: (_) => GoalService()),
@@ -86,16 +90,28 @@ class PrinciplesApp extends StatelessWidget {
           create: (ctx) => SettingsViewModel(
             settingsService: ctx.read<SettingsService>(),
             themeController: ctx.read<ThemeController>(),
+            localeController: ctx.read<LocaleController>(),
           ),
         ),
       ],
-      child: Consumer<ThemeController>(
-        builder: (context, themeController, child) {
+      child: Consumer2<ThemeController, LocaleController>(
+        builder: (context, themeController, localeController, child) {
           return MaterialApp(
-            title: 'Principles',
+            onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
             themeMode: themeController.themeMode,
+            locale: localeController.localeOverride,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en'),
+              Locale('uk'),
+            ],
             onGenerateRoute: AppRouter.generateRoute,
             initialRoute: StartupView.routeName,
             routes: {

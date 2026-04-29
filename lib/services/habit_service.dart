@@ -13,7 +13,7 @@ class HabitService {
     }
   }
 
-  Future<void> saveHabit(UserHabit habit) async {
+  Future<void> saveHabit(UserHabit habit, {required String defaultFrequencyText}) async {
     final localId = habit.localId ?? _nextLocalId++;
     final normalized = UserHabit(
       localId: localId,
@@ -21,7 +21,7 @@ class HabitService {
       name: habit.name,
       description: habit.description,
       goalName: habit.goalName,
-      frequencyText: habit.frequencyText.isEmpty ? 'Every day' : habit.frequencyText,
+      frequencyText: habit.frequencyText.isEmpty ? defaultFrequencyText : habit.frequencyText,
       reminderText: habit.reminderText,
       isArchived: habit.isArchived,
       lastModified: habit.lastModified,

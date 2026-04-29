@@ -9,14 +9,14 @@ class LoginViewModel extends ChangeNotifier {
   bool isBusy = false;
   String? error;
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {required String invalidCredentialsError}) async {
     isBusy = true;
     error = null;
     notifyListeners();
     try {
       final success = await _authService.login(email, password);
       if (!success) {
-        error = 'Invalid credentials';
+        error = invalidCredentialsError;
       }
       return success;
     } finally {

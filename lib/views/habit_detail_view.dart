@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/habit_detail_viewmodel.dart';
@@ -27,22 +29,25 @@ class _HabitDetailViewState extends State<HabitDetailView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final localeName = Localizations.localeOf(context).toLanguageTag();
+
     return Scaffold(
       appBar: AppBar(
         title: Consumer<HabitDetailViewModel>(
-          builder: (context, vm, child) => Text(vm.habit?.name ?? 'Habit details'),
+          builder: (context, vm, child) => Text(vm.habit?.name ?? l10n.habitDetailsFallbackTitle),
         ),
         actions: [
           Consumer<HabitDetailViewModel>(
             builder: (context, vm, child) => IconButton(
-              tooltip: vm.habit?.isArchived == true ? 'Unarchive' : 'Archive',
+              tooltip: vm.habit?.isArchived == true ? l10n.unarchiveTooltip : l10n.archiveTooltip,
               onPressed: vm.habit == null ? null : vm.toggleArchived,
               icon: Icon(vm.habit?.isArchived == true ? Icons.unarchive : Icons.archive_outlined),
             ),
           ),
           Consumer<HabitDetailViewModel>(
             builder: (context, vm, child) => IconButton(
-              tooltip: 'Delete',
+              tooltip: l10n.deleteTooltip,
               onPressed: vm.habit == null
                   ? null
                   : () async {
@@ -61,7 +66,7 @@ class _HabitDetailViewState extends State<HabitDetailView> {
             return const Center(child: CircularProgressIndicator());
           }
           if (vm.habit == null) {
-            return const Center(child: Text('No habit selected'));
+            return Center(child: Text(l10n.noHabitSelected));
           }
 
           return ListView(
@@ -90,7 +95,7 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Overall Progress', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(l10n.overallProgress, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Text('${(vm.completionRate * 100).round()}%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
@@ -99,8 +104,8 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Number of execution: ${vm.completedDays}'),
-                          Text('Longest streak: ${vm.longestStreak}'),
+                          Text(l10n.executionCount(vm.completedDays)),
+                          Text(l10n.longestStreak(vm.longestStreak)),
                         ],
                       ),
                     ],
@@ -108,27 +113,28 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text('Top Five Streaks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.topFiveStreaks, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               if (vm.topFiveStreaks.isEmpty)
-                const Text('No streaks yet')
+                Text(l10n.noStreaksYet)
               else
                 ...vm.topFiveStreaks.map(
                   (s) => ListTile(
                     dense: true,
                     leading: const Icon(Icons.local_fire_department_outlined),
-                    title: Text('${s.days} days'),
-                    subtitle: Text('${s.start.year}-${s.start.month.toString().padLeft(2, '0')}-${s.start.day.toString().padLeft(2, '0')}'
-                        ' to ${s.end.year}-${s.end.month.toString().padLeft(2, '0')}-${s.end.day.toString().padLeft(2, '0')}'),
+                    title: Text(l10n.streakDays(s.days)),
+                    subtitle: Text(
+                      '${DateFormat.yMd(localeName).format(s.start)} - ${DateFormat.yMd(localeName).format(s.end)}',
+                    ),
                   ),
                 ),
               const SizedBox(height: 12),
-              const Text('Stability', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.stabilityTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               SizedBox(
                 height: 120,
                 child: vm.stabilitySeries.isEmpty
-                    ? const Center(child: Text('No stability data'))
+                    ? Center(child: Text(l10n.noStabilityData))
                     : Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: vm.stabilitySeries
@@ -147,11 +153,11 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                       ),
               ),
               const SizedBox(height: 12),
-              const Text('Habit By Weekdays', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.habitByWeekdays, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              ..._buildWeekdayBars(context, vm.weekDayExecution),
+              ..._buildWeekdayBars(context, vm.weekDayExecution, l10n),
               const SizedBox(height: 12),
-              const Text('Calendar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.calendarTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               _CalendarHeatmap(completedDays: vm.completedCalendarDays),
             ],
@@ -161,8 +167,16 @@ class _HabitDetailViewState extends State<HabitDetailView> {
     );
   }
 
-  List<Widget> _buildWeekdayBars(BuildContext context, List<int> data) {
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  List<Widget> _buildWeekdayBars(BuildContext context, List<int> data, AppLocalizations l10n) {
+    final dayNames = [
+      l10n.weekdayMon,
+      l10n.weekdayTue,
+      l10n.weekdayWed,
+      l10n.weekdayThu,
+      l10n.weekdayFri,
+      l10n.weekdaySat,
+      l10n.weekdaySun,
+    ];
     final max = data.fold<int>(1, (p, e) => e > p ? e : p);
     return List<Widget>.generate(dayNames.length, (index) {
       final count = data[index];

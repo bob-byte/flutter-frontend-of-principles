@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/helper_viewmodel.dart';
@@ -22,9 +23,11 @@ class _HelperViewState extends State<HelperView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat With Helper'),
+        title: Text(l10n.helperTitle),
         actions: [
           IconButton(
             onPressed: () => Navigator.of(context).pushNamed(EditHabitView.routeName),
@@ -82,7 +85,7 @@ class _HelperViewState extends State<HelperView> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: TextField(
                         controller: _controller,
-                        decoration: const InputDecoration(hintText: 'Enter text'),
+                        decoration: InputDecoration(hintText: l10n.helperInputHint),
                       ),
                     ),
                   ),
@@ -95,7 +98,11 @@ class _HelperViewState extends State<HelperView> {
                           onPressed: () async {
                             final prompt = _controller.text;
                             _controller.clear();
-                            await vm.ask(prompt);
+                            await vm.ask(
+                              prompt,
+                              fallbackAnswer: l10n.chatFallbackAnswer,
+                              errorMessage: l10n.genericErrorOccurred,
+                            );
                           },
                           icon: const Icon(Icons.send),
                         ),
