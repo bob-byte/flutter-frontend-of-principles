@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../views/edit_habit_view.dart';
 import '../views/goals_view.dart';
+import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
@@ -16,6 +17,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const StartupView());
       case LoginView.routeName:
         return MaterialPageRoute(builder: (_) => const LoginView());
+      case AppBenefitsView.routeName:
+        return MaterialPageRoute(builder: (_) => const AppBenefitsView());
       case HelperView.routeName:
         return MaterialPageRoute(builder: (_) => const HelperView());
       case HabitDetailView.routeName:
