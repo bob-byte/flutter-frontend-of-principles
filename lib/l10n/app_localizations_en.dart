@@ -220,4 +220,45 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recommendedHabitReason4 =>
       'It creates a repeatable cue for learning and calm.';
+
+  @override
+  String get transformAreasOfLifeTitle => 'Improve lagging life areas';
+
+  @override
+  String get transformAreasOfLifeDescription =>
+      'Set goals correctly and build your habits.';
+
+  @override
+  String get chatWithHelperTitle => 'Chat with AI assistant';
+
+  @override
+  String get chatWithHelperDescription =>
+      'Get answers to various questions from AI assistant that takes your mission, habits, etc. into account.';
+
+  @override
+  String get groupHabitsByGoalsTitle => 'Continuous progress';
+
+  @override
+  String get groupHabitsByGoalsDescription =>
+      'Systematize your goals by grouping habits under goals.';
+
+  @override
+  String get getRecommendationsByAITitle => 'AI recommendations';
+
+  @override
+  String get getRecommendationsByAIDescription =>
+      'Get AI recommendations formed based on your mission, life motto, goals, etc.';
+
+  @override
+  String get becomeTruePersonalityTitle => 'Become a true personality';
+
+  @override
+  String get becomeTruePersonalityDescription =>
+      'Set goals aligned with your identity. Ahead!';
+
+  @override
+  String get ahead => 'Ahead';
+
+  @override
+  String get aboutProgram => 'About program';
 }

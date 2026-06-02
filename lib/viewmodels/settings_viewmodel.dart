@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/settings_service.dart';
+import '../views/app_benefits_view.dart';
 
 class SettingsViewModel extends ChangeNotifier {
   SettingsViewModel({
@@ -60,5 +61,9 @@ class SettingsViewModel extends ChangeNotifier {
     _localeController.setLocaleOverride(locale);
     await _settingsService.setLocaleOverride(locale?.languageCode);
     notifyListeners();
+  }
+
+  void showAppBenefits(BuildContext context) {
+    Navigator.of(context).pushNamed(AppBenefitsView.routeName);
   }
 }

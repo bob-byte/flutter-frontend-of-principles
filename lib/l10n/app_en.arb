@@ -123,5 +123,17 @@
   "recommendedHabitName4": "Read 5 pages before bed",
   "@recommendedHabitName4": {"description": "Seed recommendation title #4"},
   "recommendedHabitReason4": "It creates a repeatable cue for learning and calm.",
-  "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"}
+  "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"},
+  "transformAreasOfLifeTitle": "Improve lagging life areas",
+  "transformAreasOfLifeDescription": "Set goals correctly and build your habits.",
+  "chatWithHelperTitle": "Chat with AI assistant",
+  "chatWithHelperDescription": "Get answers to various questions from AI assistant that takes your mission, habits, etc. into account.",
+  "groupHabitsByGoalsTitle": "Continuous progress",
+  "groupHabitsByGoalsDescription": "Systematize your goals by grouping habits under goals.",
+  "getRecommendationsByAITitle": "AI recommendations",
+  "getRecommendationsByAIDescription": "Get AI recommendations formed based on your mission, life motto, goals, etc.",
+  "becomeTruePersonalityTitle": "Become a true personality",
+  "becomeTruePersonalityDescription": "Set goals aligned with your identity. Ahead!",
+  "ahead": "Ahead",
+  "aboutProgram": "About program"
 }
