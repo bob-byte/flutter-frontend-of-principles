@@ -223,45 +223,4 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get recommendedHabitReason4 =>
       'Це створює повторюваний сигнал для навчання та спокою.';
-
-  @override
-  String get transformAreasOfLifeTitle => 'Покращ відстаючі сфери життя';
-
-  @override
-  String get transformAreasOfLifeDescription =>
-      'Встановлюй цілі правильно та будуй свої звички.';
-
-  @override
-  String get chatWithHelperTitle => 'Чат з ШІ-помічником';
-
-  @override
-  String get chatWithHelperDescription =>
-      'Отримай відповідь на різноманітні питання від ШІ-асистента, який зважає на твою місію, звички й т.д.';
-
-  @override
-  String get groupHabitsByGoalsTitle => 'Безперервний прогрес';
-
-  @override
-  String get groupHabitsByGoalsDescription =>
-      'Систематизуй досягнення цілей, групувавши звички за цілями.';
-
-  @override
-  String get getRecommendationsByAITitle => 'ШІ-рекомендації';
-
-  @override
-  String get getRecommendationsByAIDescription =>
-      'Отримай ШІ-рекомендації, що сформовані на основі твоєї місії, гасла по життю, цілях і т.д.';
-
-  @override
-  String get becomeTruePersonalityTitle => 'Стань справжньою особистістю';
-
-  @override
-  String get becomeTruePersonalityDescription =>
-      'Встанови цілі, що орієнтовані на твою ідентичність. Вперед!';
-
-  @override
-  String get ahead => 'Вперед';
-
-  @override
-  String get aboutProgram => 'Про програму';
 }
