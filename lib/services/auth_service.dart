@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/storage/secure_store.dart';
 
@@ -117,9 +118,49 @@ class AuthService {
   }
 
   Future<bool> appleAuthorize() async {
-    // Placeholder for Apple OAuth
-    await Future.delayed(const Duration(seconds: 1));
-    await _secureStore.write(_tokenKey, 'fake_apple_token');
-    return true;
+    try {
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw Exception('AppleAuthUnavailableOnDevice');
+      }
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Apple ID token is null or empty.');
+      }
+
+      // Відправляємо IdToken на власний бекенд
+      const backendUrl = 'https://principles-server.ckwavh.easypanel.host/api/account/appleauthorization';
+      final dio = Dio();
+      final backendResponse = await dio.post(
+        backendUrl,
+        data: {
+          'IdToken': idToken,
+        },
+      );
+
+      final appToken = backendResponse.data['token'] ?? backendResponse.data['Token'];
+      if (appToken == null) return false;
+
+      await _secureStore.write(_tokenKey, appToken);
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        debugPrint('Apple Auth canceled by user (code 1001 equivalent).');
+      } else {
+        debugPrint('Apple Auth Exception: $e');
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Apple Auth Error: $e');
+      return false;
+    }
   }
 }
