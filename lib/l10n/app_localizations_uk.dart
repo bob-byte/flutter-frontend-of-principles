@@ -15,6 +15,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsTitle => 'Налаштування';
 
   @override
+  String get logoutLabel => 'Вийти';
+
+  @override
   String get themeLabel => 'Тема';
 
   @override
@@ -223,4 +226,22 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get recommendedHabitReason4 =>
       'Це створює повторюваний сигнал для навчання та спокою.';
+
+  @override
+  String get startupTitle => 'Давай почнемо зараз!';
+
+  @override
+  String get startupGoogleBtn => 'Продовжити через Google';
+
+  @override
+  String get startupAppleBtn => 'Продовжити через Apple';
+
+  @override
+  String get startupRegisterBtn => 'Зареєструватись';
+
+  @override
+  String get startupLoginBtn => 'Вхід';
+
+  @override
+  String get startupErrorGeneric => 'Щось пішло не так';
 }

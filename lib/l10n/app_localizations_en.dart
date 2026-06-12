@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get logoutLabel => 'Logout';
+
+  @override
   String get themeLabel => 'Theme';
 
   @override
@@ -220,4 +223,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recommendedHabitReason4 =>
       'It creates a repeatable cue for learning and calm.';
+
+  @override
+  String get startupTitle => 'Let\'s get started now!';
+
+  @override
+  String get startupGoogleBtn => 'Continue with Google';
+
+  @override
+  String get startupAppleBtn => 'Continue with Apple';
+
+  @override
+  String get startupRegisterBtn => 'Sign up';
+
+  @override
+  String get startupLoginBtn => 'Login';
+
+  @override
+  String get startupErrorGeneric => 'Something went wrong';
 }

@@ -5,6 +5,7 @@
   "@appTitle": {"description": "Заголовок застосунку"},
   "settingsTitle": "Налаштування",
   "@settingsTitle": {"description": "Заголовок екрана налаштувань"},
+  "logoutLabel": "Вийти",
   "themeLabel": "Тема",
   "themeSubtitle": "Перемикайте між темною та світлою",
   "themeLight": "Світла",
@@ -118,5 +119,11 @@
   "recommendedHabitName4": "Читайте 5 сторінок перед сном",
   "@recommendedHabitName4": {"description": "Назва стартової рекомендації #4"},
   "recommendedHabitReason4": "Це створює повторюваний сигнал для навчання та спокою.",
-  "@recommendedHabitReason4": {"description": "Причина стартової рекомендації #4"}
+  "@recommendedHabitReason4": {"description": "Причина стартової рекомендації #4"},
+  "startupTitle": "Давай почнемо зараз!",
+  "startupGoogleBtn": "Продовжити через Google",
+  "startupAppleBtn": "Продовжити через Apple",
+  "startupRegisterBtn": "Зареєструватись",
+  "startupLoginBtn": "Вхід",
+  "startupErrorGeneric": "Щось пішло не так"
 }

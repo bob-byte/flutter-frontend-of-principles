@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// Logout button text
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logoutLabel;
+
   /// Theme setting label
   ///
   /// In en, this message translates to:
@@ -493,6 +499,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It creates a repeatable cue for learning and calm.'**
   String get recommendedHabitReason4;
+
+  /// No description provided for @startupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get started now!'**
+  String get startupTitle;
+
+  /// No description provided for @startupGoogleBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get startupGoogleBtn;
+
+  /// No description provided for @startupAppleBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get startupAppleBtn;
+
+  /// No description provided for @startupRegisterBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get startupRegisterBtn;
+
+  /// No description provided for @startupLoginBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get startupLoginBtn;
+
+  /// No description provided for @startupErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get startupErrorGeneric;
 }
 
 class _AppLocalizationsDelegate

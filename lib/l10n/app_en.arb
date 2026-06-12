@@ -5,6 +5,8 @@
   "@appTitle": {"description": "Application title"},
   "settingsTitle": "Settings",
   "@settingsTitle": {"description": "Settings screen title"},
+  "logoutLabel": "Logout",
+  "@logoutLabel": {"description": "Logout button text"},
   "themeLabel": "Theme",
   "@themeLabel": {"description": "Theme setting label"},
   "themeSubtitle": "Switch between dark and light",
@@ -123,5 +125,11 @@
   "recommendedHabitName4": "Read 5 pages before bed",
   "@recommendedHabitName4": {"description": "Seed recommendation title #4"},
   "recommendedHabitReason4": "It creates a repeatable cue for learning and calm.",
-  "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"}
+  "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"},
+  "startupTitle": "Let's get started now!",
+  "startupGoogleBtn": "Continue with Google",
+  "startupAppleBtn": "Continue with Apple",
+  "startupRegisterBtn": "Sign up",
+  "startupLoginBtn": "Login",
+  "startupErrorGeneric": "Something went wrong"
 }

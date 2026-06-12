@@ -60,6 +60,7 @@ class PrinciplesApp extends StatelessWidget {
           create: (ctx) => StartupViewModel(
             authService: ctx.read<AuthService>(),
             syncService: ctx.read<SyncService>(),
+            reminderService: ctx.read<ReminderService>(),
           ),
         ),
         ChangeNotifierProvider(

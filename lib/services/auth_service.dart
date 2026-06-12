@@ -15,4 +15,18 @@ class AuthService {
   Future<void> logout() => _secureStore.delete(_tokenKey);
 
   Future<String?> getToken() => _secureStore.read(_tokenKey);
+
+  Future<bool> googleAuthorize() async {
+    // Placeholder for Google OAuth
+    await Future.delayed(const Duration(seconds: 1));
+    await _secureStore.write(_tokenKey, 'fake_google_token');
+    return true;
+  }
+
+  Future<bool> appleAuthorize() async {
+    // Placeholder for Apple OAuth
+    await Future.delayed(const Duration(seconds: 1));
+    await _secureStore.write(_tokenKey, 'fake_apple_token');
+    return true;
+  }
 }

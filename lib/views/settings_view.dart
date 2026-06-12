@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../services/auth_service.dart';
 import '../viewmodels/settings_viewmodel.dart';
+import 'startup_view.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -71,6 +73,16 @@ class _SettingsViewState extends State<SettingsView> {
                 ],
                 onChanged: (value) => vm.setLocaleOverride(value),
               ),
+            ),
+            ListTile(
+              title: Text(l10n.logoutLabel),
+              leading: const Icon(Icons.logout),
+              onTap: () async {
+                await context.read<AuthService>().logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(StartupView.routeName, (route) => false);
+                }
+              },
             ),
           ],
         ),
