@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/app_benefits_viewmodel.dart';
 import 'login_view.dart';
+import 'startup_view.dart';
 
 class AppBenefitsView extends StatefulWidget {
   const AppBenefitsView({super.key});
@@ -131,7 +132,7 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                   Navigator.of(context).pop();
                                 } else {
                                   Navigator.of(context).pushNamedAndRemoveUntil(
-                                    LoginView.routeName,
+                                    StartupView.routeName,
                                     (_) => false,
                                   );
                                 }
