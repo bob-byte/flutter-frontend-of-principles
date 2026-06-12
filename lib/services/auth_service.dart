@@ -12,6 +12,12 @@ class AuthService {
     return true;
   }
 
+  Future<bool> register(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) return false;
+    await _secureStore.write(_tokenKey, 'fake_token');
+    return true;
+  }
+
   Future<void> logout() => _secureStore.delete(_tokenKey);
 
   Future<String?> getToken() => _secureStore.read(_tokenKey);

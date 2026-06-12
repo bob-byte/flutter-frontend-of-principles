@@ -8,6 +8,7 @@ import '../viewmodels/startup_viewmodel.dart';
 import 'app_benefits_view.dart';
 import 'helper_view.dart';
 import 'login_view.dart';
+import 'signup_view.dart';
 
 class StartupView extends StatefulWidget {
   const StartupView({super.key});
@@ -200,9 +201,7 @@ class _StartupViewState extends State<StartupView> {
                     icon: const Icon(Icons.email_outlined, color: Colors.white, size: 24),
                     isPrimary: true,
                     onPressed: () {
-                      // Placeholder for SignupView navigation
-                      // Navigator.of(context).pushNamed(SignupView.routeName);
-                      _showErrorDialog("SignupView not implemented yet.");
+                      Navigator.of(context).pushNamed(SignupView.routeName);
                     },
                   ),
                   const SizedBox(height: 15),

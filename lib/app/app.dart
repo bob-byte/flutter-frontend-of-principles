@@ -22,6 +22,7 @@ import '../viewmodels/app_benefits_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../viewmodels/login_viewmodel.dart';
+import '../viewmodels/signup_viewmodel.dart';
 import '../viewmodels/progress_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
@@ -31,6 +32,7 @@ import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
+import '../views/signup_view.dart';
 import '../views/progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/startup_view.dart';
@@ -67,6 +69,9 @@ class PrinciplesApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (ctx) => LoginViewModel(ctx.read<AuthService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => SignupViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
           create: (ctx) => AppBenefitsViewModel(ctx.read<AuthService>()),
@@ -123,6 +128,7 @@ class PrinciplesApp extends StatelessWidget {
             routes: {
               StartupView.routeName: (_) => const StartupView(),
               LoginView.routeName: (_) => const LoginView(),
+              SignupView.routeName: (_) => const SignupView(),
               AppBenefitsView.routeName: (_) => const AppBenefitsView(),
               HelperView.routeName: (_) => const HelperView(),
               HabitDetailView.routeName: (_) => const HabitDetailView(),
