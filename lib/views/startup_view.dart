@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lottie/lottie.dart';
@@ -112,7 +110,6 @@ class _StartupViewState extends State<StartupView> {
     }
 
     final l10n = AppLocalizations.of(context)!;
-    final isIOS = !kIsWeb && Platform.isIOS;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -144,7 +141,7 @@ class _StartupViewState extends State<StartupView> {
                         ),
                       ),
                       child: Lottie.asset(
-                        'assets/fire_loading.json',
+                        'assets/lottie/blue_fire_loading.json',
                         width: 200,
                         height: 200,
                         repeat: true,
@@ -188,16 +185,14 @@ class _StartupViewState extends State<StartupView> {
                   ),
                   const SizedBox(height: 15),
                   
-                  // Apple Button (iOS Only)
-                  if (isIOS) ...[
-                    _AuthButton(
-                      text: l10n.startupAppleBtn,
-                      icon: const Icon(Icons.apple, color: Colors.white, size: 28),
-                      isPrimary: true,
-                      onPressed: _handleAppleAuth,
-                    ),
-                    const SizedBox(height: 15),
-                  ],
+                  // Apple Button
+                  _AuthButton(
+                    text: l10n.startupAppleBtn,
+                    icon: const Icon(Icons.apple, color: Colors.white, size: 28),
+                    isPrimary: true,
+                    onPressed: _handleAppleAuth,
+                  ),
+                  const SizedBox(height: 15),
                   
                   // Register Button
                   _AuthButton(
