@@ -535,6 +535,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong'**
   String get startupErrorGeneric;
+
+  /// No description provided for @transformAreasOfLifeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Improve lagging life areas'**
+  String get transformAreasOfLifeTitle;
+
+  /// No description provided for @transformAreasOfLifeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set goals correctly and build your habits.'**
+  String get transformAreasOfLifeDescription;
+
+  /// No description provided for @chatWithHelperTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with AI assistant'**
+  String get chatWithHelperTitle;
+
+  /// No description provided for @chatWithHelperDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Get answers to various questions from AI assistant that takes your mission, habits, etc. into account.'**
+  String get chatWithHelperDescription;
+
+  /// No description provided for @groupHabitsByGoalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous progress'**
+  String get groupHabitsByGoalsTitle;
+
+  /// No description provided for @groupHabitsByGoalsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Systematize your goals by grouping habits under goals.'**
+  String get groupHabitsByGoalsDescription;
+
+  /// No description provided for @getRecommendationsByAITitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI recommendations'**
+  String get getRecommendationsByAITitle;
+
+  /// No description provided for @getRecommendationsByAIDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Get AI recommendations formed based on your mission, life motto, goals, etc.'**
+  String get getRecommendationsByAIDescription;
+
+  /// No description provided for @becomeTruePersonalityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a true personality'**
+  String get becomeTruePersonalityTitle;
+
+  /// No description provided for @becomeTruePersonalityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Set goals aligned with your identity. Ahead!'**
+  String get becomeTruePersonalityDescription;
+
+  /// No description provided for @ahead.
+  ///
+  /// In en, this message translates to:
+  /// **'Ahead'**
+  String get ahead;
+
+  /// No description provided for @aboutProgram.
+  ///
+  /// In en, this message translates to:
+  /// **'About program'**
+  String get aboutProgram;
 }
 
 class _AppLocalizationsDelegate

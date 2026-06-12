@@ -4,6 +4,8 @@ import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 import '../services/reminder_service.dart';
 
+enum StartupNextRoute { helper, login, appBenefits }
+
 class StartupViewModel extends ChangeNotifier {
   StartupViewModel({
     required AuthService authService,
@@ -18,14 +20,23 @@ class StartupViewModel extends ChangeNotifier {
   final ReminderService _reminderService;
   bool loading = false;
   String? errorMessage;
+  bool _hasShownAppBenefitsToGuest = false;
 
-  Future<bool> initialize() async {
+  Future<StartupNextRoute> initialize() async {
     loading = true;
     notifyListeners();
     try {
       await _syncService.runSync();
       final token = await _authService.getToken();
-      return token != null && token.isNotEmpty;
+      final isLoggedIn = token != null && token.isNotEmpty;
+      if (isLoggedIn) {
+        return StartupNextRoute.helper;
+      }
+      if (!_hasShownAppBenefitsToGuest) {
+        _hasShownAppBenefitsToGuest = true;
+        return StartupNextRoute.appBenefits;
+      }
+      return StartupNextRoute.login;
     } finally {
       loading = false;
       notifyListeners();

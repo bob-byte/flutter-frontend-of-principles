@@ -125,5 +125,17 @@
   "startupAppleBtn": "Продовжити через Apple",
   "startupRegisterBtn": "Зареєструватись",
   "startupLoginBtn": "Вхід",
-  "startupErrorGeneric": "Щось пішло не так"
+  "startupErrorGeneric": "Щось пішло не так",
+  "transformAreasOfLifeTitle": "Покращ відстаючі сфери життя",
+  "transformAreasOfLifeDescription": "Встановлюй цілі правильно та будуй свої звички.",
+  "chatWithHelperTitle": "Чат з ШІ-помічником",
+  "chatWithHelperDescription": "Отримай відповідь на різноманітні питання від ШІ-асистента, який зважає на твою місію, звички й т.д.",
+  "groupHabitsByGoalsTitle": "Безперервний прогрес",
+  "groupHabitsByGoalsDescription": "Систематизуй досягнення цілей, групувавши звички за цілями.",
+  "getRecommendationsByAITitle": "ШІ-рекомендації",
+  "getRecommendationsByAIDescription": "Отримай ШІ-рекомендації, що сформовані на основі твоєї місії, гасла по життю, цілях і т.д.",
+  "becomeTruePersonalityTitle": "Стань справжньою особистістю",
+  "becomeTruePersonalityDescription": "Встанови цілі, що орієнтовані на твою ідентичність. Вперед!",
+  "ahead": "Вперед",
+  "aboutProgram": "Про програму"
 }

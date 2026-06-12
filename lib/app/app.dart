@@ -18,6 +18,7 @@ import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../viewmodels/goals_viewmodel.dart';
+import '../viewmodels/app_benefits_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../viewmodels/login_viewmodel.dart';
@@ -26,6 +27,7 @@ import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../views/edit_habit_view.dart';
 import '../views/goals_view.dart';
+import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
@@ -65,6 +67,9 @@ class PrinciplesApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (ctx) => LoginViewModel(ctx.read<AuthService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => AppBenefitsViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
           create: (ctx) => HelperViewModel(ctx.read<AiChatService>()),
@@ -118,6 +123,7 @@ class PrinciplesApp extends StatelessWidget {
             routes: {
               StartupView.routeName: (_) => const StartupView(),
               LoginView.routeName: (_) => const LoginView(),
+              AppBenefitsView.routeName: (_) => const AppBenefitsView(),
               HelperView.routeName: (_) => const HelperView(),
               HabitDetailView.routeName: (_) => const HabitDetailView(),
               EditHabitView.routeName: (_) => const EditHabitView(),

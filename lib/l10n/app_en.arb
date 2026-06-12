@@ -131,5 +131,17 @@
   "startupAppleBtn": "Continue with Apple",
   "startupRegisterBtn": "Sign up",
   "startupLoginBtn": "Login",
-  "startupErrorGeneric": "Something went wrong"
+  "startupErrorGeneric": "Something went wrong",
+  "transformAreasOfLifeTitle": "Improve lagging life areas",
+  "transformAreasOfLifeDescription": "Set goals correctly and build your habits.",
+  "chatWithHelperTitle": "Chat with AI assistant",
+  "chatWithHelperDescription": "Get answers to various questions from AI assistant that takes your mission, habits, etc. into account.",
+  "groupHabitsByGoalsTitle": "Continuous progress",
+  "groupHabitsByGoalsDescription": "Systematize your goals by grouping habits under goals.",
+  "getRecommendationsByAITitle": "AI recommendations",
+  "getRecommendationsByAIDescription": "Get AI recommendations formed based on your mission, life motto, goals, etc.",
+  "becomeTruePersonalityTitle": "Become a true personality",
+  "becomeTruePersonalityDescription": "Set goals aligned with your identity. Ahead!",
+  "ahead": "Ahead",
+  "aboutProgram": "About program"
 }
