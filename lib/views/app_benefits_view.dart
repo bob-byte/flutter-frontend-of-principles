@@ -4,7 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/app_benefits_viewmodel.dart';
-import 'login_view.dart';
+
 import 'startup_view.dart';
 
 class AppBenefitsView extends StatefulWidget {

@@ -4,7 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import '../models/app_benefit.dart';
 import '../services/auth_service.dart';
 
-enum AppBenefitsNavigationAction { goBack, loginAbsolute }
+enum AppBenefitsNavigationAction { goBack, startupAbsolute }
 
 class AppBenefitsSlideContent {
   const AppBenefitsSlideContent({
@@ -84,7 +84,7 @@ class AppBenefitsViewModel extends ChangeNotifier {
     final isLoggedIn = token != null && token.isNotEmpty;
     return isLoggedIn
         ? AppBenefitsNavigationAction.goBack
-        : AppBenefitsNavigationAction.loginAbsolute;
+        : AppBenefitsNavigationAction.startupAbsolute;
   }
 
   String _resolveLocalizedKey(AppLocalizations l10n, String key) {
