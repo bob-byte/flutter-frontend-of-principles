@@ -37,6 +37,12 @@ class AuthService {
         return true;
       }
       return false;
+    } on DioException catch (e) {
+      debugPrint('Login Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return false;
     } catch (e) {
       debugPrint('Login Error: $e');
       return false;

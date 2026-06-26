@@ -310,4 +310,25 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get signupDisclaimer =>
       'Натискаючи кнопку \'Зареєструватись\', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності';
+
+  @override
+  String get errorEmailAlreadyExists => 'Користувач з таким Email вже існує.';
+
+  @override
+  String get loginDisclaimer =>
+      'Натискаючи кнопку \'Вхід\', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності';
+
+  @override
+  String tryAgainIn(int seconds) {
+    return 'Спробуйте ще раз через $seconds с.';
+  }
+
+  @override
+  String get forgotPassword => 'Забули пароль?';
+
+  @override
+  String get principlesAppTitle => 'Principles';
+
+  @override
+  String get loginButton => 'Вхід';
 }

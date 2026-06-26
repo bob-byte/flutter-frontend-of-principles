@@ -152,5 +152,17 @@
   "sloganLabel": "Main slogan",
   "optionalLabel": "(Optional)",
   "signupDisclaimer": "By clicking 'Sign up', you agree to the User Agreement and Privacy Policy",
-  "errorEmailAlreadyExists": "User with this Email already exists."
+  "errorEmailAlreadyExists": "User with this Email already exists.",
+  "loginDisclaimer": "By clicking 'Log in', you agree to the User Agreement and Privacy Policy",
+  "tryAgainIn": "Try again in {seconds} s.",
+  "@tryAgainIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "forgotPassword": "Forgot password?",
+  "principlesAppTitle": "Principles",
+  "loginButton": "Log in"
 }

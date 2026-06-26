@@ -146,5 +146,17 @@
   "sloganLabel": "Основне гасло",
   "optionalLabel": "(Необов'язково)",
   "signupDisclaimer": "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності",
-  "errorEmailAlreadyExists": "Користувач з таким Email вже існує."
+  "errorEmailAlreadyExists": "Користувач з таким Email вже існує.",
+  "loginDisclaimer": "Натискаючи кнопку 'Вхід', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності",
+  "tryAgainIn": "Спробуйте ще раз через {seconds} с.",
+  "@tryAgainIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "forgotPassword": "Забули пароль?",
+  "principlesAppTitle": "Principles",
+  "loginButton": "Вхід"
 }

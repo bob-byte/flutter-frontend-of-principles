@@ -655,6 +655,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'By clicking \'Sign up\', you agree to the User Agreement and Privacy Policy'**
   String get signupDisclaimer;
+
+  /// No description provided for @errorEmailAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'User with this Email already exists.'**
+  String get errorEmailAlreadyExists;
+
+  /// No description provided for @loginDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'By clicking \'Log in\', you agree to the User Agreement and Privacy Policy'**
+  String get loginDisclaimer;
+
+  /// No description provided for @tryAgainIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in {seconds} s.'**
+  String tryAgainIn(int seconds);
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @principlesAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Principles'**
+  String get principlesAppTitle;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get loginButton;
 }
 
 class _AppLocalizationsDelegate

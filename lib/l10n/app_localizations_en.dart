@@ -307,4 +307,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get signupDisclaimer =>
       'By clicking \'Sign up\', you agree to the User Agreement and Privacy Policy';
+
+  @override
+  String get errorEmailAlreadyExists => 'User with this Email already exists.';
+
+  @override
+  String get loginDisclaimer =>
+      'By clicking \'Log in\', you agree to the User Agreement and Privacy Policy';
+
+  @override
+  String tryAgainIn(int seconds) {
+    return 'Try again in $seconds s.';
+  }
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get principlesAppTitle => 'Principles';
+
+  @override
+  String get loginButton => 'Log in';
 }
