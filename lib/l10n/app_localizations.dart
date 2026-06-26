@@ -691,6 +691,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log in'**
   String get loginButton;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and new password. We will send a confirmation code.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPasswordLabel;
+
+  /// No description provided for @sendCodeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCodeBtn;
+
+  /// No description provided for @confirmCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation Code'**
+  String get confirmCodeTitle;
+
+  /// No description provided for @confirmCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the code we just sent to your email.'**
+  String get confirmCodeSubtitle;
+
+  /// No description provided for @codeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get codeLabel;
+
+  /// No description provided for @confirmBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmBtn;
+
+  /// No description provided for @wrongCodeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong confirmation code'**
+  String get wrongCodeError;
+
+  /// No description provided for @passwordChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success! Your password was changed successfully.'**
+  String get passwordChangedSuccess;
 }
 
 class _AppLocalizationsDelegate

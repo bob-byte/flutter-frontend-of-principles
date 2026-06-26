@@ -328,4 +328,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginButton => 'Log in';
+
+  @override
+  String get forgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email and new password. We will send a confirmation code.';
+
+  @override
+  String get newPasswordLabel => 'New password';
+
+  @override
+  String get sendCodeBtn => 'Send code';
+
+  @override
+  String get confirmCodeTitle => 'Confirmation Code';
+
+  @override
+  String get confirmCodeSubtitle =>
+      'Please enter the code we just sent to your email.';
+
+  @override
+  String get codeLabel => 'Code';
+
+  @override
+  String get confirmBtn => 'Confirm';
+
+  @override
+  String get wrongCodeError => 'Wrong confirmation code';
+
+  @override
+  String get passwordChangedSuccess =>
+      'Success! Your password was changed successfully.';
 }

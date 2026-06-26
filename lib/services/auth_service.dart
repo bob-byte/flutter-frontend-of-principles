@@ -92,6 +92,41 @@ class AuthService {
     }
   }
 
+  Future<int?> generateCode(String email) async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://principles-server.ckwavh.easypanel.host/api/account/code',
+        queryParameters: {'emailWhereSendCode': email},
+      );
+      if (response.statusCode == 200) {
+        return response.data['code'] ?? response.data['Code'];
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Generate Code Error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> changePassword(String email, String newPassword) async {
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(newPassword);
+      final dio = Dio();
+      final response = await dio.put(
+        'https://principles-server.ckwavh.easypanel.host/api/account/password',
+        data: {
+          'email': email,
+          'newPassword': encryptedPassword,
+        },
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Change Password Error: $e');
+      return false;
+    }
+  }
+
   Future<void> logout() => _secureStore.delete(_tokenKey);
 
   Future<String?> getToken() => _secureStore.read(_tokenKey);

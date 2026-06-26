@@ -164,5 +164,15 @@
   },
   "forgotPassword": "Forgot password?",
   "principlesAppTitle": "Principles",
-  "loginButton": "Log in"
+  "loginButton": "Log in",
+  "forgotPasswordTitle": "Reset Password",
+  "forgotPasswordSubtitle": "Enter your email and new password. We will send a confirmation code.",
+  "newPasswordLabel": "New password",
+  "sendCodeBtn": "Send code",
+  "confirmCodeTitle": "Confirmation Code",
+  "confirmCodeSubtitle": "Please enter the code we just sent to your email.",
+  "codeLabel": "Code",
+  "confirmBtn": "Confirm",
+  "wrongCodeError": "Wrong confirmation code",
+  "passwordChangedSuccess": "Success! Your password was changed successfully."
 }

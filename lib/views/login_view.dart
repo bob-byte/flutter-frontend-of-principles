@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../viewmodels/login_viewmodel.dart';
+import 'forget_password_view.dart';
 import 'helper_view.dart';
 import 'signup_view.dart';
 
@@ -168,8 +169,10 @@ class _LoginViewState extends State<LoginView> {
                       
                     GestureDetector(
                       onTap: () {
-                        // Pass email to forgot password view later
-                        debugPrint('Forgot password for: ${_emailController.text}');
+                        Navigator.of(context).pushNamed(
+                          ForgetPasswordView.routeName,
+                          arguments: _emailController.text,
+                        );
                       },
                       child: Text(
                         l10n.forgotPassword,

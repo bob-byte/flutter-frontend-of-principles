@@ -158,5 +158,15 @@
   },
   "forgotPassword": "Забули пароль?",
   "principlesAppTitle": "Principles",
-  "loginButton": "Вхід"
+  "loginButton": "Вхід",
+  "forgotPasswordTitle": "Відновлення пароля",
+  "forgotPasswordSubtitle": "Введіть вашу електронну пошту та новий пароль. Ми надішлемо код підтвердження.",
+  "newPasswordLabel": "Новий пароль",
+  "sendCodeBtn": "Надіслати код",
+  "confirmCodeTitle": "Код підтвердження",
+  "confirmCodeSubtitle": "Будь ласка, введіть код, який ми щойно відправили на вашу пошту.",
+  "codeLabel": "Код",
+  "confirmBtn": "Підтвердити",
+  "wrongCodeError": "Невірний код підтвердження",
+  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено."
 }

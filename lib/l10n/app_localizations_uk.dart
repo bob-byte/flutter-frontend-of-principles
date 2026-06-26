@@ -331,4 +331,36 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get loginButton => 'Вхід';
+
+  @override
+  String get forgotPasswordTitle => 'Відновлення пароля';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Введіть вашу електронну пошту та новий пароль. Ми надішлемо код підтвердження.';
+
+  @override
+  String get newPasswordLabel => 'Новий пароль';
+
+  @override
+  String get sendCodeBtn => 'Надіслати код';
+
+  @override
+  String get confirmCodeTitle => 'Код підтвердження';
+
+  @override
+  String get confirmCodeSubtitle =>
+      'Будь ласка, введіть код, який ми щойно відправили на вашу пошту.';
+
+  @override
+  String get codeLabel => 'Код';
+
+  @override
+  String get confirmBtn => 'Підтвердити';
+
+  @override
+  String get wrongCodeError => 'Невірний код підтвердження';
+
+  @override
+  String get passwordChangedSuccess => 'Успіх! Ваш пароль успішно змінено.';
 }
