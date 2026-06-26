@@ -24,10 +24,10 @@ class AuthService {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
       final dio = Dio();
       final response = await dio.post(
-        'https://principles-server.ckwavh.easypanel.host/api/account/login',
+        'https://principles-server.ckwavh.easypanel.host/api/account/authorization',
         data: {
-          'Email': email,
-          'Password': encryptedPassword,
+          'email': email,
+          'password': encryptedPassword,
         },
       );
 
@@ -57,14 +57,14 @@ class AuthService {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
       final dio = Dio();
       final response = await dio.post(
-        'https://principles-server.ckwavh.easypanel.host/api/account/signup',
+        'https://principles-server.ckwavh.easypanel.host/api/account/authentication',
         data: {
-          'Name': name,
-          'Email': email,
-          'Password': encryptedPassword,
-          'Gender': gender,
-          if (mission != null && mission.isNotEmpty) 'Mission': mission,
-          if (slogan != null && slogan.isNotEmpty) 'MainSlogan': slogan,
+          'name': name,
+          'email': email,
+          'password': encryptedPassword,
+          'gender': gender,
+          if (mission != null && mission.isNotEmpty) 'mission': mission,
+          if (slogan != null && slogan.isNotEmpty) 'mainSlogan': slogan,
         },
       );
 
