@@ -24,7 +24,14 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       }
       return code;
     } catch (e) {
-      _error = genericError;
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (errorMsg.contains('EmailIsIncorrect')) {
+        _error = 'Такого користувача не знайдено (Email не зареєстровано).';
+      } else if (errorMsg.contains('Transaction failed') || errorMsg.contains('500')) {
+        _error = 'Помилка поштового сервера на бекенді. Зверніться до адміністратора.';
+      } else {
+        _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      }
       return null;
     } finally {
       _isBusy = false;
@@ -47,7 +54,8 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      _error = genericError;
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       return false;
     } finally {
       _isBusy = false;

@@ -103,6 +103,12 @@ class AuthService {
         return response.data['code'] ?? response.data['Code'];
       }
       return null;
+    } on DioException catch (e) {
+      debugPrint('Generate Code Dio Error: \${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return null;
     } catch (e) {
       debugPrint('Generate Code Error: $e');
       return null;
