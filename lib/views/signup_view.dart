@@ -188,9 +188,20 @@ class _SignupViewState extends State<SignupView> {
                   icon: const Icon(Icons.info_outline, color: Colors.grey),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Місія допомагає вам зосередитися на головному сенсі вашого життя.'),
-                        duration: Duration(seconds: 10),
+                      SnackBar(
+                        content: const Text(
+                          'Вона буде використана для створення більш доцільних для вас рекомендованих звичок. Місія - це життєва мета, яка постійно підтримує високий рівень мотивації й допомагає зробити найкращий вибір у різноманітних ситуаціях. Наприклад, місія може звучати так: “Я створюю ІТ-додатки, щоб робити світ кращим”.',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        backgroundColor: const Color(0xFF7CB6FA),
+                        duration: const Duration(seconds: 10),
+                        action: SnackBarAction(
+                          label: 'OK',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          },
+                        ),
                       ),
                     );
                   },
@@ -212,9 +223,20 @@ class _SignupViewState extends State<SignupView> {
                   icon: const Icon(Icons.info_outline, color: Colors.grey),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Основне гасло — це коротка фраза, яка надихатиме вас щодня.'),
-                        duration: Duration(seconds: 10),
+                      SnackBar(
+                        content: const Text(
+                          'Основне гасло буде використано для формування кращих рекомендованих звичок. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя.',
+                          style: TextStyle(color: Colors.black87),
+                        ),
+                        backgroundColor: const Color(0xFF7CB6FA),
+                        duration: const Duration(seconds: 10),
+                        action: SnackBarAction(
+                          label: 'OK',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          },
+                        ),
                       ),
                     );
                   },
@@ -256,7 +278,7 @@ class _SignupViewState extends State<SignupView> {
                     const TextSpan(text: "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з\n"),
                     WidgetSpan(
                       child: GestureDetector(
-                        onTap: () => launchUrl(Uri.parse('https://example.com/terms')),
+                        onTap: () => launchUrl(Uri.parse('https://principles.top/useragreement')),
                         child: const Text(
                           "Угодою Користувача",
                           style: TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline),
@@ -266,7 +288,7 @@ class _SignupViewState extends State<SignupView> {
                     const TextSpan(text: " та "),
                     WidgetSpan(
                       child: GestureDetector(
-                        onTap: () => launchUrl(Uri.parse('https://example.com/privacy')),
+                        onTap: () => launchUrl(Uri.parse('https://principles.top/privacypolicy')),
                         child: const Text(
                           "Політикою Конфіденційності",
                           style: TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline),
