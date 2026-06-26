@@ -19,6 +19,7 @@ class SignupViewModel extends ChangeNotifier {
     String? mission,
     String? slogan,
     required String genericError,
+    required String emailAlreadyExistsError,
   }) async {
     _isBusy = true;
     _error = null;
@@ -41,7 +42,11 @@ class SignupViewModel extends ChangeNotifier {
     } catch (e) {
       // Extract specific backend error if it's an Exception
       final errorMsg = e.toString().replaceAll('Exception: ', '');
-      _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      if (errorMsg.contains('UserWithIdenticalEmailAlreadyExists')) {
+        _error = emailAlreadyExistsError;
+      } else {
+        _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      }
       return false;
     } finally {
       _isBusy = false;

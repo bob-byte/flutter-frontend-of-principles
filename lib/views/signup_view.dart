@@ -63,6 +63,7 @@ class _SignupViewState extends State<SignupView> {
       mission: _missionController.text.isEmpty ? null : _missionController.text,
       slogan: _sloganController.text.isEmpty ? null : _sloganController.text,
       genericError: l10n.genericErrorOccurred,
+      emailAlreadyExistsError: l10n.errorEmailAlreadyExists,
     );
 
     if (!mounted) return;

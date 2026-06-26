@@ -151,5 +151,6 @@
   "missionLabel": "Mission",
   "sloganLabel": "Main slogan",
   "optionalLabel": "(Optional)",
-  "signupDisclaimer": "By clicking 'Sign up', you agree to the User Agreement and Privacy Policy"
+  "signupDisclaimer": "By clicking 'Sign up', you agree to the User Agreement and Privacy Policy",
+  "errorEmailAlreadyExists": "User with this Email already exists."
 }
