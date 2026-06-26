@@ -68,14 +68,12 @@ class AuthService {
         },
       );
 
-      final appToken = response.data['token'] ?? response.data['Token'];
-      if (appToken != null) {
-        await _secureStore.write(_tokenKey, appToken);
-        return true;
+      // Backend returns 200 OK with an empty body on successful signup.
+      // So we immediately call login() to get the token.
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return await login(email, password);
       }
-      
-      // If backend doesn't return token on signup, call login automatically
-      return await login(email, password);
+      return false;
     } catch (e) {
       debugPrint('Registration Error: $e');
       return false;
