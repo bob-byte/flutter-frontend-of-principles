@@ -9,6 +9,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/storage/secure_store.dart';
+import '../core/helpers/password_changer.dart';
 
 class AuthService {
   AuthService(this._secureStore);
@@ -18,8 +19,28 @@ class AuthService {
 
   Future<bool> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) return false;
-    await _secureStore.write(_tokenKey, 'fake_token');
-    return true;
+    
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(password);
+      final dio = Dio();
+      final response = await dio.post(
+        'https://principles-server.ckwavh.easypanel.host/api/account/login',
+        data: {
+          'Email': email,
+          'Password': encryptedPassword,
+        },
+      );
+
+      final appToken = response.data['token'] ?? response.data['Token'];
+      if (appToken != null) {
+        await _secureStore.write(_tokenKey, appToken);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Login Error: $e');
+      return false;
+    }
   }
 
   Future<bool> register({
@@ -31,8 +52,34 @@ class AuthService {
     String? slogan,
   }) async {
     if (email.isEmpty || password.isEmpty || name.isEmpty) return false;
-    await _secureStore.write(_tokenKey, 'fake_token');
-    return true;
+
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(password);
+      final dio = Dio();
+      final response = await dio.post(
+        'https://principles-server.ckwavh.easypanel.host/api/account/signup',
+        data: {
+          'Name': name,
+          'Email': email,
+          'Password': encryptedPassword,
+          'Gender': gender,
+          if (mission != null && mission.isNotEmpty) 'Mission': mission,
+          if (slogan != null && slogan.isNotEmpty) 'MainSlogan': slogan,
+        },
+      );
+
+      final appToken = response.data['token'] ?? response.data['Token'];
+      if (appToken != null) {
+        await _secureStore.write(_tokenKey, appToken);
+        return true;
+      }
+      
+      // If backend doesn't return token on signup, call login automatically
+      return await login(email, password);
+    } catch (e) {
+      debugPrint('Registration Error: $e');
+      return false;
+    }
   }
 
   Future<void> logout() => _secureStore.delete(_tokenKey);

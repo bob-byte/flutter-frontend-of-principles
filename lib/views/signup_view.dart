@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../viewmodels/signup_viewmodel.dart';
 import 'helper_view.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 class SignupView extends StatefulWidget {
   const SignupView({super.key});
 
@@ -25,6 +27,8 @@ class _SignupViewState extends State<SignupView> {
   bool _obscurePassword = true;
   int _selectedGender = 0; // 0: Male, 1: Female, 2: Other
 
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -39,6 +43,10 @@ class _SignupViewState extends State<SignupView> {
     final vm = context.read<SignupViewModel>();
     final l10n = AppLocalizations.of(context)!;
     
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.genericErrorOccurred)),
@@ -81,11 +89,13 @@ class _SignupViewState extends State<SignupView> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // Logo
               Center(
                 child: SizedBox(
@@ -106,6 +116,10 @@ class _SignupViewState extends State<SignupView> {
                 controller: _nameController,
                 hintText: l10n.nameLabel,
                 prefixIcon: Icons.person_outline,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Поле обов\'язкове';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -115,6 +129,13 @@ class _SignupViewState extends State<SignupView> {
                 hintText: l10n.emailLabel,
                 prefixIcon: Icons.mail_outline,
                 keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Поле обов\'язкове';
+                  if (!RegExp(r'^.+@[a-zA-Z]+\.{1}[a-zA-Z]+(\.{0,1}[a-zA-Z]+)$').hasMatch(value)) {
+                    return 'Невірний формат пошти';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
@@ -124,6 +145,11 @@ class _SignupViewState extends State<SignupView> {
                 hintText: l10n.passwordLabel,
                 prefixIcon: Icons.lock_outline,
                 obscureText: _obscurePassword,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Поле обов\'язкове';
+                  if (value.length < 6) return 'Мінімум 6 символів';
+                  return null;
+                },
                 suffixIcon: IconButton(
                   icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                   color: Colors.grey,
@@ -157,7 +183,18 @@ class _SignupViewState extends State<SignupView> {
                 controller: _missionController,
                 hintText: l10n.optionalLabel,
                 prefixIcon: Icons.flag_outlined,
-                suffixIcon: const Icon(Icons.info_outline, color: Colors.grey),
+                maxLines: 3,
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.info_outline, color: Colors.grey),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Місія допомагає вам зосередитися на головному сенсі вашого життя.'),
+                        duration: Duration(seconds: 10),
+                      ),
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -170,7 +207,18 @@ class _SignupViewState extends State<SignupView> {
                 controller: _sloganController,
                 hintText: l10n.optionalLabel,
                 prefixIcon: Icons.assignment_outlined,
-                suffixIcon: const Icon(Icons.info_outline, color: Colors.grey),
+                maxLines: 3,
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.info_outline, color: Colors.grey),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Основне гасло — це коротка фраза, яка надихатиме вас щодня.'),
+                        duration: Duration(seconds: 10),
+                      ),
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 32),
 
@@ -200,14 +248,38 @@ class _SignupViewState extends State<SignupView> {
               const SizedBox(height: 12),
 
               // Disclaimer
-              Text(
-                l10n.signupDisclaimer,
+              RichText(
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  children: [
+                    const TextSpan(text: "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з\n"),
+                    WidgetSpan(
+                      child: GestureDetector(
+                        onTap: () => launchUrl(Uri.parse('https://example.com/terms')),
+                        child: const Text(
+                          "Угодою Користувача",
+                          style: TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
+                    const TextSpan(text: " та "),
+                    WidgetSpan(
+                      child: GestureDetector(
+                        onTap: () => launchUrl(Uri.parse('https://example.com/privacy')),
+                        child: const Text(
+                          "Політикою Конфіденційності",
+                          style: TextStyle(fontSize: 11, color: Colors.blue, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -221,6 +293,8 @@ class _CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final int maxLines;
 
   const _CustomTextField({
     required this.controller,
@@ -229,14 +303,19 @@ class _CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.obscureText = false,
     this.keyboardType,
+    this.validator,
+    this.maxLines = 1,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),

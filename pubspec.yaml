@@ -46,6 +46,7 @@ dependencies:
   flutter_web_auth_2: ^5.0.3
   crypto: ^3.0.7
   sign_in_with_apple: ^8.1.0
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:

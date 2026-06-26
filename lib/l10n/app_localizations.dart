@@ -607,6 +607,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About program'**
   String get aboutProgram;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get genderMale;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get genderFemale;
+
+  /// No description provided for @genderOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get genderOther;
+
+  /// No description provided for @missionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission'**
+  String get missionLabel;
+
+  /// No description provided for @sloganLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Main slogan'**
+  String get sloganLabel;
+
+  /// No description provided for @optionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'(Optional)'**
+  String get optionalLabel;
+
+  /// No description provided for @signupDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'By clicking \'Sign up\', you agree to the User Agreement and Privacy Policy'**
+  String get signupDisclaimer;
 }
 
 class _AppLocalizationsDelegate

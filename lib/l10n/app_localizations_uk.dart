@@ -285,4 +285,29 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get aboutProgram => 'Про програму';
+
+  @override
+  String get nameLabel => 'Ім\'я';
+
+  @override
+  String get genderMale => 'Чоловік';
+
+  @override
+  String get genderFemale => 'Жінка';
+
+  @override
+  String get genderOther => 'Інша стать';
+
+  @override
+  String get missionLabel => 'Місія';
+
+  @override
+  String get sloganLabel => 'Основне гасло';
+
+  @override
+  String get optionalLabel => '(Необов\'язково)';
+
+  @override
+  String get signupDisclaimer =>
+      'Натискаючи кнопку \'Зареєструватись\', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності';
 }

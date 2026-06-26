@@ -67,7 +67,7 @@ void main() {
     await tester.pumpWidget(_buildWidget(locale: const Locale('uk')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Покращ відстаючі сфери життя'), findsOneWidget);
+    expect(find.text('ПОКРАЩ ВІДСТАЮЧІ СФЕРИ ЖИТТЯ'), findsOneWidget);
     expect(find.text('Вперед'), findsNothing);
   });
 }

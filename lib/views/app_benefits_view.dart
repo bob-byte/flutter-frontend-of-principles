@@ -76,6 +76,7 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                               width: 50,
                               height: 50,
                               child: ElevatedButton(
+                                key: const Key('appBenefitsPrevButton'),
                                 onPressed: () {
                                   _pageController.previousPage(
                                     duration: const Duration(milliseconds: 250),
@@ -112,11 +113,13 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: AnimatedContainer(
+                            key: const Key('appBenefitsNextContainer'),
                             duration: animationDuration,
                             curve: Curves.easeOut,
                             width: vm.isLastPage ? constraints.maxWidth - 80 : 50,
                             height: 50,
                             child: ElevatedButton(
+                              key: const Key('appBenefitsNextButton'),
                               onPressed: () async {
                                 if (!vm.isLastPage) {
                                   await _pageController.nextPage(

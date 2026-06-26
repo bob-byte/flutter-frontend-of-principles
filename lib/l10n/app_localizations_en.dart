@@ -282,4 +282,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutProgram => 'About program';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get genderOther => 'Other';
+
+  @override
+  String get missionLabel => 'Mission';
+
+  @override
+  String get sloganLabel => 'Main slogan';
+
+  @override
+  String get optionalLabel => '(Optional)';
+
+  @override
+  String get signupDisclaimer =>
+      'By clicking \'Sign up\', you agree to the User Agreement and Privacy Policy';
 }
