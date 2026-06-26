@@ -39,7 +39,9 @@ class SignupViewModel extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      _error = genericError;
+      // Extract specific backend error if it's an Exception
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       return false;
     } finally {
       _isBusy = false;

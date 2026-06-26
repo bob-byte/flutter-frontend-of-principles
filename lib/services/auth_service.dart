@@ -74,6 +74,12 @@ class AuthService {
         return await login(email, password);
       }
       return false;
+    } on DioException catch (e) {
+      debugPrint('Registration Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return false;
     } catch (e) {
       debugPrint('Registration Error: $e');
       return false;
