@@ -11,13 +11,29 @@ class SignupViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   String? get error => _error;
 
-  Future<bool> register(String email, String password, {required String genericError}) async {
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    required int gender,
+    String? mission,
+    String? slogan,
+    required String genericError,
+  }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
 
     try {
-      final success = await _authService.register(email, password);
+      // Pass all fields to auth service
+      final success = await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+        gender: gender,
+        mission: mission,
+        slogan: slogan,
+      );
       if (!success) {
         _error = genericError;
       }

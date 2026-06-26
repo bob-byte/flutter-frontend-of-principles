@@ -137,5 +137,13 @@
   "becomeTruePersonalityTitle": "Стань справжньою особистістю",
   "becomeTruePersonalityDescription": "Встанови цілі, що орієнтовані на твою ідентичність. Вперед!",
   "ahead": "Вперед",
-  "aboutProgram": "Про програму"
+  "aboutProgram": "Про програму",
+  "nameLabel": "Ім'я",
+  "genderMale": "Чоловік",
+  "genderFemale": "Жінка",
+  "genderOther": "Інша стать",
+  "missionLabel": "Місія",
+  "sloganLabel": "Основне гасло",
+  "optionalLabel": "(Необов'язково)",
+  "signupDisclaimer": "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності"
 }

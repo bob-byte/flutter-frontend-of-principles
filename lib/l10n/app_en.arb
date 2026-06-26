@@ -143,5 +143,13 @@
   "becomeTruePersonalityTitle": "Become a true personality",
   "becomeTruePersonalityDescription": "Set goals aligned with your identity. Ahead!",
   "ahead": "Ahead",
-  "aboutProgram": "About program"
+  "aboutProgram": "About program",
+  "nameLabel": "Name",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "missionLabel": "Mission",
+  "sloganLabel": "Main slogan",
+  "optionalLabel": "(Optional)",
+  "signupDisclaimer": "By clicking 'Sign up', you agree to the User Agreement and Privacy Policy"
 }
