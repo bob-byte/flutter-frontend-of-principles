@@ -111,6 +111,8 @@ class _StartupViewState extends State<StartupView> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    final isApplePlatform = Theme.of(context).platform == TargetPlatform.iOS || 
+                            Theme.of(context).platform == TargetPlatform.macOS;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -185,15 +187,16 @@ class _StartupViewState extends State<StartupView> {
                     onPressed: _handleGoogleAuth,
                   ),
                   const SizedBox(height: 15),
-                  
-                  // Apple Button
-                  _AuthButton(
-                    text: l10n.startupAppleBtn,
-                    icon: const Icon(Icons.apple, color: Colors.white, size: 28),
-                    isPrimary: true,
-                    onPressed: _handleAppleAuth,
-                  ),
-                  const SizedBox(height: 15),
+                  if (isApplePlatform) ...[
+                    // Apple Button
+                    _AuthButton(
+                      text: l10n.startupAppleBtn,
+                      icon: const Icon(Icons.apple, color: Colors.white, size: 28),
+                      isPrimary: true,
+                      onPressed: _handleAppleAuth,
+                    ),
+                    const SizedBox(height: 15),
+                  ],
                   
                   // Register Button
                   _AuthButton(
