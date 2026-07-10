@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+
+import '../core/utils/date_helpers.dart';
+import '../core/theme/task_theme_palette.dart';
+import '../l10n/task_strings.dart';
+import '../models/task.dart';
+import '../models/task_priority.dart';
+import '../services/task_service.dart';
+
+enum TasksListMode { today, day, inbox }
+
+enum TaskStatusFilter { all, active, done }
+
+/// Фільтр «без категорії» (не null — окреме значення в UI).
+const taskNoCategoryFilterKey = '__no_category__';
+
+class TasksViewModel extends ChangeNotifier {
+  TasksViewModel(this._taskService);
+
+  final TaskService _taskService;
+
+  final List<Task> tasks = [];
+  Map<String, int> themeColors = {};
+  String? selectedThemeFilter;
+  TaskPriority? selectedPriorityFilter;
+  TaskStatusFilter statusFilter = TaskStatusFilter.all;
+  TasksListMode listMode = TasksListMode.today;
+  DateTime selectedDay = dateOnly(DateTime.now());
+  TasksUiTheme uiTheme = TasksUiTheme.darkOrange;
+
+  TasksUiPalette get palette => TasksUiPalette.of(uiTheme);
+
+  bool filtersVisible = false;
+  bool isLoading = false;
+
+  ThemeData get themeData => palette.toThemeData();
+
+  Set<String> get allThemes {
+    final themes = themeColors.keys.toSet();
+    for (final task in tasks) {
+      final value = task.theme?.trim();
+      if (value != null && value.isNotEmpty) themes.add(value);
+    }
+    return themes;
+  }
+
+  bool get hasTasksWithoutCategory =>
+      tasks.any((t) => t.theme == null || t.theme!.trim().isEmpty);
+
+  List<Task> get filteredTasks {
+    var result = List<Task>.from(tasks);
+    result = result.where(_matchesListMode).toList();
+    if (selectedThemeFilter == taskNoCategoryFilterKey) {
+      result = result
+          .where((t) => t.theme == null || t.theme!.trim().isEmpty)
+          .toList();
+    } else if (selectedThemeFilter != null) {
+      result = result.where((t) => t.theme == selectedThemeFilter).toList();
+    }
+    if (selectedPriorityFilter != null) {
+      result =
+          result.where((t) => t.priority == selectedPriorityFilter).toList();
+    }
+    result = result.where(_matchesStatusFilter).toList();
+    result.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final priorityCmp =
+          _priorityRank(b.priority).compareTo(_priorityRank(a.priority));
+      if (priorityCmp != 0) return priorityCmp;
+      if (a.dueDate != null && b.dueDate != null) {
+        return a.dueDate!.compareTo(b.dueDate!);
+      }
+      return b.createdAt.compareTo(a.createdAt);
+    });
+    return result;
+  }
+
+  int get completedCount => filteredTasks.where((t) => t.isDone).length;
+
+  double get progressPercent {
+    if (filteredTasks.isEmpty) return 0;
+    return (completedCount / filteredTasks.length) * 100;
+  }
+
+  List<Task> get todayTasks {
+    final today = dateOnly(DateTime.now());
+    return tasks
+        .where((t) => isSameDay(t.dueDate, today))
+        .toList();
+  }
+
+  int get todayCompletedCount => todayTasks.where((t) => t.isDone).length;
+
+  double get todayProgressPercent {
+    if (todayTasks.isEmpty) return 0;
+    return (todayCompletedCount / todayTasks.length) * 100;
+  }
+
+  Color colorForTheme(String theme) {
+    final stored = themeColors[theme];
+    if (stored != null) return Color(stored);
+    return fallbackThemeColor(theme);
+  }
+
+  String listModeTitle(TaskStrings strings) => switch (listMode) {
+        TasksListMode.today => strings.taskMenuToday,
+        TasksListMode.day => formatTaskDate(selectedDay),
+        TasksListMode.inbox => strings.taskMenuInbox,
+      };
+
+  void toggleFiltersVisible() {
+    filtersVisible = !filtersVisible;
+    notifyListeners();
+  }
+
+  void setThemeFilter(String? theme) {
+    selectedThemeFilter = theme;
+    notifyListeners();
+  }
+
+  void setPriorityFilter(TaskPriority? priority) {
+    selectedPriorityFilter = priority;
+    notifyListeners();
+  }
+
+  void setStatusFilter(TaskStatusFilter status) {
+    statusFilter = status;
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    selectedThemeFilter = null;
+    selectedPriorityFilter = null;
+    statusFilter = TaskStatusFilter.all;
+    notifyListeners();
+  }
+
+  bool get hasActiveFilters =>
+      selectedThemeFilter != null ||
+      selectedPriorityFilter != null ||
+      statusFilter != TaskStatusFilter.all;
+
+  void setListModeToday() {
+    listMode = TasksListMode.today;
+    notifyListeners();
+  }
+
+  void setListModeInbox() {
+    listMode = TasksListMode.inbox;
+    notifyListeners();
+  }
+
+  void setListModeDay(DateTime day) {
+    listMode = TasksListMode.day;
+    selectedDay = dateOnly(day);
+    notifyListeners();
+  }
+
+  bool _matchesListMode(Task task) => switch (listMode) {
+        TasksListMode.today => isSameDay(task.dueDate, dateOnly(DateTime.now())),
+        TasksListMode.day => isSameDay(task.dueDate, selectedDay),
+        TasksListMode.inbox => task.dueDate == null,
+      };
+
+  bool _matchesStatusFilter(Task task) => switch (statusFilter) {
+        TaskStatusFilter.all => true,
+        TaskStatusFilter.active => !task.isDone,
+        TaskStatusFilter.done => task.isDone,
+      };
+
+  Future<void> load() async {
+    isLoading = true;
+    notifyListeners();
+    try {
+      tasks
+        ..clear()
+        ..addAll(await _taskService.getTasks());
+      themeColors = await _taskService.getThemeColors();
+      uiTheme = await _taskService.getUiTheme();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setUiTheme(TasksUiTheme theme) async {
+    uiTheme = theme;
+    notifyListeners();
+    await _taskService.setUiTheme(theme);
+  }
+
+  Future<void> toggleTask(String id) async {
+    final task = _findTask(id);
+    if (task == null) return;
+
+    final done = !task.isDone;
+    await _taskService.updateTaskStatus(id, done);
+    await load();
+  }
+
+  Future<void> deleteTask(String id) async {
+    await _taskService.deleteTask(id);
+    await load();
+  }
+
+  Task? taskById(String id) => _findTask(id);
+
+  Task? _findTask(String id) {
+    for (final task in tasks) {
+      if (task.id == id) return task;
+    }
+    return null;
+  }
+}
+
+int _priorityRank(TaskPriority? priority) => switch (priority) {
+      TaskPriority.high => 3,
+      TaskPriority.medium => 2,
+      TaskPriority.low => 1,
+      null => 0,
+    };

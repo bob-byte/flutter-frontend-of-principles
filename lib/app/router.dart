@@ -8,6 +8,7 @@ import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
 import '../views/progress_view.dart';
 import '../views/settings_view.dart';
+import '../views/tasks_view.dart';
 import '../views/startup_view.dart';
 
 class AppRouter {
@@ -27,6 +28,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const EditHabitView());
       case GoalsView.routeName:
         return MaterialPageRoute(builder: (_) => const GoalsView());
+      case TasksView.routeName:
+        return MaterialPageRoute(builder: (_) => const TasksView());
       case ProgressView.routeName:
         return MaterialPageRoute(builder: (_) => const ProgressView());
       case SettingsView.routeName:

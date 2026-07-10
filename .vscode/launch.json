@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "app (with backend API)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "toolArgs": [
+                "--dart-define=DATA_SOURCE=api",
+                "--dart-define=API_ENV=local"
+            ]
+        },
+        {
             "name": "app (macOS)",
             "request": "launch",
             "type": "dart",

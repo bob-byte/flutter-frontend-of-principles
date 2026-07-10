@@ -8,6 +8,7 @@ import 'goals_view.dart';
 import 'habit_detail_view.dart';
 import 'progress_view.dart';
 import 'settings_view.dart';
+import 'tasks_view.dart';
 
 class HelperView extends StatefulWidget {
   const HelperView({super.key});
@@ -32,6 +33,10 @@ class _HelperViewState extends State<HelperView> {
           IconButton(
             onPressed: () => Navigator.of(context).pushNamed(EditHabitView.routeName),
             icon: const Icon(Icons.auto_awesome),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(TasksView.routeName),
+            icon: const Icon(Icons.checklist_outlined),
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pushNamed(GoalsView.routeName),
