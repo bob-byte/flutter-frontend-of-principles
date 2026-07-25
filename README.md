@@ -25,7 +25,7 @@ Root app widget: `lib/app/app.dart`
 - Habit details and progress tracking.
 - Settings and theme switching.
 - Local persistence/sync foundations (`sqflite`, secure storage).
-- AI helper/recommendation service integration stubs.
+- AI helper and task assist via OpenAI (`gpt-5-nano`).
 
 ## Tech Stack
 
@@ -73,6 +73,12 @@ flutter run -d chrome
 flutter run -d ios
 flutter run -d android
 ```
+
+AI key for plain `flutter run` (offline/local): put it once into
+`lib/core/config/ai_api_key.dart` → `kAiApiKey`.
+
+With backend (`DATA_SOURCE=api`) the same key can live in
+`SET.WebAPI/appsettings.Development.json` → `AiApiKey`.
 
 ## Testing
 

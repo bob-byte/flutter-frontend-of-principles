@@ -85,9 +85,8 @@ class _TasksViewState extends State<TasksView> {
                       isPrimary: true,
                       size: 56,
                       onPressed: () async {
-                        final changed = await TasksNavigation.openEditTask(
-                          context,
-                        );
+                        final changed =
+                            await TasksNavigation.openCreateTask(context);
                         if (!context.mounted) return;
                         if (changed == true) {
                           await context.read<TasksViewModel>().load();

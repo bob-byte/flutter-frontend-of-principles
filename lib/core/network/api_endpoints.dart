@@ -4,5 +4,6 @@ class ApiEndpoints {
   static const account = '/account';
   static const simpleAuthorization = '$account/simpleauthorization';
   static const authorization = '$account/authorization';
+  static const apiKey = '$account/apikey';
   static const tasks = '/tasks';
 }

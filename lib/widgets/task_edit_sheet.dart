@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../core/utils/date_helpers.dart';
 import '../l10n/task_strings.dart';
+import '../models/ai_task_draft.dart';
 import '../models/task_priority.dart';
 import '../viewmodels/edit_task_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
@@ -13,14 +14,16 @@ import 'tasks_glass.dart';
 Future<bool?> showTaskEditSheet(
   BuildContext context, {
   String? taskId,
+  AiTaskDraft? draft,
 }) async {
   final tasksVm = context.read<TasksViewModel>();
   final editVm = context.read<EditTaskViewModel>();
 
-  await editVm.load(taskId: taskId);
+  await editVm.load(taskId: taskId, draft: draft);
   if (!context.mounted) return null;
 
-  if (taskId == null) {
+  // Для нового завдання без дати від AI — підставити дату з режиму списку.
+  if (taskId == null && (draft == null || !draft.hasDueDate)) {
     switch (tasksVm.listMode) {
       case TasksListMode.inbox:
         editVm.setHasDueDate(false);

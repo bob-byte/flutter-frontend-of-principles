@@ -16,6 +16,8 @@ import '../services/ai_recommendation_service.dart';
 import '../services/auth_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
+import '../services/openai_api_key_service.dart';
+import '../services/openai_client.dart';
 import '../services/progress_service.dart';
 import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
@@ -66,7 +68,22 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => HabitService()),
         Provider(create: (_) => ProgressService()),
         Provider(create: (_) => ReminderService()),
-        Provider(create: (_) => AiChatService()),
+        Provider(
+          create: (ctx) => OpenAiApiKeyService(
+            apiClient: ctx.read<ApiClient>(),
+            secureStore: ctx.read<SecureStore>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => OpenAiClient(
+            apiKeyService: ctx.read<OpenAiApiKeyService>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => AiChatService(
+            openAiClient: ctx.read<OpenAiClient>(),
+          ),
+        ),
         Provider(create: (_) => AiRecommendationService()),
         ProxyProvider2<LocalDb, AuthService, SyncService>(
           update: (context, db, auth, previous) => SyncService(db: db, authService: auth),

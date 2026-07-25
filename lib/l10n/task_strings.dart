@@ -57,6 +57,22 @@ class TaskStrings {
     required this.uiThemeLightOrange,
     required this.uiThemeLightBlue,
     required this.taskUiThemeTooltip,
+    required this.taskCreateHowTitle,
+    required this.taskCreateHowHint,
+    required this.taskCreateManual,
+    required this.taskCreateManualHint,
+    required this.taskCreateWithAi,
+    required this.taskCreateWithAiHint,
+    required this.taskAiAssistTitle,
+    required this.taskAiAssistHint,
+    required this.taskAiPromptHint,
+    required this.taskAiMicTooltip,
+    required this.taskAiSendTooltip,
+    required this.taskAiListening,
+    required this.taskAiProcessing,
+    required this.taskAiEmptyPrompt,
+    required this.taskAiMicUnavailable,
+    required this.taskAiProcessError,
   });
 
   final String tasksTitle;
@@ -114,6 +130,22 @@ class TaskStrings {
   final String uiThemeLightOrange;
   final String uiThemeLightBlue;
   final String taskUiThemeTooltip;
+  final String taskCreateHowTitle;
+  final String taskCreateHowHint;
+  final String taskCreateManual;
+  final String taskCreateManualHint;
+  final String taskCreateWithAi;
+  final String taskCreateWithAiHint;
+  final String taskAiAssistTitle;
+  final String taskAiAssistHint;
+  final String taskAiPromptHint;
+  final String taskAiMicTooltip;
+  final String taskAiSendTooltip;
+  final String taskAiListening;
+  final String taskAiProcessing;
+  final String taskAiEmptyPrompt;
+  final String taskAiMicUnavailable;
+  final String taskAiProcessError;
 
   String taskProgressCount(int completed, int total) {
     if (identical(this, uk)) {
@@ -190,6 +222,23 @@ class TaskStrings {
     uiThemeLightOrange: 'Light orange',
     uiThemeLightBlue: 'Light blue',
     taskUiThemeTooltip: 'Color theme',
+    taskCreateHowTitle: 'How do you want to add a task?',
+    taskCreateHowHint: 'Choose manual entry or describe it to the AI assistant.',
+    taskCreateManual: 'Create myself',
+    taskCreateManualHint: 'Fill in the task details manually',
+    taskCreateWithAi: 'With AI assistant',
+    taskCreateWithAiHint: 'Describe the task in text or by voice',
+    taskAiAssistTitle: 'AI task assistant',
+    taskAiAssistHint:
+        'Example: “Buy groceries tomorrow, high priority, category home — don’t forget milk”',
+    taskAiPromptHint: 'Describe the task…',
+    taskAiMicTooltip: 'Dictate',
+    taskAiSendTooltip: 'Create draft',
+    taskAiListening: 'Listening…',
+    taskAiProcessing: 'AI is preparing the task…',
+    taskAiEmptyPrompt: 'Enter or say what needs to be done',
+    taskAiMicUnavailable: 'Microphone is unavailable',
+    taskAiProcessError: 'Could not process the request. Try again.',
   );
 
   static final uk = TaskStrings._(
@@ -248,5 +297,23 @@ class TaskStrings {
     uiThemeLightOrange: 'Світла помаранчева',
     uiThemeLightBlue: 'Світла синя',
     taskUiThemeTooltip: 'Кольорова тема',
+    taskCreateHowTitle: 'Як додати завдання?',
+    taskCreateHowHint:
+        'Оберіть ручне створення або опишіть завдання помічнику.',
+    taskCreateManual: 'Створити власноруч',
+    taskCreateManualHint: 'Заповнити поля завдання самостійно',
+    taskCreateWithAi: 'За допомогою ШІ',
+    taskCreateWithAiHint: 'Опишіть завдання текстом або голосом',
+    taskAiAssistTitle: 'ШІ-помічник завдань',
+    taskAiAssistHint:
+        'Наприклад: «Купити продукти завтра, пріоритет високий, категорія дім. Опис: не забути молоко»',
+    taskAiPromptHint: 'Опишіть завдання…',
+    taskAiMicTooltip: 'Диктувати',
+    taskAiSendTooltip: 'Створити чернетку',
+    taskAiListening: 'Слухаю…',
+    taskAiProcessing: 'ШІ готує завдання…',
+    taskAiEmptyPrompt: 'Введіть або скажіть, що потрібно зробити',
+    taskAiMicUnavailable: 'Мікрофон недоступний',
+    taskAiProcessError: 'Не вдалося обробити запит. Спробуйте ще раз.',
   );
 }

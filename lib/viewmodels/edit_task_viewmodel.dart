@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/utils/date_helpers.dart';
 import '../core/theme/task_theme_palette.dart';
+import '../models/ai_task_draft.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
 import '../services/task_service.dart';
@@ -45,7 +46,7 @@ class EditTaskViewModel extends ChangeNotifier {
     return fallbackThemeColor(theme);
   }
 
-  Future<void> load({String? taskId}) async {
+  Future<void> load({String? taskId, AiTaskDraft? draft}) async {
     isLoading = true;
     notifyListeners();
     try {
@@ -53,15 +54,29 @@ class EditTaskViewModel extends ChangeNotifier {
 
       if (taskId == null) {
         editingId = null;
-        title = '';
-        description = '';
-        priority = null;
+        title = draft?.title ?? '';
+        description = draft?.description ?? '';
+        priority = draft?.priority;
         themeMode = ThemePickerMode.none;
         selectedTheme = null;
         newThemeName = '';
         themeColor = taskCategoryPalette.first;
-        hasDueDate = true;
-        dueDate = dateOnly(DateTime.now());
+        hasDueDate = draft?.hasDueDate ?? true;
+        dueDate = draft?.dueDate ?? dateOnly(DateTime.now());
+
+        final themeName = draft?.theme?.trim();
+        if (themeName != null && themeName.isNotEmpty) {
+          final themes = themeColors.keys.toSet();
+          if (themes.contains(themeName)) {
+            themeMode = ThemePickerMode.existing;
+            selectedTheme = themeName;
+            themeColor = colorForTheme(themeName);
+          } else {
+            themeMode = ThemePickerMode.newTheme;
+            newThemeName = themeName;
+            themeColor = fallbackThemeColor(themeName);
+          }
+        }
         return;
       }
 
