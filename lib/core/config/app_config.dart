@@ -1,17 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import 'ai_api_key.dart';
-
 /// Конфігурація API (аналог `LOCALDEBUG` у MAUI).
 ///
 /// **Без бекенду (за замовчуванням):**
 /// `flutter run` — локальна БД, будь-який логін/пароль.
-/// AI-ключ: `lib/core/config/ai_api_key.dart` (`kAiApiKey`).
+/// AI-ключ завжди з продакшн-сервера `/account/apikey`.
 ///
 /// **З бекендом:**
 /// `flutter run --dart-define=DATA_SOURCE=api`
 /// + `dotnet run --project SET.WebAPI --launch-profile http`
-/// AI-ключ тоді з бекенду `AiApiKey` через `/account/apikey`.
 class AppConfig {
   AppConfig._();
 
@@ -36,10 +33,21 @@ class AppConfig {
         defaultValue: 'http://localhost:6001/api',
       );
     }
-    return const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'https://principles-server.ckwavh.easypanel.host/api',
-    );
+    return productionApiBaseUrl;
+  }
+
+  /// Прод-сервер — джерело OpenAI-ключа (як у MAUI).
+  static const productionApiBaseUrl = String.fromEnvironment(
+    'PRODUCTION_API_BASE_URL',
+    defaultValue: 'https://principles-server.ckwavh.easypanel.host/api',
+  );
+
+  static String get aiKeyApiBaseUrl {
+    const fromEnv = String.fromEnvironment('AI_KEY_API_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    // Debug (зокрема Web): локальний AI-проксі з серверним ключем у AiApiKey.
+    if (kDebugMode) return 'http://localhost:6001/api';
+    return productionApiBaseUrl;
   }
 
   static bool get useSimpleAuth => isLocal;
@@ -55,26 +63,32 @@ class AppConfig {
   /// OpenAI model for chat + task assist (MAUI uses the same name).
   static const openAiModel = String.fromEnvironment(
     'OPENAI_MODEL',
-    defaultValue: 'gpt-5-nano',
+    defaultValue: 'gpt-5-mini',
   );
 
-  /// OpenAI key: `--dart-define=OPENAI_API_KEY` або [kAiApiKey].
-  static const openAiApiKey = kAiApiKey;
+  /// Лише явний override. Інакше ключ з продакшн `/account/apikey`.
+  static const openAiApiKey = String.fromEnvironment('OPENAI_API_KEY');
 
-  /// AES keys to decrypt `/account/apikey` (MAUI `ApiKeyEncryptionSettings`).
-  static String get aiApiKeyEncryptionFirstKey {
-    const fromEnv = String.fromEnvironment('AI_API_KEY_FIRST');
-    if (fromEnv.isNotEmpty) return fromEnv;
-    // Local backend / MAUI Development
-    if (isLocal) return '9&KG6L#~UCea+Z4T&Jx4d8n5gr&)+b29';
-    // Production MAUI appsettings.json
-    return '6)e8Ar%8;5dd38E+BDYYUU%2;yaa5-z_';
-  }
+  /// MAUI production `ApiKeyEncryptionSettings` — для ключа з прод-сервера.
+  static const aiApiKeyEncryptionFirstKey = String.fromEnvironment(
+    'AI_API_KEY_FIRST',
+    defaultValue: '6)e8Ar%8;5dd38E+BDYYUU%2;yaa5-z_',
+  );
 
-  static String get aiApiKeyEncryptionSecondKey {
-    const fromEnv = String.fromEnvironment('AI_API_KEY_SECOND');
-    if (fromEnv.isNotEmpty) return fromEnv;
-    if (isLocal) return '2xf7YtC^_7D7+e*V';
-    return '_+AfxHY&D*53b44c';
-  }
+  static const aiApiKeyEncryptionSecondKey = String.fromEnvironment(
+    'AI_API_KEY_SECOND',
+    defaultValue: '_+AfxHY&D*53b44c',
+  );
+
+  /// Fallback decrypt keys (local/dev backend).
+  static const aiApiKeyEncryptionFirstKeyDev =
+      '9&KG6L#~UCea+Z4T&Jx4d8n5gr&)+b29';
+  static const aiApiKeyEncryptionSecondKeyDev = '2xf7YtC^_7D7+e*V';
+
+  /// MAUI production `EncryptionSettings` — шифрування пароля для `/authorization`.
+  static const passwordEncryptionFirstKey =
+      'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
+  static const passwordEncryptionSecondKey = 'M%m5Vy9R(_k74t^M';
+
+  static const productionAuthTokenKey = 'auth_access_token';
 }

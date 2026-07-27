@@ -6,4 +6,6 @@ class ApiEndpoints {
   static const authorization = '$account/authorization';
   static const apiKey = '$account/apikey';
   static const tasks = '/tasks';
+  static const aiParseTask = '/ai/parse-task';
+  static const aiChat = '/ai/chat';
 }

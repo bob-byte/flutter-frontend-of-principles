@@ -211,6 +211,9 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         TextField(
                           controller: _titleController,
                           focusNode: _titleFocus,
+                          keyboardType: TextInputType.text,
+                          textCapitalization: TextCapitalization.sentences,
+                          enableSuggestions: true,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
@@ -250,6 +253,9 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                           controller: _descriptionController,
                           minLines: 1,
                           maxLines: 6,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                          enableSuggestions: true,
                           style: TextStyle(
                             fontSize: 15,
                             color: palette.textPrimary,

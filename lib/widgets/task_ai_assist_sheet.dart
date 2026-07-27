@@ -88,8 +88,10 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
       return;
     }
 
-    final locale = Localizations.localeOf(context);
-    final localeId = locale.languageCode == 'uk' ? 'uk_UA' : 'en_US';
+    final preferred = Localizations.localeOf(context);
+    final locales = await _speech.locales();
+    if (!mounted) return;
+    final localeId = _resolveSpeechLocaleId(locales, preferred);
 
     setState(() => _isListening = true);
     await _speech.listen(
@@ -109,6 +111,36 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
         });
       },
     );
+  }
+
+  String _resolveSpeechLocaleId(
+    List<LocaleName> locales,
+    Locale preferred,
+  ) {
+    String? find(bool Function(String normalizedId) test) {
+      for (final locale in locales) {
+        final normalized = locale.localeId.toLowerCase().replaceAll('-', '_');
+        if (test(normalized)) return locale.localeId;
+      }
+      return null;
+    }
+
+    final lang = preferred.languageCode.toLowerCase();
+    final country = (preferred.countryCode ?? (lang == 'uk' ? 'ua' : ''))
+        .toLowerCase();
+
+    if (country.isNotEmpty) {
+      final exact = find((id) => id == '${lang}_$country');
+      if (exact != null) return exact;
+    }
+
+    final byLang = find((id) => id == lang || id.startsWith('${lang}_'));
+    if (byLang != null) return byLang;
+
+    final uk = find((id) => id == 'uk' || id.startsWith('uk_'));
+    if (uk != null) return uk;
+
+    return lang == 'uk' ? 'uk_UA' : 'en_US';
   }
 
   Future<void> _submit() async {
@@ -138,11 +170,12 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
       final draft = await ai.parseTaskDraft(text);
       if (!mounted) return;
       Navigator.of(context).pop(draft);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      final fallback = TaskStrings.of(context).taskAiProcessError;
       setState(() {
         _isProcessing = false;
-        _error = TaskStrings.of(context).taskAiProcessError;
+        _error = e.toString().trim().isEmpty ? fallback : e.toString();
       });
     }
   }
@@ -212,6 +245,10 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
                           minLines: 2,
                           maxLines: 5,
                           enabled: !_isProcessing,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                          enableSuggestions: true,
+                          enableIMEPersonalizedLearning: true,
                           style: TextStyle(
                             fontSize: 15,
                             color: palette.textPrimary,
@@ -227,8 +264,7 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
                             contentPadding: EdgeInsets.zero,
                             filled: false,
                           ),
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _submit(),
+                          textInputAction: TextInputAction.newline,
                           onChanged: (_) {
                             if (_error != null) setState(() => _error = null);
                           },

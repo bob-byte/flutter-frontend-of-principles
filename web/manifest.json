@@ -1,11 +1,12 @@
 {
-    "name": "principles_app",
-    "short_name": "principles_app",
+    "lang": "uk-UA",
+    "name": "Principles",
+    "short_name": "Principles",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Principles",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

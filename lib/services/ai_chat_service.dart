@@ -1,12 +1,27 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
+import '../core/config/app_config.dart';
+import '../core/network/api_endpoints.dart';
 import '../models/ai_task_draft.dart';
-import 'openai_client.dart';
 
+/// AI через бекенд-проксі (серверний ключ, без CORS у браузері).
 class AiChatService {
-  AiChatService({required OpenAiClient openAiClient}) : _openAi = openAiClient;
+  AiChatService({Dio? dio})
+      : _dio = dio ??
+            Dio(
+              BaseOptions(
+                baseUrl: AppConfig.aiKeyApiBaseUrl,
+                connectTimeout: const Duration(seconds: 30),
+                receiveTimeout: const Duration(seconds: 120),
+                headers: const {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+              ),
+            );
 
-  final OpenAiClient _openAi;
+  final Dio _dio;
   final List<Map<String, String>> _messages = [];
 
   Stream<String> streamAnswer(
@@ -26,30 +41,32 @@ class AiChatService {
 
     _messages.add({'role': 'user', 'content': trimmed});
 
-    final buffer = StringBuffer();
     try {
-      await for (final chunk in _openAi.streamComplete(messages: _messages)) {
-        buffer.write(chunk);
-        yield chunk;
-      }
-      final answer = buffer.toString().trim();
-      if (answer.isEmpty) {
+      final response = await _postWithLocalFallback(
+        ApiEndpoints.aiChat,
+        data: {'messages': _messages},
+      );
+      final map = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      final content =
+          (map['content'] ?? map['Content'])?.toString().trim() ?? '';
+      if (content.isEmpty) {
         yield fallbackResponse;
         _messages.add({'role': 'assistant', 'content': fallbackResponse});
       } else {
-        _messages.add({'role': 'assistant', 'content': answer});
+        yield content;
+        _messages.add({'role': 'assistant', 'content': content});
       }
-    } catch (_) {
-      // Прибираємо невдале user-повідомлення з історії.
+    } catch (e) {
       if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
         _messages.removeLast();
       }
-      yield errorMessage;
+      yield _userFacingError(e, errorMessage);
     }
   }
 
   void addAssistantAnswer(String text) {
-    // Відповідь уже додається в streamAnswer; метод лишається для сумісності VM.
     if (text.trim().isEmpty) return;
     if (_messages.isEmpty || _messages.last['role'] != 'assistant') {
       _messages.add({'role': 'assistant', 'content': text.trim()});
@@ -60,75 +77,85 @@ class AiChatService {
     _messages.clear();
   }
 
-  /// Аналізує текст користувача через OpenAI і збирає поля завдання.
   Future<AiTaskDraft> parseTaskDraft(String prompt) async {
     final trimmed = prompt.trim();
     if (trimmed.isEmpty) {
       return const AiTaskDraft(title: '');
     }
 
-    final today = DateTime.now();
-    final todayIso =
-        '${today.year.toString().padLeft(4, '0')}-'
-        '${today.month.toString().padLeft(2, '0')}-'
-        '${today.day.toString().padLeft(2, '0')}';
+    try {
+      final response = await _postWithLocalFallback(
+        ApiEndpoints.aiParseTask,
+        data: {'prompt': trimmed},
+      );
 
-    final content = await _openAi.complete(
-      jsonObject: true,
-      maxCompletionTokens: 800,
-      messages: [
-        {
-          'role': 'system',
-          'content': '''
-You convert messy spoken or typed user text into one todo task.
-Reply with ONLY a JSON object:
-{
-  "title": "short clear task title",
-  "description": "cleaned useful details; empty string if none",
-  "priority": "high" | "medium" | "low" | null,
-  "theme": "category name or null",
-  "dueDate": "YYYY-MM-DD or null"
-}
-Rules:
-- Fix grammar, word order, and speech-to-text noise.
-- Do not dump raw speech into title or description.
-- Title must be concise (usually verb + object).
-- Description holds details/lists, nicely phrased.
-- Match the user's language.
-- Today is $todayIso.
-''',
-        },
-        {'role': 'user', 'content': trimmed},
-      ],
-    );
+      final data = response.data;
+      if (data is! Map) {
+        throw StateError('AI повернув неочікувану відповідь.');
+      }
 
-    final json = _extractJsonObject(content);
-    final draft = AiTaskDraft.fromJson(json);
-    if (draft.title.isEmpty) {
-      throw StateError('AI returned a task without a title.');
+      final draft = AiTaskDraft.fromJson(Map<String, dynamic>.from(data));
+      if (draft.title.isEmpty) {
+        throw StateError('AI повернув завдання без назви.');
+      }
+      return draft;
+    } catch (e) {
+      throw StateError(_userFacingError(e, 'Не вдалося обробити запит.'));
     }
-    return draft;
   }
 
-  Map<String, dynamic> _extractJsonObject(String content) {
-    var text = content.trim();
-    if (text.startsWith('```')) {
-      text = text.replaceFirst(RegExp(r'^```(?:json)?\s*', multiLine: false), '');
-      text = text.replaceFirst(RegExp(r'\s*```$'), '');
-      text = text.trim();
-    }
+  /// Прод → якщо недоступний у debug, локальний бекенд.
+  Future<Response<dynamic>> _postWithLocalFallback(
+    String path, {
+    required Object data,
+  }) async {
+    try {
+      return await _dio.post<dynamic>(path, data: data);
+    } on DioException catch (e) {
+      final canFallback = kDebugMode &&
+          AppConfig.aiKeyApiBaseUrl != 'http://localhost:6001/api';
+      final status = e.response?.statusCode;
+      final networkMiss = e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          status == 404;
 
-    final start = text.indexOf('{');
-    final end = text.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      text = text.substring(start, end + 1);
-    }
+      if (!canFallback || !networkMiss) rethrow;
 
-    final decoded = jsonDecode(text);
-    if (decoded is! Map<String, dynamic>) {
-      throw StateError('AI JSON is not an object.');
+      debugPrint('AI prod failed ($status), fallback to local backend');
+      final local = Dio(
+        BaseOptions(
+          baseUrl: 'http://localhost:6001/api',
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 120),
+          headers: const {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      return local.post<dynamic>(path, data: data);
     }
-    return decoded;
+  }
+
+  String _userFacingError(Object e, String fallback) {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is Map) {
+        final err = data['error'] ?? data['Error'] ?? data['title'];
+        if (err != null && err.toString().trim().isNotEmpty) {
+          return err.toString().trim();
+        }
+      }
+      if (e.response?.statusCode == 429) {
+        return 'Закінчилась квота OpenAI на сервері. Поповніть баланс.';
+      }
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        return 'Немає з\'єднання з AI-сервером. Запустіть бекенд або перевірте інтернет.';
+      }
+    }
+    final text = e.toString().replaceFirst(RegExp(r'^Bad state:\s*'), '').trim();
+    return text.isEmpty ? fallback : text;
   }
 
   static const _helperSystemPrompt =
@@ -137,5 +164,6 @@ Rules:
       'without forcing that topic. Support the user in building better habits and '
       'growing, but do not lecture unsolicited. Do not accept weak conclusions as true: '
       'be an intellectual opponent when useful. '
+      'Answer in the user\'s language (Ukrainian when the user writes Ukrainian). '
       'If you generate code, do not wrap it in ``` fences; put the language name on a line before the code.';
 }

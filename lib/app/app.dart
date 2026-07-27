@@ -16,8 +16,6 @@ import '../services/ai_recommendation_service.dart';
 import '../services/auth_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
-import '../services/openai_api_key_service.dart';
-import '../services/openai_client.dart';
 import '../services/progress_service.dart';
 import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
@@ -68,22 +66,7 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => HabitService()),
         Provider(create: (_) => ProgressService()),
         Provider(create: (_) => ReminderService()),
-        Provider(
-          create: (ctx) => OpenAiApiKeyService(
-            apiClient: ctx.read<ApiClient>(),
-            secureStore: ctx.read<SecureStore>(),
-          ),
-        ),
-        Provider(
-          create: (ctx) => OpenAiClient(
-            apiKeyService: ctx.read<OpenAiApiKeyService>(),
-          ),
-        ),
-        Provider(
-          create: (ctx) => AiChatService(
-            openAiClient: ctx.read<OpenAiClient>(),
-          ),
-        ),
+        Provider(create: (_) => AiChatService()),
         Provider(create: (_) => AiRecommendationService()),
         ProxyProvider2<LocalDb, AuthService, SyncService>(
           update: (context, db, auth, previous) => SyncService(db: db, authService: auth),
@@ -147,7 +130,21 @@ class PrinciplesApp extends StatelessWidget {
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
             themeMode: themeController.themeMode,
-            locale: localeController.localeOverride,
+            locale: localeController.localeOverride ?? const Locale('uk', 'UA'),
+            localeListResolutionCallback: (deviceLocales, supported) {
+              if (localeController.localeOverride != null) {
+                return localeController.localeOverride;
+              }
+              for (final device in deviceLocales ?? const <Locale>[]) {
+                if (device.languageCode == 'uk') {
+                  return const Locale('uk', 'UA');
+                }
+                for (final s in supported) {
+                  if (s.languageCode == device.languageCode) return s;
+                }
+              }
+              return const Locale('uk', 'UA');
+            },
             localizationsDelegates: const [
               AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
@@ -155,8 +152,9 @@ class PrinciplesApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [
-              Locale('en'),
+              Locale('uk', 'UA'),
               Locale('uk'),
+              Locale('en'),
             ],
             onGenerateRoute: AppRouter.generateRoute,
             initialRoute: StartupView.routeName,

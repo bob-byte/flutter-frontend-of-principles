@@ -74,11 +74,8 @@ flutter run -d ios
 flutter run -d android
 ```
 
-AI key for plain `flutter run` (offline/local): put it once into
-`lib/core/config/ai_api_key.dart` → `kAiApiKey`.
-
-With backend (`DATA_SOURCE=api`) the same key can live in
-`SET.WebAPI/appsettings.Development.json` → `AiApiKey`.
+AI key is loaded from the production server (`/account/apikey`), same as MAUI.
+No local key and no `--dart-define=OPENAI_API_KEY` needed for normal runs.
 
 ## Testing
 
