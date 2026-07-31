@@ -66,8 +66,9 @@ class TasksUiPalette {
   Color get glassFill =>
       isDark ? Colors.white.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.58);
 
-  Color get glassBarFill =>
-      isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.52);
+  Color get glassBarFill => isDark
+      ? const Color(0xE6101010)
+      : Colors.white.withValues(alpha: 0.52);
 
   Color get glassSheetFill =>
       isDark ? const Color(0xCC141414) : const Color(0xD9F5F8FC);

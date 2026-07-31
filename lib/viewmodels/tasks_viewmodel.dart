@@ -7,7 +7,7 @@ import '../models/task.dart';
 import '../models/task_priority.dart';
 import '../services/task_service.dart';
 
-enum TasksListMode { today, day, inbox }
+enum TasksListMode { today, day, inbox, completed }
 
 enum TaskStatusFilter { all, active, done }
 
@@ -62,8 +62,19 @@ class TasksViewModel extends ChangeNotifier {
           result.where((t) => t.priority == selectedPriorityFilter).toList();
     }
     result = result.where(_matchesStatusFilter).toList();
+    final today = dateOnly(DateTime.now());
     result.sort((a, b) {
+      if (listMode == TasksListMode.completed) {
+        final aDone = a.completedAt ?? a.createdAt;
+        final bDone = b.completedAt ?? b.createdAt;
+        return bDone.compareTo(aDone);
+      }
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final aOverdue =
+          !a.isDone && a.dueDate != null && a.dueDate!.isBefore(today);
+      final bOverdue =
+          !b.isDone && b.dueDate != null && b.dueDate!.isBefore(today);
+      if (aOverdue != bOverdue) return aOverdue ? -1 : 1;
       final priorityCmp =
           _priorityRank(b.priority).compareTo(_priorityRank(a.priority));
       if (priorityCmp != 0) return priorityCmp;
@@ -89,6 +100,16 @@ class TasksViewModel extends ChangeNotifier {
         .toList();
   }
 
+  /// Дні, на які є хоча б одне завдання (для крапок у календарі).
+  Set<DateTime> get daysWithTasks {
+    final days = <DateTime>{};
+    for (final task in tasks) {
+      final due = task.dueDate;
+      if (due != null) days.add(dateOnly(due));
+    }
+    return days;
+  }
+
   int get todayCompletedCount => todayTasks.where((t) => t.isDone).length;
 
   double get todayProgressPercent {
@@ -106,6 +127,7 @@ class TasksViewModel extends ChangeNotifier {
         TasksListMode.today => strings.taskMenuToday,
         TasksListMode.day => formatTaskDate(selectedDay),
         TasksListMode.inbox => strings.taskMenuInbox,
+        TasksListMode.completed => strings.taskMenuCompleted,
       };
 
   void toggleFiltersVisible() {
@@ -150,17 +172,39 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setListModeCompleted() {
+    listMode = TasksListMode.completed;
+    notifyListeners();
+  }
+
   void setListModeDay(DateTime day) {
     listMode = TasksListMode.day;
     selectedDay = dateOnly(day);
     notifyListeners();
   }
 
-  bool _matchesListMode(Task task) => switch (listMode) {
-        TasksListMode.today => isSameDay(task.dueDate, dateOnly(DateTime.now())),
-        TasksListMode.day => isSameDay(task.dueDate, selectedDay),
-        TasksListMode.inbox => task.dueDate == null,
-      };
+  bool _isCompletedInLast24Hours(Task task) {
+    if (!task.isDone) return false;
+    final completedAt = task.completedAt;
+    if (completedAt == null) return false;
+    final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+    return !completedAt.isBefore(cutoff);
+  }
+
+  bool _matchesListMode(Task task) {
+    final today = dateOnly(DateTime.now());
+    return switch (listMode) {
+      // Сьогодні + протерміновані (незавершені), щоб можна було перенести або виконати.
+      TasksListMode.today =>
+        isSameDay(task.dueDate, today) ||
+            (!task.isDone &&
+                task.dueDate != null &&
+                task.dueDate!.isBefore(today)),
+      TasksListMode.day => isSameDay(task.dueDate, selectedDay),
+      TasksListMode.inbox => task.dueDate == null,
+      TasksListMode.completed => _isCompletedInLast24Hours(task),
+    };
+  }
 
   bool _matchesStatusFilter(Task task) => switch (statusFilter) {
         TaskStatusFilter.all => true,
@@ -195,6 +239,17 @@ class TasksViewModel extends ChangeNotifier {
 
     final done = !task.isDone;
     await _taskService.updateTaskStatus(id, done);
+    await load();
+  }
+
+  Future<void> moveTaskToToday(String id) async {
+    final task = _findTask(id);
+    if (task == null) return;
+
+    await _taskService.saveTask(
+      task.copyWith(dueDate: dateOnly(DateTime.now())),
+      isNew: false,
+    );
     await load();
   }
 

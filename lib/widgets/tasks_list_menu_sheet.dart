@@ -5,6 +5,7 @@ import '../core/theme/task_theme_palette.dart';
 import '../core/utils/date_helpers.dart';
 import '../l10n/task_strings.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import 'task_calendar_sheet.dart';
 import 'tasks_glass.dart';
 
 Future<void> showTasksListMenuSheet(BuildContext context) {
@@ -23,11 +24,10 @@ class TasksListMenuSheet extends StatelessWidget {
   const TasksListMenuSheet({super.key});
 
   Future<void> _pickDay(BuildContext context, TasksViewModel vm) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: vm.selectedDay,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+    final picked = await showTaskCalendarSheet(
+      context,
+      initialDay: vm.selectedDay,
+      daysWithTasks: vm.daysWithTasks,
     );
     if (picked == null || !context.mounted) return;
     vm.setListModeDay(picked);
@@ -98,6 +98,17 @@ class TasksListMenuSheet extends StatelessWidget {
               selected: vm.listMode == TasksListMode.inbox,
               onTap: () {
                 vm.setListModeInbox();
+                Navigator.pop(context);
+              },
+            ),
+            _MenuTile(
+              palette: palette,
+              icon: Icons.check_circle_outline,
+              label: strings.taskMenuCompleted,
+              subtitle: strings.taskMenuCompletedHint,
+              selected: vm.listMode == TasksListMode.completed,
+              onTap: () {
+                vm.setListModeCompleted();
                 Navigator.pop(context);
               },
             ),

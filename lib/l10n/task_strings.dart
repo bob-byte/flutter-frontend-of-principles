@@ -46,11 +46,15 @@ class TaskStrings {
     required this.taskMenuToday,
     required this.taskMenuCalendar,
     required this.taskMenuInbox,
+    required this.taskMenuCompleted,
+    required this.taskMenuCompletedHint,
     required this.taskListMenuTitle,
     required this.taskWhatNeedsToBeDone,
     required this.taskNoDueDate,
     required this.taskNoTasksInbox,
     required this.taskNoTasksInboxHint,
+    required this.taskNoTasksCompleted,
+    required this.taskNoTasksCompletedHint,
     required this.saveButton,
     required this.uiThemeDarkOrange,
     required this.uiThemeDarkBlue,
@@ -73,6 +77,9 @@ class TaskStrings {
     required this.taskAiEmptyPrompt,
     required this.taskAiMicUnavailable,
     required this.taskAiProcessError,
+    required this.taskCalendarSelectDay,
+    required this.taskOverdue,
+    required this.taskMoveToToday,
   });
 
   final String tasksTitle;
@@ -119,11 +126,15 @@ class TaskStrings {
   final String taskMenuToday;
   final String taskMenuCalendar;
   final String taskMenuInbox;
+  final String taskMenuCompleted;
+  final String taskMenuCompletedHint;
   final String taskListMenuTitle;
   final String taskWhatNeedsToBeDone;
   final String taskNoDueDate;
   final String taskNoTasksInbox;
   final String taskNoTasksInboxHint;
+  final String taskNoTasksCompleted;
+  final String taskNoTasksCompletedHint;
   final String saveButton;
   final String uiThemeDarkOrange;
   final String uiThemeDarkBlue;
@@ -146,6 +157,9 @@ class TaskStrings {
   final String taskAiEmptyPrompt;
   final String taskAiMicUnavailable;
   final String taskAiProcessError;
+  final String taskCalendarSelectDay;
+  final String taskOverdue;
+  final String taskMoveToToday;
 
   String taskProgressCount(int completed, int total) {
     if (identical(this, uk)) {
@@ -211,11 +225,15 @@ class TaskStrings {
     taskMenuToday: 'Today',
     taskMenuCalendar: 'Calendar',
     taskMenuInbox: 'Inbox',
+    taskMenuCompleted: 'Completed',
+    taskMenuCompletedHint: 'Finished in the last 24 hours',
     taskListMenuTitle: 'Show tasks',
     taskWhatNeedsToBeDone: 'What needs to be done?',
     taskNoDueDate: 'No date',
     taskNoTasksInbox: 'Inbox is empty',
     taskNoTasksInboxHint: 'Tasks without a due date appear here',
+    taskNoTasksCompleted: 'No recent completions',
+    taskNoTasksCompletedHint: 'Tasks finished in the last 24 hours appear here',
     saveButton: 'Save',
     uiThemeDarkOrange: 'Dark orange',
     uiThemeDarkBlue: 'Dark blue',
@@ -239,6 +257,9 @@ class TaskStrings {
     taskAiEmptyPrompt: 'Enter or say what needs to be done',
     taskAiMicUnavailable: 'Microphone is unavailable',
     taskAiProcessError: 'Could not process the request. Try again.',
+    taskCalendarSelectDay: 'Show this day',
+    taskOverdue: 'Overdue',
+    taskMoveToToday: 'Move to today',
   );
 
   static final uk = TaskStrings._(
@@ -286,11 +307,16 @@ class TaskStrings {
     taskMenuToday: 'Сьогодні',
     taskMenuCalendar: 'Календар',
     taskMenuInbox: 'Вхідні',
+    taskMenuCompleted: 'Виконані',
+    taskMenuCompletedHint: 'За останні 24 години',
     taskListMenuTitle: 'Показати завдання',
     taskWhatNeedsToBeDone: 'Що потрібно зробити?',
     taskNoDueDate: 'Без дати',
     taskNoTasksInbox: 'Вхідні порожні',
     taskNoTasksInboxHint: 'Тут з\'являться завдання без терміну',
+    taskNoTasksCompleted: 'Немає нещодавніх виконаних',
+    taskNoTasksCompletedHint:
+        'Тут з\'являться завдання, виконані за останні 24 години',
     saveButton: 'Зберегти',
     uiThemeDarkOrange: 'Темна помаранчева',
     uiThemeDarkBlue: 'Темна синя',
@@ -315,5 +341,8 @@ class TaskStrings {
     taskAiEmptyPrompt: 'Введіть або скажіть, що потрібно зробити',
     taskAiMicUnavailable: 'Мікрофон недоступний',
     taskAiProcessError: 'Не вдалося обробити запит. Спробуйте ще раз.',
+    taskCalendarSelectDay: 'Показати цей день',
+    taskOverdue: 'Протерміновано',
+    taskMoveToToday: 'Перенести на сьогодні',
   );
 }

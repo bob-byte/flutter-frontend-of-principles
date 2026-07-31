@@ -37,6 +37,9 @@ class RemoteTaskStorage {
               local?['priority'] as String?,
             ),
             theme: local?['theme'] as String?,
+            completedAt: local?['completedAt'] != null
+                ? DateTime.tryParse(local!['completedAt'] as String)
+                : null,
           );
         })
         .toList()
@@ -93,6 +96,11 @@ class RemoteTaskStorage {
     await _apiClient.put(
       '${ApiEndpoints.tasks}/$serverId/status',
       data: {'isCompleted': isDone},
+    );
+    await _saveLocalMeta(
+      id,
+      completedAt: isDone ? DateTime.now() : null,
+      clearCompletedAt: !isDone,
     );
     _cache = null;
   }
@@ -155,8 +163,10 @@ class RemoteTaskStorage {
     String taskId, {
     TaskPriority? priority,
     String? theme,
+    DateTime? completedAt,
     bool clearPriority = false,
     bool clearTheme = false,
+    bool clearCompletedAt = false,
   }) async {
     final meta = await _loadLocalMeta();
     final entry = Map<String, dynamic>.from(meta[taskId] ?? {});
@@ -171,6 +181,12 @@ class RemoteTaskStorage {
       entry.remove('theme');
     } else if (theme != null && theme.isNotEmpty) {
       entry['theme'] = theme;
+    }
+
+    if (clearCompletedAt) {
+      entry.remove('completedAt');
+    } else if (completedAt != null) {
+      entry['completedAt'] = completedAt.toIso8601String();
     }
 
     if (entry.isEmpty) {

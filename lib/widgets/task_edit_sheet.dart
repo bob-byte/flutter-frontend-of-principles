@@ -31,6 +31,7 @@ Future<bool?> showTaskEditSheet(
         editVm.setHasDueDate(true);
         editVm.setDueDate(tasksVm.selectedDay);
       case TasksListMode.today:
+      case TasksListMode.completed:
         editVm.setHasDueDate(true);
         editVm.setDueDate(dateOnly(DateTime.now()));
     }

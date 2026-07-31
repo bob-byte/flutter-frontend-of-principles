@@ -150,28 +150,40 @@ class TasksGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: palette.glassBarFill,
-            border: Border(
-              bottom: BorderSide(color: palette.glassBorder.withValues(alpha: 0.65)),
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: SizedBox(
-              height: kToolbarHeight,
-              child: NavigationToolbar(
-                centerMiddle: false,
-                leading: IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: palette.textPrimary, size: 20),
-                  onPressed: () => Navigator.maybePop(context),
+    return ColoredBox(
+      color: palette.pageBg,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: palette.glassBarFill,
+              border: Border(
+                bottom: BorderSide(
+                  color: palette.glassBorder.withValues(alpha: 0.65),
                 ),
-                middle: title,
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: actions),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: NavigationToolbar(
+                  centerMiddle: false,
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: palette.textPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.maybePop(context),
+                  ),
+                  middle: title,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: actions,
+                  ),
+                ),
               ),
             ),
           ),

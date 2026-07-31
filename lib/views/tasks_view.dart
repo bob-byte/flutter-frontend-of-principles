@@ -37,63 +37,63 @@ class _TasksViewState extends State<TasksView> {
 
         return Theme(
           data: vm.themeData,
-          child: Scaffold(
-            extendBody: true,
-            backgroundColor: Colors.transparent,
-            appBar: TasksGlassAppBar(
-              palette: palette,
-              title: Text(
-                vm.listModeTitle(strings),
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                  color: palette.textPrimary,
+          child: TasksGlassBackground(
+            palette: palette,
+            child: Scaffold(
+              extendBody: true,
+              backgroundColor: Colors.transparent,
+              appBar: TasksGlassAppBar(
+                palette: palette,
+                title: Text(
+                  vm.listModeTitle(strings),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                    color: palette.textPrimary,
+                  ),
                 ),
+                actions: [
+                  _TasksThemeSwitcher(
+                    selected: vm.uiTheme,
+                    strings: strings,
+                    onSelected: vm.setUiTheme,
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-              actions: [
-                _TasksThemeSwitcher(
-                  selected: vm.uiTheme,
-                  strings: strings,
-                  onSelected: vm.setUiTheme,
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            body: TasksGlassBackground(
-              palette: palette,
-              child: vm.isLoading && vm.tasks.isEmpty
+              body: vm.isLoading && vm.tasks.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : _TasksBody(strings: strings, palette: palette),
-            ),
-            bottomNavigationBar: SafeArea(
-              child: TasksGlassBottomBar(
-                palette: palette,
-                child: Row(
-                  children: [
-                    TasksGlassCircleButton(
-                      palette: palette,
-                      icon: Icons.menu_rounded,
-                      tooltip: strings.taskListMenuTitle,
-                      onPressed: () => TasksNavigation.openListMenu(context),
-                    ),
-                    const Spacer(),
-                    TasksGlassCircleButton(
-                      palette: palette,
-                      icon: Icons.add,
-                      tooltip: strings.taskAdd,
-                      isPrimary: true,
-                      size: 56,
-                      onPressed: () async {
-                        final changed =
-                            await TasksNavigation.openCreateTask(context);
-                        if (!context.mounted) return;
-                        if (changed == true) {
-                          await context.read<TasksViewModel>().load();
-                        }
-                      },
-                    ),
-                  ],
+              bottomNavigationBar: SafeArea(
+                child: TasksGlassBottomBar(
+                  palette: palette,
+                  child: Row(
+                    children: [
+                      TasksGlassCircleButton(
+                        palette: palette,
+                        icon: Icons.menu_rounded,
+                        tooltip: strings.taskListMenuTitle,
+                        onPressed: () => TasksNavigation.openListMenu(context),
+                      ),
+                      const Spacer(),
+                      TasksGlassCircleButton(
+                        palette: palette,
+                        icon: Icons.add,
+                        tooltip: strings.taskAdd,
+                        isPrimary: true,
+                        size: 56,
+                        onPressed: () async {
+                          final changed =
+                              await TasksNavigation.openCreateTask(context);
+                          if (!context.mounted) return;
+                          if (changed == true) {
+                            await context.read<TasksViewModel>().load();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -232,6 +232,7 @@ class _TasksBody extends StatelessWidget {
                       }
                     },
                     onToggle: () => vm.toggleTask(task.id),
+                    onMoveToToday: () => vm.moveTaskToToday(task.id),
                     strings: strings,
                   ),
                 ),
@@ -247,6 +248,7 @@ IconData _emptyIcon(TasksListMode mode) => switch (mode) {
       TasksListMode.inbox => Icons.inbox_outlined,
       TasksListMode.day => Icons.calendar_today_outlined,
       TasksListMode.today => Icons.checklist_outlined,
+      TasksListMode.completed => Icons.check_circle_outline,
     };
 
 String _emptyTitle(TaskStrings strings, TasksViewModel vm) => switch (vm.listMode) {
@@ -254,12 +256,14 @@ String _emptyTitle(TaskStrings strings, TasksViewModel vm) => switch (vm.listMod
       TasksListMode.day =>
         strings.taskNoTasksForDayLabel(formatTaskDate(vm.selectedDay)),
       TasksListMode.today => strings.taskNoTasks,
+      TasksListMode.completed => strings.taskNoTasksCompleted,
     };
 
 String _emptyHint(TaskStrings strings, TasksViewModel vm) => switch (vm.listMode) {
       TasksListMode.inbox => strings.taskNoTasksInboxHint,
       TasksListMode.day => strings.taskNoTasksHint,
       TasksListMode.today => strings.taskNoTasksHint,
+      TasksListMode.completed => strings.taskNoTasksCompletedHint,
     };
 
 class _TasksFiltersPanel extends StatelessWidget {

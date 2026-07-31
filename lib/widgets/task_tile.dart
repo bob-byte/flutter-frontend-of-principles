@@ -15,6 +15,7 @@ class TaskTile extends StatelessWidget {
     required this.onTap,
     required this.onToggle,
     required this.strings,
+    this.onMoveToToday,
   });
 
   final Task task;
@@ -22,6 +23,7 @@ class TaskTile extends StatelessWidget {
   final Color themeColor;
   final VoidCallback onTap;
   final VoidCallback onToggle;
+  final VoidCallback? onMoveToToday;
   final TaskStrings strings;
 
   @override
@@ -31,6 +33,7 @@ class TaskTile extends StatelessWidget {
     final isOverdue = !task.isDone &&
         task.dueDate != null &&
         task.dueDate!.isBefore(today);
+    final markColor = isOverdue ? scheme.error : themeColor;
 
     return TasksGlassPanel(
       palette: palette,
@@ -50,13 +53,13 @@ class TaskTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: task.isDone ? palette.primaryGradient : null,
-                color: task.isDone
-                    ? null
-                    : palette.glassChipFill,
+                color: task.isDone ? null : palette.glassChipFill,
                 border: task.isDone
                     ? null
                     : Border.all(
-                        color: palette.glassBorder,
+                        color: isOverdue
+                            ? scheme.error.withValues(alpha: 0.75)
+                            : palette.glassBorder,
                         width: 1.5,
                       ),
                 boxShadow: task.isDone
@@ -78,11 +81,11 @@ class TaskTile extends StatelessWidget {
             width: 4,
             height: 40,
             decoration: BoxDecoration(
-              color: themeColor,
+              color: markColor,
               borderRadius: BorderRadius.circular(999),
               boxShadow: [
                 BoxShadow(
-                  color: themeColor.withValues(alpha: 0.45),
+                  color: markColor.withValues(alpha: 0.45),
                   blurRadius: 8,
                 ),
               ],
@@ -93,20 +96,37 @@ class TaskTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  task.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.2,
-                    color: task.isDone
-                        ? palette.textMuted
-                        : palette.textPrimary,
-                    decoration:
-                        task.isDone ? TextDecoration.lineThrough : null,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isOverdue) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1, right: 6),
+                        child: Icon(
+                          Icons.priority_high_rounded,
+                          size: 18,
+                          color: scheme.error,
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      child: Text(
+                        task.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
+                          color: task.isDone
+                              ? palette.textMuted
+                              : palette.textPrimary,
+                          decoration:
+                              task.isDone ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 if (_taskMetaLine(task, strings).isNotEmpty)
@@ -124,23 +144,43 @@ class TaskTile extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.schedule,
+                        isOverdue
+                            ? Icons.warning_amber_rounded
+                            : Icons.schedule,
                         size: 13,
-                        color: isOverdue
-                            ? scheme.error
-                            : palette.textMuted,
+                        color: isOverdue ? scheme.error : palette.textMuted,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        formatTaskDate(task.dueDate!),
+                        isOverdue
+                            ? '${strings.taskOverdue} · ${formatTaskDate(task.dueDate!)}'
+                            : formatTaskDate(task.dueDate!),
                         style: TextStyle(
                           fontSize: 12,
-                          color: isOverdue
-                              ? scheme.error
-                              : palette.textMuted,
+                          fontWeight:
+                              isOverdue ? FontWeight.w600 : FontWeight.w400,
+                          color: isOverdue ? scheme.error : palette.textMuted,
                         ),
                       ),
                     ],
+                  ),
+                ],
+                if (isOverdue && onMoveToToday != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: onMoveToToday,
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.error,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.today_outlined, size: 16),
+                      label: Text(strings.taskMoveToToday),
+                    ),
                   ),
                 ],
               ],
