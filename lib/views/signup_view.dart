@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/signup_viewmodel.dart';
 import 'helper_view.dart';
+import 'main_view.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -68,7 +69,7 @@ class _SignupViewState extends State<SignupView> {
 
     if (!mounted) return;
     if (success) {
-      navigator.pushReplacementNamed(HelperView.routeName);
+      navigator.pushReplacementNamed(MainView.routeName);
     }
   }
 

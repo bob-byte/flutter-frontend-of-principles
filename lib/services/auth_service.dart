@@ -13,7 +13,7 @@ import '../core/helpers/password_changer.dart';
 
 class AuthService {
   // Environment-based API URL configuration
-  static String get _baseUrl {
+  static String get baseUrl {
     if (kDebugMode) {
       // Check if developer provided a custom local IP via --dart-define
       const customIp = String.fromEnvironment('LOCAL_API_URL');
@@ -21,8 +21,8 @@ class AuthService {
         return customIp;
       }
       
-      // Default fallback for Android Emulator
-      return 'http://10.0.2.2:6001'; 
+      // IPv4 address of the Windows machine on the Wi-Fi network (for physical phone testing)
+      return 'http://192.168.0.210:6001'; 
     } else {
       // Production server
       return 'https://principles-server.ckwavh.easypanel.host';
@@ -41,7 +41,7 @@ class AuthService {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
       final dio = Dio();
       final response = await dio.post(
-        '${_baseUrl}/api/account/authorization',
+        '${baseUrl}/api/account/authorization',
         data: {
           'email': email,
           'password': encryptedPassword,
@@ -80,7 +80,7 @@ class AuthService {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
       final dio = Dio();
       final response = await dio.post(
-        '${_baseUrl}/api/account/authentication',
+        '${baseUrl}/api/account/authentication',
         data: {
           'name': name,
           'email': email,
@@ -113,7 +113,7 @@ class AuthService {
     try {
       final dio = Dio();
       final response = await dio.get(
-        '${_baseUrl}/api/account/code',
+        '${baseUrl}/api/account/code',
         queryParameters: {'emailWhereSendCode': email},
       );
       if (response.statusCode == 200) {
@@ -137,7 +137,7 @@ class AuthService {
       final encryptedPassword = PasswordChanger.encryptNewPassword(newPassword);
       final dio = Dio();
       final response = await dio.put(
-        '${_baseUrl}/api/account/password',
+        '${baseUrl}/api/account/password',
         data: {
           'email': email,
           'newPassword': encryptedPassword,
@@ -223,7 +223,7 @@ class AuthService {
       if (accessToken == null || idToken == null) return false;
 
       // 6. Send to backend
-      final backendUrl = '${_baseUrl}/api/account/googleauthorization';
+      final backendUrl = '${baseUrl}/api/account/googleauthorization';
       final backendResponse = await dio.post(
         backendUrl,
         data: {
@@ -265,7 +265,7 @@ class AuthService {
       }
 
       // Send IdToken to our backend
-      final backendUrl = '${_baseUrl}/api/account/appleauthorization';
+      final backendUrl = '${baseUrl}/api/account/appleauthorization';
       final dio = Dio();
       final backendResponse = await dio.post(
         backendUrl,

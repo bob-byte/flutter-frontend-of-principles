@@ -168,5 +168,8 @@
   "codeLabel": "Код",
   "confirmBtn": "Підтвердити",
   "wrongCodeError": "Невірний код підтвердження",
-  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено."
+  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено.",
+  "tabAssistant": "ШІ-Помічник",
+  "tabProgress": "Прогрес",
+  "tabProfile": "Профіль"
 }

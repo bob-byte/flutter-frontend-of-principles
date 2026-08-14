@@ -751,6 +751,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Success! Your password was changed successfully.'**
   String get passwordChangedSuccess;
+
+  /// No description provided for @tabAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get tabAssistant;
+
+  /// No description provided for @tabProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get tabProgress;
+
+  /// No description provided for @tabProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get tabProfile;
 }
 
 class _AppLocalizationsDelegate

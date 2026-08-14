@@ -1,72 +1,175 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/recommended_habit.dart';
-import '../models/user_habit.dart';
-import '../services/ai_recommendation_service.dart';
+import '../models/habit.dart';
+import '../services/database_service.dart';
 import '../services/habit_service.dart';
+import '../services/reminder_service.dart';
+import '../services/goal_service.dart';
+import '../models/frequency_config.dart';
+import '../models/user_goal.dart';
+import '../models/habit_reminder.dart';
+import '../services/dialog_service.dart';
 
 class EditHabitViewModel extends ChangeNotifier {
-  EditHabitViewModel({
-    required HabitService habitService,
-    required AiRecommendationService recommendationService,
-  })  : _habitService = habitService,
-        _recommendationService = recommendationService;
+  EditHabitViewModel(this._habitService, this._reminderService, this._goalService);
 
   final HabitService _habitService;
-  final AiRecommendationService _recommendationService;
+  final ReminderService _reminderService;
+  final GoalService _goalService;
+  final DatabaseService _dbService = DatabaseService();
+  final DialogService _dialogService = DialogService();
 
+  int? editingHabitId;
+
+  void init(Habit? habit) {
+    if (habit != null) {
+      editingHabitId = habit.id;
+      habitName = habit.name;
+      targetGoal = habit.targetGoal ?? '';
+      targetGoalId = habit.targetGoalId;
+      isFlexible = habit.isFlexible;
+      frequency = habit.frequency ?? const FrequencyConfig(type: FrequencyType.daily);
+      reminders = List.from(habit.reminders ?? []);
+      notes = habit.notes ?? '';
+      difficulty = habit.difficulty ?? 5;
+    } else {
+      editingHabitId = null;
+      habitName = '';
+      targetGoal = '';
+      targetGoalId = null;
+      isFlexible = true;
+      frequency = const FrequencyConfig(type: FrequencyType.daily);
+      reminders = [];
+      notes = '';
+      difficulty = 5;
+    }
+  }
+
+  // Вкладка 1 (Дані)
   String habitName = '';
-  String habitDescription = '';
-  bool isSaving = false;
-  bool isRecommendationLoading = false;
-  final List<RecommendedHabit> recommendations = [];
+  String targetGoal = '';
+  int? targetGoalId;
+  bool isFlexible = true;
+  FrequencyConfig frequency = const FrequencyConfig(type: FrequencyType.daily);
+  List<HabitReminder> reminders = [];
 
-  Future<void> saveHabit({required String defaultFrequencyText}) async {
-    if (habitName.trim().isEmpty) return;
+  // Вкладка 2 (Як утримувати)
+  String notes = '';
+  int difficulty = 5;
+
+  bool isSaving = false;
+
+  void setFlexible(bool value) {
+    if (isFlexible != value) {
+      isFlexible = value;
+      notifyListeners();
+    }
+  }
+
+  void setTargetGoal(UserGoal goal) {
+    if (targetGoalId != goal.id || targetGoal != goal.name) {
+      targetGoal = goal.name;
+      targetGoalId = goal.id ?? goal.localId; // Use backend ID if available, else local ID
+      notifyListeners();
+    }
+  }
+
+  Future<void> requestGoalSelection() async {
+    final response = await _dialogService.showCustomSheet(
+      variant: BottomSheetType.goalSelection,
+      data: targetGoal, // Currently selected string for UI highlight
+    );
+
+    if (response != null && response.confirmed == true) {
+      final selectedGoal = response.data as UserGoal;
+      setTargetGoal(selectedGoal);
+    }
+  }
+
+  void setFrequency(FrequencyConfig freq) {
+    if (frequency != freq) {
+      frequency = freq;
+      notifyListeners();
+    }
+  }
+
+  Future<void> requestFrequencyConfig() async {
+    final response = await _dialogService.showCustomDialog(
+      variant: DialogType.frequencyConfig,
+      data: frequency,
+    );
+
+    if (response != null && response.confirmed == true) {
+      setFrequency(response.data as FrequencyConfig);
+    }
+  }
+
+  void setReminder(HabitReminder? reminder) {
+    if (reminder != null) {
+      if (reminders.isNotEmpty) {
+        reminders[0] = reminder;
+      } else {
+        reminders.add(reminder);
+      }
+      notifyListeners();
+    }
+  }
+
+  void incrementDifficulty() {
+    if (difficulty < 10) {
+      difficulty++;
+      notifyListeners();
+    }
+  }
+
+  void decrementDifficulty() {
+    if (difficulty > 1) {
+      difficulty--;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> saveHabit() async {
+    if (habitName.trim().isEmpty) return false;
+    
     isSaving = true;
     notifyListeners();
+    
     try {
-      await _habitService.saveHabit(
-        UserHabit(
-          name: habitName.trim(),
-          description: habitDescription.trim(),
-        ),
-        defaultFrequencyText: defaultFrequencyText,
+      final newHabit = Habit(
+        id: editingHabitId,
+        name: habitName,
+        targetGoal: targetGoal,
+        targetGoalId: targetGoalId,
+        isFlexible: isFlexible,
+        frequency: frequency,
+        difficulty: difficulty,
+        notes: notes,
+        reminders: reminders,
       );
+      
+      if (editingHabitId == null) {
+        final id = await _dbService.insertHabit(newHabit);
+        final savedHabit = newHabit.copyWith(id: id);
+        
+        // Push to backend (Fire and forget, don't wait for network)
+        _habitService.pushHabit(savedHabit).catchError((e) {
+          debugPrint('Backend sync failed, but saved locally: $e');
+        });
+      } else {
+        await _dbService.updateHabit(newHabit);
+        _habitService.pushHabit(newHabit).catchError((e) {
+          debugPrint('Backend sync failed, but saved locally: $e');
+        });
+      }
+      
+      return true;
+    } catch (e) {
+      debugPrint('Save habit error: $e');
+      return false;
     } finally {
       isSaving = false;
       notifyListeners();
     }
-  }
-
-  Future<void> loadRecommendations({required List<RecommendedHabit> localizedFallbacks}) async {
-    isRecommendationLoading = true;
-    notifyListeners();
-    try {
-      final currentHabits = await _habitService.getHabits();
-      final data = await _recommendationService.recommendHabits(
-        currentHabits: currentHabits,
-        mission: null,
-        slogan: null,
-        goal: null,
-        localizedFallbacks: localizedFallbacks,
-      );
-      recommendations
-        ..clear()
-        ..addAll(data);
-    } finally {
-      isRecommendationLoading = false;
-      notifyListeners();
-    }
-  }
-
-  void applyRecommendation(RecommendedHabit habit) {
-    habitName = habit.name;
-    if (habitDescription.trim().isEmpty) {
-      habitDescription = habit.reasonToFollow;
-    } else {
-      habitDescription = '$habitDescription\n\n${habit.reasonToFollow}';
-    }
-    notifyListeners();
   }
 }

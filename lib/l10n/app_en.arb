@@ -174,5 +174,8 @@
   "codeLabel": "Code",
   "confirmBtn": "Confirm",
   "wrongCodeError": "Wrong confirmation code",
-  "passwordChangedSuccess": "Success! Your password was changed successfully."
+  "passwordChangedSuccess": "Success! Your password was changed successfully.",
+  "tabAssistant": "AI Assistant",
+  "tabProgress": "Progress",
+  "tabProfile": "Profile"
 }
