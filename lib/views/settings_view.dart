@@ -74,11 +74,7 @@ class _SettingsViewState extends State<SettingsView> {
                 onChanged: (value) => vm.setLocaleOverride(value),
               ),
             ),
-            ListTile(
-              title: Text(l10n.aboutProgram),
-              trailing: const Icon(Icons.info_outline),
-              onTap: () => vm.showAppBenefits(context),
-            ),
+
             ListTile(
               title: Text(l10n.logoutLabel),
               leading: const Icon(Icons.logout),

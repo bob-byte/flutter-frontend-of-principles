@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import 'app_benefits_view.dart';
 import 'helper_view.dart';
+import 'main_view.dart';
 import 'login_view.dart';
 import 'signup_view.dart';
 
@@ -32,7 +33,7 @@ class _StartupViewState extends State<StartupView> {
         if (!mounted) return;
         switch (nextRoute) {
           case StartupNextRoute.helper:
-            Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+            Navigator.of(context).pushReplacementNamed(MainView.routeName);
             break;
           case StartupNextRoute.appBenefits:
             Navigator.of(context).pushReplacementNamed(AppBenefitsView.routeName);
@@ -74,7 +75,7 @@ class _StartupViewState extends State<StartupView> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+      Navigator.of(context).pushReplacementNamed(MainView.routeName);
     } else if (vm.errorMessage != null) {
       _showErrorDialog(vm.errorMessage!);
     } else {
@@ -88,7 +89,7 @@ class _StartupViewState extends State<StartupView> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+      Navigator.of(context).pushReplacementNamed(MainView.routeName);
     } else if (vm.errorMessage != null) {
       // Prompt said: "Не показувати помилку, якщо скасування відбулося самим користувачем."
       // Since we don't have the exact error string for cancellation, we will just show it for now

@@ -361,4 +361,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get passwordChangedSuccess =>
       'Success! Your password was changed successfully.';
+
+  @override
+  String get tabAssistant => 'AI Assistant';
+
+  @override
+  String get tabProgress => 'Progress';
+
+  @override
+  String get tabProfile => 'Profile';
 }

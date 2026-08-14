@@ -30,7 +30,7 @@ class _HelperViewState extends State<HelperView> {
         title: Text(l10n.helperTitle),
         actions: [
           IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(EditHabitView.routeName),
+            onPressed: () => EditHabitView.show(context),
             icon: const Icon(Icons.auto_awesome),
           ),
           IconButton(

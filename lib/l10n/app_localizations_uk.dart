@@ -363,4 +363,13 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get passwordChangedSuccess => 'Успіх! Ваш пароль успішно змінено.';
+
+  @override
+  String get tabAssistant => 'ШІ-Помічник';
+
+  @override
+  String get tabProgress => 'Прогрес';
+
+  @override
+  String get tabProfile => 'Профіль';
 }

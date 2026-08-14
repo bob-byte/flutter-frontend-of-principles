@@ -23,8 +23,7 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const HelperView());
       case HabitDetailView.routeName:
         return MaterialPageRoute(builder: (_) => const HabitDetailView());
-      case EditHabitView.routeName:
-        return MaterialPageRoute(builder: (_) => const EditHabitView());
+
       case GoalsView.routeName:
         return MaterialPageRoute(builder: (_) => const GoalsView());
       case ProgressView.routeName:

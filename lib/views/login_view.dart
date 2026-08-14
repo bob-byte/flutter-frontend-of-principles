@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../viewmodels/login_viewmodel.dart';
 import 'forget_password_view.dart';
 import 'helper_view.dart';
+import 'main_view.dart';
 import 'signup_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -57,7 +58,7 @@ class _LoginViewState extends State<LoginView> {
 
     if (!mounted) return;
     if (success) {
-      navigator.pushReplacementNamed(HelperView.routeName);
+      navigator.pushReplacementNamed(MainView.routeName);
     }
   }
 

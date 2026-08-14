@@ -16,6 +16,7 @@ import '../services/habit_service.dart';
 import '../services/progress_service.dart';
 import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
+import '../services/dialog_service.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/app_benefits_viewmodel.dart';
@@ -38,6 +39,7 @@ import '../views/forget_password_view.dart';
 import '../views/progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/startup_view.dart';
+import '../views/main_view.dart';
 import 'router.dart';
 
 class PrinciplesApp extends StatelessWidget {
@@ -53,8 +55,10 @@ class PrinciplesApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
-        Provider(create: (_) => GoalService()),
-        Provider(create: (_) => HabitService()),
+        ProxyProvider<AuthService, GoalService>(
+          update: (_, authService, __) => GoalService(authService),
+        ),
+        Provider(create: (ctx) => HabitService(ctx.read<AuthService>())),
         Provider(create: (_) => ProgressService()),
         Provider(create: (_) => ReminderService()),
         Provider(create: (_) => AiChatService()),
@@ -86,21 +90,19 @@ class PrinciplesApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (ctx) => EditHabitViewModel(
-            habitService: ctx.read<HabitService>(),
-            recommendationService: ctx.read<AiRecommendationService>(),
+            ctx.read<HabitService>(),
+            ctx.read<ReminderService>(),
+            ctx.read<GoalService>(),
           ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => GoalsViewModel(ctx.read<GoalService>()),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => ProgressViewModel(ctx.read<ProgressService>()),
+          create: (ctx) => ProgressViewModel(ctx.read<HabitService>()),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => HabitDetailViewModel(
-            habitService: ctx.read<HabitService>(),
-            progressService: ctx.read<ProgressService>(),
-          ),
+          create: (ctx) => HabitDetailViewModel(),
         ),
         ChangeNotifierProvider(
           create: (ctx) => SettingsViewModel(
@@ -113,6 +115,8 @@ class PrinciplesApp extends StatelessWidget {
       child: Consumer2<ThemeController, LocaleController>(
         builder: (context, themeController, localeController, child) {
           return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            navigatorKey: DialogService().navigatorKey,
             onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
@@ -141,10 +145,11 @@ class PrinciplesApp extends StatelessWidget {
               },
               HelperView.routeName: (_) => const HelperView(),
               HabitDetailView.routeName: (_) => const HabitDetailView(),
-              EditHabitView.routeName: (_) => const EditHabitView(),
+
               GoalsView.routeName: (_) => const GoalsView(),
               ProgressView.routeName: (_) => const ProgressView(),
               SettingsView.routeName: (_) => const SettingsView(),
+              MainView.routeName: (_) => const MainView(),
             },
           );
         },
