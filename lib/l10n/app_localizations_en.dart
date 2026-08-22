@@ -250,7 +250,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Get AI recommendations formed based on your mission, life motto, goals, etc.';
 
   @override
-  String get becomeTruePersonalityTitle => 'Become a true personality';
+  String get becomeTruePersonalityTitle => 'Become a real personality';
 
   @override
   String get becomeTruePersonalityDescription =>
