@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/theme_controller.dart';
 import '../viewmodels/app_benefits_viewmodel.dart';
+import '../widgets/themed_lottie.dart';
 
 import 'startup_view.dart';
 
@@ -39,10 +40,11 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
 
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final animationDuration = Duration(milliseconds: isIOS ? 1000 : 500);
-    const primaryBlue = Color(0xFF3A78EA);
+    final palette = context.watch<ThemeController>().palette;
+    final primary = palette.primary;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.pageBg,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -84,8 +86,8 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                   );
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryBlue,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: primary,
+                                  foregroundColor: palette.onPrimary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
                                   ),
@@ -107,7 +109,7 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                           child: _DotsIndicator(
                             itemCount: slides.length,
                             currentIndex: vm.currentPage,
-                            activeColor: primaryBlue,
+                            activeColor: primary,
                           ),
                         ),
                         Align(
@@ -116,7 +118,9 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                             key: const Key('appBenefitsNextContainer'),
                             duration: animationDuration,
                             curve: Curves.easeOut,
-                            width: vm.isLastPage ? constraints.maxWidth - 80 : 50,
+                            width: vm.isLastPage
+                                ? constraints.maxWidth - 80
+                                : 50,
                             height: 50,
                             child: ElevatedButton(
                               key: const Key('appBenefitsNextButton'),
@@ -129,9 +133,11 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                   return;
                                 }
 
-                                final action = await vm.navigateToNextViewAction();
+                                final action = await vm
+                                    .navigateToNextViewAction();
                                 if (!context.mounted) return;
-                                if (action == AppBenefitsNavigationAction.goBack) {
+                                if (action ==
+                                    AppBenefitsNavigationAction.goBack) {
                                   Navigator.of(context).pop();
                                 } else {
                                   Navigator.of(context).pushNamedAndRemoveUntil(
@@ -141,8 +147,8 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryBlue,
-                                foregroundColor: Colors.white,
+                                backgroundColor: primary,
+                                foregroundColor: palette.onPrimary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
                                 ),
@@ -190,35 +196,11 @@ class _AppBenefitSlide extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 320,
-            height: 320,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 0.6,
-                colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFFFFFFF),
-                  Color(0xCA3D7FFF),
-                  Color(0x4700E0FF),
-                  Color(0xFFFFFFFF),
-                ],
-                stops: [0.1, 0.3, 0.5, 0.8, 0.9],
-              ),
-            ),
-            child: Center(
-              child: SizedBox(
-                width: 160,
-                height: 160,
-                child: Lottie.asset(
-                  animationAssetPath,
-                  repeat: true,
-                  animate: true,
-                  fit: BoxFit.contain,
-                ),
-              ),
+          ThemedLottieHalo(
+            child: ThemedLottie(
+              assetPath: animationAssetPath,
+              width: 160,
+              height: 160,
             ),
           ),
           const SizedBox(height: 32),
@@ -227,10 +209,10 @@ class _AppBenefitSlide extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 26,
-              color: Color(0xFF222222),
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.2,
             ),
           ),
@@ -239,9 +221,9 @@ class _AppBenefitSlide extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             maxLines: 6,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
-              color: Color(0xFF555555),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               height: 1.3,
             ),
           ),

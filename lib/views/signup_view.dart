@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/helpers/linked_text.dart';
+import '../core/theme/theme_controller.dart';
 import '../viewmodels/signup_viewmodel.dart';
+import '../widgets/themed_lottie.dart';
 import 'helper_view.dart';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -79,21 +80,22 @@ class _SignupViewState extends State<SignupView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final vm = context.watch<SignupViewModel>();
+    final palette = context.watch<ThemeController>().palette;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.pageBg,
       appBar: AppBar(
         title: Text(
           l10n.startupRegisterBtn,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: palette.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: palette.pageBg,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF3B82F6)),
+        iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -111,16 +113,11 @@ class _SignupViewState extends State<SignupView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Logo
-                      Center(
+                      const Center(
                         child: SizedBox(
                           width: 120,
                           height: 120,
-                          child: Lottie.asset(
-                            'assets/lottie/blue_fire_loading.json',
-                            repeat: true,
-                            animate: true,
-                            fit: BoxFit.contain,
-                          ),
+                          child: ThemedLottie.fire(width: 120, height: 120),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -244,7 +241,7 @@ class _SignupViewState extends State<SignupView> {
                                   'Вона буде використана для створення більш доцільних для вас рекомендованих звичок. Місія - це життєва мета, яка постійно підтримує високий рівень мотивації й допомагає зробити найкращий вибір у різноманітних ситуаціях. Наприклад, місія може звучати так: “Я створюю ІТ-додатки, щоб робити світ кращим”.',
                                   style: TextStyle(color: Colors.black87),
                                 ),
-                                backgroundColor: const Color(0xFF7CB6FA),
+                                backgroundColor: palette.accentMuted,
                                 duration: const Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: 'OK',
@@ -291,7 +288,7 @@ class _SignupViewState extends State<SignupView> {
                                   'Основне гасло буде використано для формування кращих рекомендованих звичок. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя.',
                                   style: TextStyle(color: Colors.black87),
                                 ),
-                                backgroundColor: const Color(0xFF7CB6FA),
+                                backgroundColor: palette.accentMuted,
                                 duration: const Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: 'OK',
@@ -331,8 +328,8 @@ class _SignupViewState extends State<SignupView> {
                       child: ElevatedButton(
                         onPressed: vm.isBusy ? null : _doRegister,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
-                          foregroundColor: Colors.white,
+                          backgroundColor: palette.primary,
+                          foregroundColor: palette.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
                           ),
@@ -374,13 +371,13 @@ class _SignupViewState extends State<SignupView> {
                             Uri.parse('https://principles.top/privacypolicy'),
                           ),
                         },
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey,
+                          color: palette.textMuted,
                         ),
-                        linkStyle: const TextStyle(
+                        linkStyle: TextStyle(
                           fontSize: 11,
-                          color: Colors.blue,
+                          color: palette.primary,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -419,35 +416,54 @@ class _CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    final isMultiline = maxLines > 1;
+
+    final field = TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      maxLines: maxLines,
+      maxLines: isMultiline ? null : maxLines,
+      expands: isMultiline,
+      textAlignVertical: TextAlignVertical.center,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),
         prefixIcon: Icon(prefixIcon, color: Colors.grey),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFFF5F6F8),
+        fillColor: Theme.of(
+          context,
+        ).colorScheme.surface.withValues(alpha: 0.72),
         contentPadding: const EdgeInsets.symmetric(vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
         ),
       ),
     );
+
+    if (!isMultiline) return field;
+
+    return SizedBox(height: 96, child: field);
   }
 }
 
@@ -464,6 +480,7 @@ class _GenderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -471,19 +488,17 @@ class _GenderButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF3B82F6).withOpacity(0.15)
+              ? scheme.primary.withValues(alpha: 0.15)
               : Colors.transparent,
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF3B82F6)
-                : const Color(0xFFE0E0E0),
+            color: isSelected ? scheme.primary : scheme.outline,
           ),
           borderRadius: BorderRadius.circular(22),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF3B82F6) : Colors.black87,
+            color: isSelected ? scheme.primary : scheme.onSurface,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 14,
           ),

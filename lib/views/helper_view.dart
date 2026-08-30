@@ -4,6 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/helper_viewmodel.dart';
+import '../widgets/themed_lottie.dart';
 import 'edit_habit_view.dart';
 
 class HelperView extends StatefulWidget {
@@ -39,10 +40,7 @@ class _HelperViewState extends State<HelperView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final body = _HelperBody(
-      controller: _controller,
-      onSend: _send,
-    );
+    final body = _HelperBody(controller: _controller, onSend: _send);
 
     if (widget.embedded) {
       return SafeArea(
@@ -74,10 +72,7 @@ class _HelperViewState extends State<HelperView> {
 }
 
 class _HelperBody extends StatelessWidget {
-  const _HelperBody({
-    required this.controller,
-    required this.onSend,
-  });
+  const _HelperBody({required this.controller, required this.onSend});
 
   final TextEditingController controller;
   final Future<void> Function(HelperViewModel vm, AppLocalizations l10n) onSend;
@@ -90,52 +85,61 @@ class _HelperBody extends StatelessWidget {
       builder: (context, vm, child) => Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              itemCount: vm.messages.length,
-              itemBuilder: (_, index) {
-                final msg = vm.messages[index];
-
-                return Align(
-                  alignment:
-                      msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.sizeOf(context).width * 0.78,
-                      ),
-                      child: msg.isUser
-                          ? DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.88),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Text(
-                                  msg.text,
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : GlassCard(
-                              useOwnLayer: true,
-                              padding: const EdgeInsets.all(12),
-                              child: Text(msg.text),
-                            ),
+            child: vm.messages.isEmpty
+                ? const Center(
+                    child: ThemedLottie(
+                      assetPath: 'assets/lottie/emptychat_light.json',
+                      width: 220,
+                      height: 220,
                     ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    itemCount: vm.messages.length,
+                    itemBuilder: (_, index) {
+                      final msg = vm.messages[index];
+
+                      return Align(
+                        alignment: msg.isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+                            ),
+                            child: msg.isUser
+                                ? DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.88),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Text(
+                                        msg.text,
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : GlassCard(
+                                    useOwnLayer: true,
+                                    padding: const EdgeInsets.all(12),
+                                    child: Text(msg.text),
+                                  ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
@@ -155,9 +159,7 @@ class _HelperBody extends StatelessWidget {
                   icon: Icon(
                     vm.isBusy ? Icons.stop_circle_outlined : Icons.send,
                   ),
-                  onPressed: vm.isBusy
-                      ? vm.cancel
-                      : () => onSend(vm, l10n),
+                  onPressed: vm.isBusy ? vm.cancel : () => onSend(vm, l10n),
                 ),
               ],
             ),

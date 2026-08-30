@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lottie/lottie.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
+import '../widgets/themed_lottie.dart';
 import 'app_benefits_view.dart';
 import 'helper_view.dart';
 import 'login_view.dart';
@@ -76,8 +77,13 @@ class _StartupViewState extends State<StartupView> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.watch<ThemeController>().palette;
+
     if (_isChecking) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: palette.pageBg,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final l10n = AppLocalizations.of(context)!;
@@ -86,7 +92,7 @@ class _StartupViewState extends State<StartupView> {
         Theme.of(context).platform == TargetPlatform.macOS;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -96,40 +102,18 @@ class _StartupViewState extends State<StartupView> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Animation with RadialGradient background
-                    Container(
-                      width: 320,
-                      height: 320,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            Color(0xEEFFFFFF),
-                            Color(0x523D7FFF),
-                            Color(0xB63D7FFF),
-                            Color(0x623D7FFF),
-                            Color(0x12E3F9FF),
-                            Color(0x00000000),
-                          ],
-                        ),
-                      ),
-                      child: Lottie.asset(
-                        'assets/lottie/blue_fire_loading.json',
-                        width: 200,
-                        height: 200,
-                        repeat: true,
-                      ),
+                    const ThemedLottieHalo(
+                      child: ThemedLottie.fire(width: 200, height: 200),
                     ),
                     const SizedBox(height: 20),
                     // Title Text
                     Text(
                       l10n.startupTitle,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: palette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -148,6 +132,8 @@ class _StartupViewState extends State<StartupView> {
                   // Google Button
                   _AuthButton(
                     text: l10n.startupGoogleBtn,
+                    primary: palette.primary,
+                    onPrimary: palette.onPrimary,
                     icon: SvgPicture.string(
                       '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
   <!-- Right segment: Changed from #4285F4 to #FFFFFF -->
@@ -170,9 +156,11 @@ class _StartupViewState extends State<StartupView> {
                     // Apple Button
                     _AuthButton(
                       text: l10n.startupAppleBtn,
-                      icon: const Icon(
+                      primary: palette.primary,
+                      onPrimary: palette.onPrimary,
+                      icon: Icon(
                         Icons.apple,
-                        color: Colors.white,
+                        color: palette.onPrimary,
                         size: 28,
                       ),
                       isPrimary: true,
@@ -184,9 +172,11 @@ class _StartupViewState extends State<StartupView> {
                   // Register Button
                   _AuthButton(
                     text: l10n.startupRegisterWithEmailBtn,
-                    icon: const Icon(
+                    primary: palette.primary,
+                    onPrimary: palette.onPrimary,
+                    icon: Icon(
                       Icons.email_outlined,
-                      color: Colors.white,
+                      color: palette.onPrimary,
                       size: 24,
                     ),
                     isPrimary: true,
@@ -199,6 +189,8 @@ class _StartupViewState extends State<StartupView> {
                   // Login Button
                   _AuthButton(
                     text: l10n.startupLoginBtn,
+                    primary: palette.primary,
+                    onPrimary: palette.onPrimary,
                     isPrimary: false,
                     onPressed: () {
                       Navigator.of(context).pushNamed(LoginView.routeName);
@@ -219,21 +211,23 @@ class _AuthButton extends StatelessWidget {
   final Widget? icon;
   final bool isPrimary;
   final VoidCallback onPressed;
+  final Color primary;
+  final Color onPrimary;
 
   const _AuthButton({
     required this.text,
     this.icon,
     required this.isPrimary,
     required this.onPressed,
+    required this.primary,
+    required this.onPrimary,
   });
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = isPrimary
-        ? const Color(0xFF3B82F6)
-        : Colors.transparent;
-    final textColor = isPrimary ? Colors.white : const Color(0xFF3B82F6);
-    final borderColor = const Color(0xFF3B82F6);
+    final backgroundColor = isPrimary ? primary : Colors.transparent;
+    final textColor = isPrimary ? onPrimary : primary;
+    final borderColor = primary;
 
     return SizedBox(
       height: 50, // Fixed height per requirements

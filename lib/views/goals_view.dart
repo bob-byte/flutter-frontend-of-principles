@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/goals_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
+import '../widgets/themed_lottie.dart';
 
 class GoalsView extends StatefulWidget {
   const GoalsView({super.key, this.embedded = false});
@@ -101,7 +102,21 @@ class _GoalsBody extends StatelessWidget {
           ),
           Expanded(
             child: vm.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: ThemedLottie(
+                      assetPath: 'assets/lottie/loading.json',
+                      width: 96,
+                      height: 96,
+                    ),
+                  )
+                : vm.goals.isEmpty
+                ? const Center(
+                    child: ThemedLottie(
+                      assetPath: 'assets/lottie/goals.json',
+                      width: 200,
+                      height: 200,
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     itemCount: vm.goals.length,

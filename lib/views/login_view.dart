@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/helpers/linked_text.dart';
+import '../core/theme/theme_controller.dart';
 import '../viewmodels/login_viewmodel.dart';
 import 'forget_password_view.dart';
 import 'helper_view.dart';
@@ -66,21 +67,23 @@ class _LoginViewState extends State<LoginView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final vm = context.watch<LoginViewModel>();
+    final themeController = context.watch<ThemeController>();
+    final palette = themeController.palette;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.pageBg,
       appBar: AppBar(
         title: Text(
           l10n.loginTitle,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: palette.textPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: palette.pageBg,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF3B82F6)),
+        iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -98,7 +101,9 @@ class _LoginViewState extends State<LoginView> {
                 Center(
                   child: SizedBox(
                     child: Image.asset(
-                      'assets/images/logolargesize.png',
+                      themeController.uiTheme.isOrange
+                          ? 'assets/images/orange_logo.png'
+                          : 'assets/images/blue_logo.png',
                       width: 220,
                       height: 220,
                       fit: BoxFit.contain,
@@ -113,8 +118,8 @@ class _LoginViewState extends State<LoginView> {
                     l10n.principlesAppTitle,
                     style: GoogleFonts.merriweather(
                       fontSize: 36,
-                      fontWeight: .bold,
-                      color: Color(0xFF3B82F6),
+                      fontWeight: FontWeight.bold,
+                      color: palette.primary,
                     ),
                   ),
                 ),
@@ -192,9 +197,9 @@ class _LoginViewState extends State<LoginView> {
                       },
                       child: Text(
                         l10n.forgotPassword,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Colors.black87,
+                          color: palette.textPrimary,
                         ),
                       ),
                     ),
@@ -217,8 +222,8 @@ class _LoginViewState extends State<LoginView> {
                   child: ElevatedButton(
                     onPressed: !vm.isLoginEnable ? null : _doLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -290,10 +295,10 @@ class _LoginViewState extends State<LoginView> {
                         Uri.parse('https://principles.top/privacypolicy'),
                       ),
                     },
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    linkStyle: const TextStyle(
+                    style: TextStyle(fontSize: 11, color: palette.textMuted),
+                    linkStyle: TextStyle(
                       fontSize: 11,
-                      color: Colors.blue,
+                      color: palette.primary,
                       decoration: TextDecoration.underline,
                     ),
                   ),
@@ -341,19 +346,30 @@ class _CustomTextField extends StatelessWidget {
         prefixIcon: Icon(prefixIcon, color: Colors.grey),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFFF5F6F8),
+        fillColor: Theme.of(
+          context,
+        ).colorScheme.surface.withValues(alpha: 0.72),
         contentPadding: const EdgeInsets.symmetric(vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
         ),
       ),
     );

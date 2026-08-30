@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
+import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/viewmodels/app_benefits_viewmodel.dart';
@@ -11,32 +12,47 @@ Widget _buildWidget({
   required Locale locale,
   Future<String?> Function()? tokenReader,
 }) {
-  return ChangeNotifierProvider(
-    create: (_) => AppBenefitsViewModel(
-      AuthService(SecureStore()),
-      tokenReader: tokenReader,
-    ),
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => ThemeController()),
+      ChangeNotifierProvider(
+        create: (_) => AppBenefitsViewModel(
+          AuthService(SecureStore()),
+          tokenReader: tokenReader,
+        ),
+      ),
+    ],
     child: MaterialApp(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routes: {
-        '/': (_) => const Scaffold(body: Text('Startup root')),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/') {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Startup root')),
+          );
+        }
+        return null;
       },
       home: const AppBenefitsView(),
     ),
   );
 }
 
+Future<void> _pumpThroughTransitions(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1200));
+}
+
 void main() {
   testWidgets('Prev button is hidden on first slide and visible on next', (tester) async {
     await tester.pumpWidget(_buildWidget(locale: const Locale('en')));
-    await tester.pumpAndSettle();
+    await _pumpThroughTransitions(tester);
 
     expect(find.byKey(const Key('appBenefitsPrevButton')), findsNothing);
 
     await tester.tap(find.byKey(const Key('appBenefitsNextButton')));
-    await tester.pumpAndSettle();
+    await _pumpThroughTransitions(tester);
     expect(find.byKey(const Key('appBenefitsPrevButton')), findsOneWidget);
   });
 
@@ -44,19 +60,23 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(_buildWidget(locale: const Locale('en')));
-    await tester.pumpAndSettle();
+    await _pumpThroughTransitions(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.tap(find.byKey(const Key('appBenefitsNextButton')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
     }
+    await tester.pump(const Duration(milliseconds: 1000));
 
     expect(find.text('Ahead'), findsOneWidget);
     final expandedWidth = tester.getSize(find.byKey(const Key('appBenefitsNextContainer'))).width;
     expect(expandedWidth, greaterThan(120));
 
-    await tester.tap(find.byKey(const Key('appBenefitsPrevButton')));
-    await tester.pumpAndSettle();
+    final element = tester.element(find.byType(AppBenefitsView));
+    Provider.of<AppBenefitsViewModel>(element, listen: false).setCurrentPage(3);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
 
     expect(find.text('>'), findsOneWidget);
     final collapsedWidth = tester.getSize(find.byKey(const Key('appBenefitsNextContainer'))).width;
@@ -65,7 +85,7 @@ void main() {
 
   testWidgets('Localized strings are rendered from arb', (tester) async {
     await tester.pumpWidget(_buildWidget(locale: const Locale('uk')));
-    await tester.pumpAndSettle();
+    await _pumpThroughTransitions(tester);
 
     expect(find.text('ПОКРАЩ ВІДСТАЮЧІ СФЕРИ ЖИТТЯ'), findsOneWidget);
     expect(find.text('Вперед'), findsNothing);

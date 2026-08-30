@@ -9,6 +9,8 @@ import '../models/task_priority.dart';
 import '../viewmodels/tasks_viewmodel.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/tasks_glass.dart';
+import '../widgets/themed_lottie.dart';
+import '../widgets/ui_theme_switcher.dart';
 
 class TasksView extends StatefulWidget {
   const TasksView({super.key, this.embedded = false});
@@ -57,9 +59,8 @@ class _TasksViewState extends State<TasksView> {
                   ),
                 ),
                 actions: [
-                  _TasksThemeSwitcher(
+                  UiThemeSwitcher(
                     selected: vm.uiTheme,
-                    strings: strings,
                     onSelected: vm.setUiTheme,
                   ),
                   const SizedBox(width: 8),
@@ -87,8 +88,9 @@ class _TasksViewState extends State<TasksView> {
                         isPrimary: true,
                         size: 56,
                         onPressed: () async {
-                          final changed =
-                              await TasksNavigation.openCreateTask(context);
+                          final changed = await TasksNavigation.openCreateTask(
+                            context,
+                          );
                           if (!context.mounted) return;
                           if (changed == true) {
                             await context.read<TasksViewModel>().load();
@@ -170,10 +172,7 @@ class _TasksBody extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     strings.taskProgressCount(todayCompleted, todayTotal),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: palette.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 13, color: palette.textMuted),
                   ),
                 ],
               ),
@@ -186,14 +185,13 @@ class _TasksBody extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 48),
                 child: Column(
                   children: [
-                    TasksGlassPanel(
-                      palette: palette,
-                      borderRadius: BorderRadius.circular(999),
-                      padding: const EdgeInsets.all(20),
-                      child: Icon(
-                        _emptyIcon(vm.listMode),
-                        size: 34,
-                        color: palette.accentMuted,
+                    SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: ThemedLottie(
+                        assetPath: _emptyLottie(vm.listMode),
+                        width: 140,
+                        height: 140,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -247,22 +245,25 @@ class _TasksBody extends StatelessWidget {
   }
 }
 
-IconData _emptyIcon(TasksListMode mode) => switch (mode) {
-      TasksListMode.inbox => Icons.inbox_outlined,
-      TasksListMode.day => Icons.calendar_today_outlined,
-      TasksListMode.today => Icons.checklist_outlined,
-      TasksListMode.completed => Icons.check_circle_outline,
-    };
+String _emptyLottie(TasksListMode mode) => switch (mode) {
+  TasksListMode.inbox => 'assets/lottie/archive.json',
+  TasksListMode.day => 'assets/lottie/reminders.json',
+  TasksListMode.today => 'assets/lottie/checks.json',
+  TasksListMode.completed => 'assets/lottie/checks.json',
+};
 
-String _emptyTitle(TaskStrings strings, TasksViewModel vm) => switch (vm.listMode) {
+String _emptyTitle(TaskStrings strings, TasksViewModel vm) =>
+    switch (vm.listMode) {
       TasksListMode.inbox => strings.taskNoTasksInbox,
-      TasksListMode.day =>
-        strings.taskNoTasksForDayLabel(formatTaskDate(vm.selectedDay)),
+      TasksListMode.day => strings.taskNoTasksForDayLabel(
+        formatTaskDate(vm.selectedDay),
+      ),
       TasksListMode.today => strings.taskNoTasks,
       TasksListMode.completed => strings.taskNoTasksCompleted,
     };
 
-String _emptyHint(TaskStrings strings, TasksViewModel vm) => switch (vm.listMode) {
+String _emptyHint(TaskStrings strings, TasksViewModel vm) =>
+    switch (vm.listMode) {
       TasksListMode.inbox => strings.taskNoTasksInboxHint,
       TasksListMode.day => strings.taskNoTasksHint,
       TasksListMode.today => strings.taskNoTasksHint,
@@ -334,25 +335,17 @@ class _TasksFiltersPanel extends StatelessWidget {
                       ),
                       child: Text(
                         strings.taskClearFilters,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: palette.primary,
-                        ),
+                        style: TextStyle(fontSize: 12, color: palette.primary),
                       ),
                     ),
                   if (vm.hasActiveFilters && vm.filtersVisible)
                     const SizedBox(width: 4),
                   Text(
                     vm.filtersVisible ? strings.taskHide : strings.taskShow,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: palette.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 12, color: palette.textMuted),
                   ),
                   Icon(
-                    vm.filtersVisible
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    vm.filtersVisible ? Icons.expand_less : Icons.expand_more,
                     color: palette.textMuted,
                   ),
                 ],
@@ -419,10 +412,7 @@ class _TasksFiltersPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _FilterSectionTitle(
-                palette: palette,
-                label: strings.taskThemes,
-              ),
+              _FilterSectionTitle(palette: palette, label: strings.taskThemes),
               const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -440,8 +430,7 @@ class _TasksFiltersPanel extends StatelessWidget {
                         palette: palette,
                         selected:
                             vm.selectedThemeFilter == taskNoCategoryFilterKey,
-                        onTap: () =>
-                            vm.setThemeFilter(taskNoCategoryFilterKey),
+                        onTap: () => vm.setThemeFilter(taskNoCategoryFilterKey),
                       ),
                     ...themes.map(
                       (theme) => TasksGlassChip(
@@ -477,92 +466,6 @@ class _FilterSectionTitle extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: palette.textMuted,
-      ),
-    );
-  }
-}
-
-class _TasksThemeSwitcher extends StatelessWidget {
-  const _TasksThemeSwitcher({
-    required this.selected,
-    required this.strings,
-    required this.onSelected,
-  });
-
-  final TasksUiTheme selected;
-  final TaskStrings strings;
-  final ValueChanged<TasksUiTheme> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<TasksUiTheme>(
-      tooltip: strings.taskUiThemeTooltip,
-      initialValue: selected,
-      onSelected: onSelected,
-      offset: const Offset(0, 44),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      itemBuilder: (context) => TasksUiTheme.values
-          .map(
-            (theme) => PopupMenuItem(
-              value: theme,
-              child: Row(
-                children: [
-                  _ThemeSwatch(theme: theme, selected: theme == selected),
-                  const SizedBox(width: 10),
-                  Text(theme.label(strings)),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ThemeSwatch(theme: selected, selected: true, compact: true),
-            const Icon(Icons.arrow_drop_down),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeSwatch extends StatelessWidget {
-  const _ThemeSwatch({
-    required this.theme,
-    required this.selected,
-    this.compact = false,
-  });
-
-  final TasksUiTheme theme;
-  final bool selected;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = TasksUiPalette.of(theme);
-    final size = compact ? 22.0 : 18.0;
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: palette.primaryGradient,
-        border: Border.all(
-          color: selected ? palette.textPrimary : Colors.transparent,
-          width: selected ? 2 : 0,
-        ),
-        boxShadow: selected
-            ? [
-                BoxShadow(
-                  color: palette.primary.withValues(alpha: 0.35),
-                  blurRadius: 6,
-                ),
-              ]
-            : null,
       ),
     );
   }

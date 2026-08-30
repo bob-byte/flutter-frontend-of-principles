@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'startup_view.dart';
 
 class SettingsView extends StatefulWidget {
@@ -81,28 +82,10 @@ class _SettingsBody extends StatelessWidget {
                   leading: const Icon(Icons.palette_outlined),
                   title: Text(l10n.themeLabel),
                   subtitle: Text(l10n.themeSubtitle),
-                  trailing: DropdownButton<ThemeMode>(
-                    value: vm.themeMode,
-                    underline: const SizedBox.shrink(),
-                    items: [
-                      DropdownMenuItem(
-                        value: ThemeMode.light,
-                        child: Text(l10n.themeLight),
-                      ),
-                      DropdownMenuItem(
-                        value: ThemeMode.dark,
-                        child: Text(l10n.themeDark),
-                      ),
-                      DropdownMenuItem(
-                        value: ThemeMode.system,
-                        child: Text(l10n.themeSystem),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        vm.setTheme(value);
-                      }
-                    },
+                  trailing: UiThemeSwitcher(
+                    selected: vm.uiTheme,
+                    onSelected: vm.setUiTheme,
+                    compact: true,
                   ),
                 ),
                 GlassListTile(

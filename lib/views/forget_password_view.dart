@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
 import 'helper_view.dart';
 
@@ -68,7 +69,9 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Text(l10n.confirmCodeTitle, textAlign: TextAlign.center),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -81,7 +84,9 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                     decoration: InputDecoration(
                       labelText: l10n.codeLabel,
                       errorText: localError,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -104,9 +109,11 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: Text(l10n.confirmBtn),
                 ),
@@ -134,22 +141,30 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.check_circle, color: Colors.green, size: 60),
               const SizedBox(height: 16),
-              Text(l10n.passwordChangedSuccess, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+              Text(
+                l10n.passwordChangedSuccess,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
             ],
           ),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text('OK'),
             ),
@@ -164,24 +179,32 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final vm = context.watch<ForgetPasswordViewModel>();
+    final palette = context.watch<ThemeController>().palette;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.pageBg,
       appBar: AppBar(
         title: Text(
           l10n.forgotPasswordTitle,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: palette.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: palette.pageBg,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF3B82F6)),
+        iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -189,7 +212,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                 Text(
                   l10n.forgotPasswordSubtitle,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  style: TextStyle(fontSize: 14, color: palette.textPrimary),
                 ),
                 const SizedBox(height: 32),
 
@@ -199,13 +222,19 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   keyboardType: TextInputType.emailAddress,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.fieldRequired;
-                    if (!RegExp(r'^.+@[a-zA-Z]+\.{1}[a-zA-Z]+(\.{0,1}[a-zA-Z]+)$').hasMatch(value)) {
+                    if (value == null || value.isEmpty)
+                      return l10n.fieldRequired;
+                    if (!RegExp(
+                      r'^.+@[a-zA-Z]+\.{1}[a-zA-Z]+(\.{0,1}[a-zA-Z]+)$',
+                    ).hasMatch(value)) {
                       return l10n.invalidEmailFormat;
                     }
                     return null;
                   },
-                  decoration: _inputDecoration(l10n.emailLabel, Icons.mail_outline),
+                  decoration: _inputDecoration(
+                    l10n.emailLabel,
+                    Icons.mail_outline,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -215,26 +244,39 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   obscureText: _obscurePassword,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.fieldRequired;
+                    if (value == null || value.isEmpty)
+                      return l10n.fieldRequired;
                     if (value.length < 6) return l10n.passwordMinLength;
                     return null;
                   },
-                  decoration: _inputDecoration(l10n.newPasswordLabel, Icons.lock_outline).copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                      color: Colors.grey,
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
+                  decoration:
+                      _inputDecoration(
+                        l10n.newPasswordLabel,
+                        Icons.lock_outline,
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          color: Colors.grey,
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
                 ),
                 const SizedBox(height: 32),
 
                 if (vm.error != null) ...[
-                  Text(vm.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                  Text(
+                    vm.error!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 16),
                 ],
 
@@ -244,16 +286,29 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   child: ElevatedButton(
                     onPressed: vm.isBusy ? null : _onSendCode,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
+                      backgroundColor: palette.primary,
+                      foregroundColor: palette.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 0,
                     ),
                     child: vm.isBusy
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(l10n.sendCodeBtn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            l10n.sendCodeBtn,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -270,19 +325,28 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
       hintStyle: const TextStyle(color: Colors.grey),
       prefixIcon: Icon(prefixIcon, color: Colors.grey),
       filled: true,
-      fillColor: const Color(0xFFF5F6F8),
+      fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1,
+        ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outline,
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.primary,
+          width: 1.5,
+        ),
       ),
     );
   }
