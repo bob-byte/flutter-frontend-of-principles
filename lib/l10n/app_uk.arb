@@ -9,7 +9,7 @@
   "themeLabel": "Тема",
   "themeSubtitle": "Перемикайте між темною та світлою",
   "themeLight": "Світла",
-  "themeDark": "Темна (чорна + помаранчева)",
+  "themeDark": "Темна (чорна + синя)",
   "themeSystem": "Системна",
   "languageLabel": "Мова",
   "languageSubtitle": "Використовуйте системну мову або оберіть вручну",
@@ -124,6 +124,7 @@
   "startupGoogleBtn": "Продовжити через Google",
   "startupAppleBtn": "Продовжити через Apple",
   "startupRegisterBtn": "Зареєструватись",
+  "startupRegisterWithEmailBtn": "Зареєструватись",
   "startupLoginBtn": "Вхід",
   "startupErrorGeneric": "Щось пішло не так",
   "transformAreasOfLifeTitle": "Покращ відстаючі сфери життя",
@@ -145,9 +146,25 @@
   "missionLabel": "Місія",
   "sloganLabel": "Основне гасло",
   "optionalLabel": "(Необов'язково)",
-  "signupDisclaimer": "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності",
+  "userAgreement": "Угодою Користувача",
+  "@userAgreement": {"description": "Текст посилання на Угоду користувача"},
+  "privacyPolicy": "Політикою Конфіденційності",
+  "@privacyPolicy": {"description": "Текст посилання на Політику конфіденційності"},
+  "signupDisclaimer": "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з {userAgreement} та {privacyPolicy}",
+  "@signupDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
   "errorEmailAlreadyExists": "Користувач з таким Email вже існує.",
-  "loginDisclaimer": "Натискаючи кнопку 'Вхід', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності",
+  "loginDisclaimer": "Натискаючи кнопку 'Вхід', ви погоджуєтесь з {userAgreement} та {privacyPolicy}",
+  "@loginDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
   "tryAgainIn": "Спробуйте ще раз через {seconds} с.",
   "@tryAgainIn": {
     "placeholders": {
@@ -159,6 +176,12 @@
   "forgotPassword": "Забули пароль?",
   "principlesAppTitle": "Principles",
   "loginButton": "Вхід",
+  "fieldRequired": "Поле обов'язкове",
+  "@fieldRequired": {"description": "Повідомлення валідації, коли обов'язкове поле порожнє"},
+  "invalidEmailFormat": "Невірний формат пошти",
+  "@invalidEmailFormat": {"description": "Повідомлення валідації при невірному форматі email"},
+  "passwordMinLength": "Мінімум 6 символів",
+  "@passwordMinLength": {"description": "Повідомлення валідації, коли пароль коротший за 6 символів"},
   "forgotPasswordTitle": "Відновлення пароля",
   "forgotPasswordSubtitle": "Введіть вашу електронну пошту та новий пароль. Ми надішлемо код підтвердження.",
   "newPasswordLabel": "Новий пароль",
@@ -168,5 +191,12 @@
   "codeLabel": "Код",
   "confirmBtn": "Підтвердити",
   "wrongCodeError": "Невірний код підтвердження",
-  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено."
+  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено.",
+  "errorTitle": "Помилка",
+  "okButton": "ОК",
+  "yesButton": "Так",
+  "noButton": "Ні",
+  "appleAuthUnknownError": "Не вдалося увійти через Apple. Переконайтесь, що ви увійшли в iCloud на цьому пристрої, і спробуйте ще раз.",
+  "appleAuthUnavailableOnDevice": "Вхід через Apple недоступний. Увійдіть в iCloud і спробуйте ще раз.",
+  "somethingWentWrongWhenUserAuthsUsingExternalService": "Щось пішло не так. Скористайтесь опцією «Зареєструватись через email» або «Вхід»."
 }

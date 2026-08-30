@@ -11,6 +11,7 @@ import '../core/theme/theme_controller.dart';
 import '../services/ai_chat_service.dart';
 import '../services/ai_recommendation_service.dart';
 import '../services/auth_service.dart';
+import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
 import '../services/progress_service.dart';
@@ -52,6 +53,7 @@ class PrinciplesApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
+        Provider(create: (_) => DialogService()),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
         Provider(create: (_) => GoalService()),
         Provider(create: (_) => HabitService()),
@@ -60,13 +62,15 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => AiChatService()),
         Provider(create: (_) => AiRecommendationService()),
         ProxyProvider2<LocalDb, AuthService, SyncService>(
-          update: (context, db, auth, previous) => SyncService(db: db, authService: auth),
+          update: (context, db, auth, previous) =>
+              SyncService(db: db, authService: auth),
         ),
         ChangeNotifierProvider(
           create: (ctx) => StartupViewModel(
             authService: ctx.read<AuthService>(),
             syncService: ctx.read<SyncService>(),
             reminderService: ctx.read<ReminderService>(),
+            dialogService: ctx.read<DialogService>(),
           ),
         ),
         ChangeNotifierProvider(
@@ -113,7 +117,9 @@ class PrinciplesApp extends StatelessWidget {
       child: Consumer2<ThemeController, LocaleController>(
         builder: (context, themeController, localeController, child) {
           return MaterialApp(
-            onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+            navigatorKey: context.read<DialogService>().navigatorKey,
+            onGenerateTitle: (context) =>
+                AppLocalizations.of(context)!.appTitle,
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
             themeMode: themeController.themeMode,
@@ -124,10 +130,7 @@ class PrinciplesApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('en'),
-              Locale('uk'),
-            ],
+            supportedLocales: const [Locale('en'), Locale('uk')],
             onGenerateRoute: AppRouter.generateRoute,
             initialRoute: StartupView.routeName,
             routes: {

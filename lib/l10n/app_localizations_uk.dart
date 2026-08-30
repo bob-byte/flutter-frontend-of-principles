@@ -27,7 +27,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get themeLight => 'Світла';
 
   @override
-  String get themeDark => 'Темна (чорна + помаранчева)';
+  String get themeDark => 'Темна (чорна + синя)';
 
   @override
   String get themeSystem => 'Системна';
@@ -240,6 +240,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get startupRegisterBtn => 'Зареєструватись';
 
   @override
+  String get startupRegisterWithEmailBtn => 'Зареєструватись';
+
+  @override
   String get startupLoginBtn => 'Вхід';
 
   @override
@@ -308,15 +311,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get optionalLabel => '(Необов\'язково)';
 
   @override
-  String get signupDisclaimer =>
-      'Натискаючи кнопку \'Зареєструватись\', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності';
+  String get userAgreement => 'Угодою Користувача';
+
+  @override
+  String get privacyPolicy => 'Політикою Конфіденційності';
+
+  @override
+  String signupDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'Натискаючи кнопку \'Зареєструватись\', ви погоджуєтесь з $userAgreement та $privacyPolicy';
+  }
 
   @override
   String get errorEmailAlreadyExists => 'Користувач з таким Email вже існує.';
 
   @override
-  String get loginDisclaimer =>
-      'Натискаючи кнопку \'Вхід\', ви погоджуєтесь з Угодою Користувача та Політикою Конфіденційності';
+  String loginDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'Натискаючи кнопку \'Вхід\', ви погоджуєтесь з $userAgreement та $privacyPolicy';
+  }
 
   @override
   String tryAgainIn(int seconds) {
@@ -331,6 +342,15 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get loginButton => 'Вхід';
+
+  @override
+  String get fieldRequired => 'Поле обов\'язкове';
+
+  @override
+  String get invalidEmailFormat => 'Невірний формат пошти';
+
+  @override
+  String get passwordMinLength => 'Мінімум 6 символів';
 
   @override
   String get forgotPasswordTitle => 'Відновлення пароля';
@@ -363,4 +383,28 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get passwordChangedSuccess => 'Успіх! Ваш пароль успішно змінено.';
+
+  @override
+  String get errorTitle => 'Помилка';
+
+  @override
+  String get okButton => 'ОК';
+
+  @override
+  String get yesButton => 'Так';
+
+  @override
+  String get noButton => 'Ні';
+
+  @override
+  String get appleAuthUnknownError =>
+      'Не вдалося увійти через Apple. Переконайтесь, що ви увійшли в iCloud на цьому пристрої, і спробуйте ще раз.';
+
+  @override
+  String get appleAuthUnavailableOnDevice =>
+      'Вхід через Apple недоступний. Увійдіть в iCloud і спробуйте ще раз.';
+
+  @override
+  String get somethingWentWrongWhenUserAuthsUsingExternalService =>
+      'Щось пішло не так. Скористайтесь опцією «Зареєструватись через email» або «Вхід».';
 }

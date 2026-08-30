@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
+import '../services/dialog_service.dart';
 import '../services/reminder_service.dart';
 
 enum StartupNextRoute { helper, login, appBenefits }
@@ -11,13 +13,16 @@ class StartupViewModel extends ChangeNotifier {
     required AuthService authService,
     required SyncService syncService,
     required ReminderService reminderService,
-  })  : _authService = authService,
-        _syncService = syncService,
-        _reminderService = reminderService;
+    required DialogService dialogService,
+  }) : _authService = authService,
+       _syncService = syncService,
+       _reminderService = reminderService,
+       _dialogService = dialogService;
 
   final AuthService _authService;
   final SyncService _syncService;
   final ReminderService _reminderService;
+  final DialogService _dialogService;
   bool loading = false;
   String? errorMessage;
   bool _hasShownAppBenefitsToGuest = false;
@@ -47,7 +52,7 @@ class StartupViewModel extends ChangeNotifier {
     loading = true;
     errorMessage = null;
     notifyListeners();
-    
+
     try {
       final success = await _authService.googleAuthorize();
       if (success) {
@@ -57,6 +62,9 @@ class StartupViewModel extends ChangeNotifier {
       return false;
     } catch (e) {
       errorMessage = e.toString();
+      await _dialogService.showErrorAsync(
+        _dialogService.l10n.somethingWentWrongWhenUserAuthsUsingExternalService,
+      );
       return false;
     } finally {
       loading = false;
@@ -68,7 +76,7 @@ class StartupViewModel extends ChangeNotifier {
     loading = true;
     errorMessage = null;
     notifyListeners();
-    
+
     try {
       final success = await _authService.appleAuthorize();
       if (success) {
@@ -76,12 +84,39 @@ class StartupViewModel extends ChangeNotifier {
         return true;
       }
       return false;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      await _handleAppleAuthException(e);
+      return false;
     } catch (e) {
       errorMessage = e.toString();
+      await _handleAppleAuthException(e);
       return false;
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _handleAppleAuthException(Object ex) async {
+    if (ex is SignInWithAppleAuthorizationException &&
+        ex.code == AuthorizationErrorCode.canceled) {
+      return;
+    }
+
+    final l10n = _dialogService.l10n;
+    String errorMsg;
+
+    if (ex is SignInWithAppleAuthorizationException &&
+        ex.code == AuthorizationErrorCode.unknown) {
+      // ASAuthorizationErrorUnknown (error 1000): often iCloud / Apple ID setup.
+      errorMsg = l10n.appleAuthUnknownError;
+    } else if (ex.toString().contains('AppleAuthUnavailableOnDevice')) {
+      errorMsg = l10n.appleAuthUnavailableOnDevice;
+    } else {
+      errorMsg = l10n.somethingWentWrongWhenUserAuthsUsingExternalService;
+    }
+
+    errorMessage = errorMsg;
+    await _dialogService.showErrorAsync(errorMsg);
   }
 }

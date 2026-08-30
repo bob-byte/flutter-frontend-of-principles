@@ -137,7 +137,7 @@ abstract class AppLocalizations {
   /// No description provided for @themeDark.
   ///
   /// In en, this message translates to:
-  /// **'Dark (black + orange)'**
+  /// **'Dark (black + blue)'**
   String get themeDark;
 
   /// No description provided for @themeSystem.
@@ -524,6 +524,12 @@ abstract class AppLocalizations {
   /// **'Sign up'**
   String get startupRegisterBtn;
 
+  /// No description provided for @startupRegisterWithEmailBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with email'**
+  String get startupRegisterWithEmailBtn;
+
   /// No description provided for @startupLoginBtn.
   ///
   /// In en, this message translates to:
@@ -650,11 +656,23 @@ abstract class AppLocalizations {
   /// **'(Optional)'**
   String get optionalLabel;
 
+  /// Clickable User Agreement link label
+  ///
+  /// In en, this message translates to:
+  /// **'User Agreement'**
+  String get userAgreement;
+
+  /// Clickable Privacy Policy link label
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
   /// No description provided for @signupDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'By clicking \'Sign up\', you agree to the User Agreement and Privacy Policy'**
-  String get signupDisclaimer;
+  /// **'By clicking \'Sign up\', you agree to the {userAgreement} and {privacyPolicy}'**
+  String signupDisclaimer(String userAgreement, String privacyPolicy);
 
   /// No description provided for @errorEmailAlreadyExists.
   ///
@@ -665,8 +683,8 @@ abstract class AppLocalizations {
   /// No description provided for @loginDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'By clicking \'Log in\', you agree to the User Agreement and Privacy Policy'**
-  String get loginDisclaimer;
+  /// **'By clicking \'Log in\', you agree to the {userAgreement} and {privacyPolicy}'**
+  String loginDisclaimer(String userAgreement, String privacyPolicy);
 
   /// No description provided for @tryAgainIn.
   ///
@@ -691,6 +709,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log in'**
   String get loginButton;
+
+  /// Validation message when a required form field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get fieldRequired;
+
+  /// Validation message when email format is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email format'**
+  String get invalidEmailFormat;
+
+  /// Validation message when password is shorter than 6 characters
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 6 characters'**
+  String get passwordMinLength;
 
   /// No description provided for @forgotPasswordTitle.
   ///
@@ -751,6 +787,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Success! Your password was changed successfully.'**
   String get passwordChangedSuccess;
+
+  /// Title for error dialog popups
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get errorTitle;
+
+  /// Dismiss button label on alert dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get okButton;
+
+  /// Confirm button label on confirmation dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yesButton;
+
+  /// Cancel button label on confirmation dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get noButton;
+
+  /// Shown when Apple Sign-In fails with AuthorizationErrorCode.unknown (error 1000)
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete Sign in with Apple. Make sure you\'re signed into iCloud on this device, then try again.'**
+  String get appleAuthUnknownError;
+
+  /// Shown when Sign in with Apple is not available on the device
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple is unavailable. Please sign in to iCloud and try again.'**
+  String get appleAuthUnavailableOnDevice;
+
+  /// Fallback message when Google or Apple sign-in fails
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.'**
+  String get somethingWentWrongWhenUserAuthsUsingExternalService;
 }
 
 class _AppLocalizationsDelegate
