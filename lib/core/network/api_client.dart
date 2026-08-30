@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 import '../config/app_config.dart';
 import '../storage/secure_store.dart';
@@ -13,6 +16,20 @@ class ApiClient {
             headers: const {'Accept': 'application/json'},
           ),
         ) {
+    if (AppConfig.allowBadCertificates) {
+      _dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.badCertificateCallback = (cert, host, port) {
+            return host == 'localhost' ||
+                host == '127.0.0.1' ||
+                host == '10.0.2.2';
+          };
+          return client;
+        },
+      );
+    }
+
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
