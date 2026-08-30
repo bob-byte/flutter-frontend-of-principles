@@ -8,4 +8,8 @@ class ReminderService {
   Future<void> saveReminder(Reminder reminder) async {
     _reminders.add(reminder);
   }
+
+  Future<void> tryToRecoverAllUserReminders() async {
+    // Placeholder for recovering reminders after login
+  }
 }

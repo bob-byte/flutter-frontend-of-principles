@@ -1,18 +1,313 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+
 import '../core/storage/secure_store.dart';
+import '../core/helpers/password_changer.dart';
 
 class AuthService {
+  static const _isLocalDebug = bool.fromEnvironment('LOCALDEBUG');
+  static const _customLocalApiUrl = String.fromEnvironment('LOCAL_API_URL');
+  static const _productionUrl =
+      'https://principles-server.ckwavh.easypanel.host';
+
+  // Matches MAUI UrlBuilder: LocalDebug uses the machine's API, otherwise prod.
+  static String get _baseUrl {
+    if (_customLocalApiUrl.isNotEmpty) {
+      return _customLocalApiUrl;
+    }
+    if (_isLocalDebug) {
+      if (!kIsWeb && Platform.isAndroid) {
+        return 'https://10.0.2.2:6001';
+      }
+      return 'https://localhost:6001';
+    }
+    return _productionUrl;
+  }
+
   AuthService(this._secureStore);
 
-  static const _tokenKey = 'auth_access_token';
+  static const _tokenKey = _isLocalDebug
+      ? 'local_access_token'
+      : 'auth_access_token';
+
   final SecureStore _secureStore;
+
+  Dio _createDio() {
+    final dio = Dio();
+    if (!_isLocalDebug || kIsWeb) {
+      return dio;
+    }
+
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) {
+          return host == 'localhost' ||
+              host == '127.0.0.1' ||
+              host == '10.0.2.2';
+        };
+        return client;
+      },
+    );
+    return dio;
+  }
 
   Future<bool> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) return false;
-    await _secureStore.write(_tokenKey, 'fake_token');
-    return true;
+
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(password);
+      final dio = _createDio();
+      final response = await dio.post(
+        '${_baseUrl}/api/account/authorization',
+        data: {'email': email, 'password': encryptedPassword},
+      );
+
+      final appToken = response.data['token'] ?? response.data['Token'];
+      if (appToken != null) {
+        await _secureStore.write(_tokenKey, appToken);
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      debugPrint('Login Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Login Error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    required int gender,
+    String? mission,
+    String? slogan,
+  }) async {
+    if (email.isEmpty || password.isEmpty || name.isEmpty) return false;
+
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(password);
+      final dio = _createDio();
+      final response = await dio.post(
+        '${_baseUrl}/api/account/authentication',
+        data: {
+          'name': name,
+          'email': email,
+          'password': encryptedPassword,
+          'gender': gender,
+          if (mission != null && mission.isNotEmpty) 'mission': mission,
+          if (slogan != null && slogan.isNotEmpty) 'mainSlogan': slogan,
+        },
+      );
+
+      // Backend returns 200 OK with an empty body on successful signup.
+      // So we immediately call login() to get the token.
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return await login(email, password);
+      }
+      return false;
+    } on DioException catch (e) {
+      debugPrint('Registration Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Registration Error: $e');
+      return false;
+    }
+  }
+
+  Future<int?> generateCode(String email) async {
+    try {
+      final dio = _createDio();
+      final response = await dio.get(
+        '${_baseUrl}/api/account/code',
+        queryParameters: {'emailWhereSendCode': email},
+      );
+      if (response.statusCode == 200) {
+        return response.data['code'] ?? response.data['Code'];
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('Generate Code Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Generate Code Error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> changePassword(String email, String newPassword) async {
+    try {
+      final encryptedPassword = PasswordChanger.encryptNewPassword(newPassword);
+      final dio = _createDio();
+      final response = await dio.put(
+        '${_baseUrl}/api/account/password',
+        data: {'email': email, 'newPassword': encryptedPassword},
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      debugPrint('Change Password Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Change Password Error: $e');
+      return false;
+    }
   }
 
   Future<void> logout() => _secureStore.delete(_tokenKey);
 
   Future<String?> getToken() => _secureStore.read(_tokenKey);
+
+  Future<bool> googleAuthorize() async {
+    try {
+      final String clientId = !kIsWeb && Platform.isIOS
+          ? '40949920786-ufvoeeof4s82011n4got9udapd6pm35e.apps.googleusercontent.com'
+          : '40949920786-030cht7nm5a2q2hi4jgm7leldfcc6miu.apps.googleusercontent.com';
+
+      // 1. Generate PKCE verifier and challenge
+      final random = Random.secure();
+      final verifierBytes = List<int>.generate(32, (_) => random.nextInt(256));
+      final codeVerifier = base64UrlEncode(verifierBytes).replaceAll('=', '');
+
+      final challengeBytes = sha256.convert(ascii.encode(codeVerifier)).bytes;
+      final codeChallenge = base64UrlEncode(challengeBytes).replaceAll('=', '');
+
+      const callbackScheme = 'com.set.principles';
+      const redirectUri = '$callbackScheme:/oauth2redirect';
+
+      // 2. Build URL
+      final authUrl = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
+        'client_id': clientId,
+        'redirect_uri': redirectUri,
+        'response_type': 'code',
+        'scope': 'openid profile email https://www.googleapis.com/auth/user.gender.read',
+        'code_challenge': codeChallenge,
+        'code_challenge_method': 'S256',
+        'access_type': 'offline',
+      });
+
+      // 3. Open Browser
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl.toString(),
+        callbackUrlScheme: callbackScheme,
+      );
+
+      // 4. Get code from the redirect
+      final resultUri = Uri.parse(result);
+      final code = resultUri.queryParameters['code'];
+      final error = resultUri.queryParameters['error'];
+
+      if (error != null || code == null) {
+        throw Exception('Code generated by Google to get tokens is null or error occurred: $error');
+      }
+
+      // 5. Exchange code for tokens
+      final dio = _createDio();
+      final tokenResponse = await dio.post(
+        'https://oauth2.googleapis.com/token',
+        data: {
+          'code': code,
+          'client_id': clientId,
+          'redirect_uri': redirectUri,
+          'grant_type': 'authorization_code',
+          'code_verifier': codeVerifier,
+        },
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+
+      final accessToken = tokenResponse.data['access_token'];
+      final idToken = tokenResponse.data['id_token'];
+
+      if (accessToken == null || idToken == null) return false;
+
+      // 6. Send to backend
+      final backendUrl = '${_baseUrl}/api/account/googleauthorization';
+      final backendResponse = await dio.post(
+        backendUrl,
+        data: {
+          'AccessToken': accessToken,
+          'IdToken': idToken,
+        },
+      );
+
+      final appToken = backendResponse.data['token'] ?? backendResponse.data['Token'];
+      if (appToken == null) return false;
+
+      // 7. Save token
+      await _secureStore.write(_tokenKey, appToken);
+
+      return true;
+    } catch (e) {
+      debugPrint('Google Auth Error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> appleAuthorize() async {
+    try {
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw Exception('AppleAuthUnavailableOnDevice');
+      }
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Apple ID token is null or empty.');
+      }
+
+      // Send IdToken to our backend
+      final backendUrl = '${_baseUrl}/api/account/appleauthorization';
+      final dio = _createDio();
+      final backendResponse = await dio.post(
+        backendUrl,
+        data: {'IdToken': idToken},
+      );
+
+      final appToken =
+          backendResponse.data['token'] ?? backendResponse.data['Token'];
+      if (appToken == null) return false;
+
+      await _secureStore.write(_tokenKey, appToken);
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        debugPrint('Apple Auth canceled by user (code 1001 equivalent).');
+        return false;
+      }
+      debugPrint('Apple Auth Exception: $e');
+      rethrow;
+    } catch (e) {
+      debugPrint('Apple Auth Error: $e');
+      rethrow;
+    }
+  }
 }

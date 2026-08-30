@@ -11,6 +11,7 @@ import '../core/theme/theme_controller.dart';
 import '../services/ai_chat_service.dart';
 import '../services/ai_recommendation_service.dart';
 import '../services/auth_service.dart';
+import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
 import '../services/progress_service.dart';
@@ -22,6 +23,8 @@ import '../viewmodels/app_benefits_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../viewmodels/login_viewmodel.dart';
+import '../viewmodels/signup_viewmodel.dart';
+import '../viewmodels/forget_password_viewmodel.dart';
 import '../viewmodels/progress_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
@@ -31,6 +34,8 @@ import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
+import '../views/signup_view.dart';
+import '../views/forget_password_view.dart';
 import '../views/progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/startup_view.dart';
@@ -48,6 +53,7 @@ class PrinciplesApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
+        Provider(create: (_) => DialogService()),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
         Provider(create: (_) => GoalService()),
         Provider(create: (_) => HabitService()),
@@ -56,19 +62,28 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => AiChatService()),
         Provider(create: (_) => AiRecommendationService()),
         ProxyProvider2<LocalDb, AuthService, SyncService>(
-          update: (context, db, auth, previous) => SyncService(db: db, authService: auth),
+          update: (context, db, auth, previous) =>
+              SyncService(db: db, authService: auth),
         ),
         ChangeNotifierProvider(
           create: (ctx) => StartupViewModel(
             authService: ctx.read<AuthService>(),
             syncService: ctx.read<SyncService>(),
+            reminderService: ctx.read<ReminderService>(),
+            dialogService: ctx.read<DialogService>(),
           ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => LoginViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
+          create: (ctx) => SignupViewModel(ctx.read<AuthService>()),
+        ),
+        ChangeNotifierProvider(
           create: (ctx) => AppBenefitsViewModel(ctx.read<AuthService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => ForgetPasswordViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
           create: (ctx) => HelperViewModel(ctx.read<AiChatService>()),
@@ -102,7 +117,9 @@ class PrinciplesApp extends StatelessWidget {
       child: Consumer2<ThemeController, LocaleController>(
         builder: (context, themeController, localeController, child) {
           return MaterialApp(
-            onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+            navigatorKey: context.read<DialogService>().navigatorKey,
+            onGenerateTitle: (context) =>
+                AppLocalizations.of(context)!.appTitle,
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
             themeMode: themeController.themeMode,
@@ -113,16 +130,18 @@ class PrinciplesApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('en'),
-              Locale('uk'),
-            ],
+            supportedLocales: const [Locale('en'), Locale('uk')],
             onGenerateRoute: AppRouter.generateRoute,
             initialRoute: StartupView.routeName,
             routes: {
               StartupView.routeName: (_) => const StartupView(),
               LoginView.routeName: (_) => const LoginView(),
+              SignupView.routeName: (_) => const SignupView(),
               AppBenefitsView.routeName: (_) => const AppBenefitsView(),
+              ForgetPasswordView.routeName: (ctx) {
+                final email = ModalRoute.of(ctx)?.settings.arguments as String?;
+                return ForgetPasswordView(initialEmail: email);
+              },
               HelperView.routeName: (_) => const HelperView(),
               HabitDetailView.routeName: (_) => const HabitDetailView(),
               EditHabitView.routeName: (_) => const EditHabitView(),

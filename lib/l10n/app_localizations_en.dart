@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get logoutLabel => 'Logout';
+
+  @override
   String get themeLabel => 'Theme';
 
   @override
@@ -24,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeLight => 'Light';
 
   @override
-  String get themeDark => 'Dark (black + orange)';
+  String get themeDark => 'Dark (black + blue)';
 
   @override
   String get themeSystem => 'System';
@@ -222,6 +225,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'It creates a repeatable cue for learning and calm.';
 
   @override
+  String get startupTitle => 'Let\'s get started now!';
+
+  @override
+  String get startupGoogleBtn => 'Continue with Google';
+
+  @override
+  String get startupAppleBtn => 'Continue with Apple';
+
+  @override
+  String get startupRegisterBtn => 'Sign up';
+
+  @override
+  String get startupRegisterWithEmailBtn => 'Sign up with email';
+
+  @override
+  String get startupLoginBtn => 'Login';
+
+  @override
+  String get startupErrorGeneric => 'Something went wrong';
+
+  @override
   String get transformAreasOfLifeTitle => 'Improve lagging life areas';
 
   @override
@@ -261,4 +285,124 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutProgram => 'About program';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get genderOther => 'Other';
+
+  @override
+  String get missionLabel => 'Mission';
+
+  @override
+  String get sloganLabel => 'Main slogan';
+
+  @override
+  String get optionalLabel => '(Optional)';
+
+  @override
+  String get userAgreement => 'User Agreement';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String signupDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'By clicking \'Sign up\', you agree to the $userAgreement and $privacyPolicy';
+  }
+
+  @override
+  String get errorEmailAlreadyExists => 'User with this Email already exists.';
+
+  @override
+  String loginDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'By clicking \'Log in\', you agree to the $userAgreement and $privacyPolicy';
+  }
+
+  @override
+  String tryAgainIn(int seconds) {
+    return 'Try again in $seconds s.';
+  }
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get principlesAppTitle => 'Principles';
+
+  @override
+  String get loginButton => 'Log in';
+
+  @override
+  String get fieldRequired => 'This field is required';
+
+  @override
+  String get invalidEmailFormat => 'Invalid email format';
+
+  @override
+  String get passwordMinLength => 'Minimum 6 characters';
+
+  @override
+  String get forgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email and new password. We will send a confirmation code.';
+
+  @override
+  String get newPasswordLabel => 'New password';
+
+  @override
+  String get sendCodeBtn => 'Send code';
+
+  @override
+  String get confirmCodeTitle => 'Confirmation Code';
+
+  @override
+  String get confirmCodeSubtitle =>
+      'Please enter the code we just sent to your email.';
+
+  @override
+  String get codeLabel => 'Code';
+
+  @override
+  String get confirmBtn => 'Confirm';
+
+  @override
+  String get wrongCodeError => 'Wrong confirmation code';
+
+  @override
+  String get passwordChangedSuccess =>
+      'Success! Your password was changed successfully.';
+
+  @override
+  String get errorTitle => 'Error';
+
+  @override
+  String get okButton => 'OK';
+
+  @override
+  String get yesButton => 'Yes';
+
+  @override
+  String get noButton => 'No';
+
+  @override
+  String get appleAuthUnknownError =>
+      'Couldn\'t complete Sign in with Apple. Make sure you\'re signed into iCloud on this device, then try again.';
+
+  @override
+  String get appleAuthUnavailableOnDevice =>
+      'Sign in with Apple is unavailable. Please sign in to iCloud and try again.';
+
+  @override
+  String get somethingWentWrongWhenUserAuthsUsingExternalService =>
+      'Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.';
 }

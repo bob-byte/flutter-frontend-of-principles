@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// Logout button text
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logoutLabel;
+
   /// Theme setting label
   ///
   /// In en, this message translates to:
@@ -131,7 +137,7 @@ abstract class AppLocalizations {
   /// No description provided for @themeDark.
   ///
   /// In en, this message translates to:
-  /// **'Dark (black + orange)'**
+  /// **'Dark (black + blue)'**
   String get themeDark;
 
   /// No description provided for @themeSystem.
@@ -494,6 +500,48 @@ abstract class AppLocalizations {
   /// **'It creates a repeatable cue for learning and calm.'**
   String get recommendedHabitReason4;
 
+  /// No description provided for @startupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get started now!'**
+  String get startupTitle;
+
+  /// No description provided for @startupGoogleBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get startupGoogleBtn;
+
+  /// No description provided for @startupAppleBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get startupAppleBtn;
+
+  /// No description provided for @startupRegisterBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get startupRegisterBtn;
+
+  /// No description provided for @startupRegisterWithEmailBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with email'**
+  String get startupRegisterWithEmailBtn;
+
+  /// No description provided for @startupLoginBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get startupLoginBtn;
+
+  /// No description provided for @startupErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get startupErrorGeneric;
+
   /// No description provided for @transformAreasOfLifeTitle.
   ///
   /// In en, this message translates to:
@@ -565,6 +613,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About program'**
   String get aboutProgram;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get genderMale;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get genderFemale;
+
+  /// No description provided for @genderOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get genderOther;
+
+  /// No description provided for @missionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission'**
+  String get missionLabel;
+
+  /// No description provided for @sloganLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Main slogan'**
+  String get sloganLabel;
+
+  /// No description provided for @optionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'(Optional)'**
+  String get optionalLabel;
+
+  /// Clickable User Agreement link label
+  ///
+  /// In en, this message translates to:
+  /// **'User Agreement'**
+  String get userAgreement;
+
+  /// Clickable Privacy Policy link label
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @signupDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'By clicking \'Sign up\', you agree to the {userAgreement} and {privacyPolicy}'**
+  String signupDisclaimer(String userAgreement, String privacyPolicy);
+
+  /// No description provided for @errorEmailAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'User with this Email already exists.'**
+  String get errorEmailAlreadyExists;
+
+  /// No description provided for @loginDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'By clicking \'Log in\', you agree to the {userAgreement} and {privacyPolicy}'**
+  String loginDisclaimer(String userAgreement, String privacyPolicy);
+
+  /// No description provided for @tryAgainIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in {seconds} s.'**
+  String tryAgainIn(int seconds);
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @principlesAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Principles'**
+  String get principlesAppTitle;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get loginButton;
+
+  /// Validation message when a required form field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get fieldRequired;
+
+  /// Validation message when email format is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email format'**
+  String get invalidEmailFormat;
+
+  /// Validation message when password is shorter than 6 characters
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 6 characters'**
+  String get passwordMinLength;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and new password. We will send a confirmation code.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPasswordLabel;
+
+  /// No description provided for @sendCodeBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCodeBtn;
+
+  /// No description provided for @confirmCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation Code'**
+  String get confirmCodeTitle;
+
+  /// No description provided for @confirmCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the code we just sent to your email.'**
+  String get confirmCodeSubtitle;
+
+  /// No description provided for @codeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get codeLabel;
+
+  /// No description provided for @confirmBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmBtn;
+
+  /// No description provided for @wrongCodeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong confirmation code'**
+  String get wrongCodeError;
+
+  /// No description provided for @passwordChangedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Success! Your password was changed successfully.'**
+  String get passwordChangedSuccess;
+
+  /// Title for error dialog popups
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get errorTitle;
+
+  /// Dismiss button label on alert dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get okButton;
+
+  /// Confirm button label on confirmation dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yesButton;
+
+  /// Cancel button label on confirmation dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get noButton;
+
+  /// Shown when Apple Sign-In fails with AuthorizationErrorCode.unknown (error 1000)
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete Sign in with Apple. Make sure you\'re signed into iCloud on this device, then try again.'**
+  String get appleAuthUnknownError;
+
+  /// Shown when Sign in with Apple is not available on the device
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple is unavailable. Please sign in to iCloud and try again.'**
+  String get appleAuthUnavailableOnDevice;
+
+  /// Fallback message when Google or Apple sign-in fails
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.'**
+  String get somethingWentWrongWhenUserAuthsUsingExternalService;
 }
 
 class _AppLocalizationsDelegate

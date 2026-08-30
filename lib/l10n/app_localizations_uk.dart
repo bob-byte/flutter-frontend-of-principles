@@ -15,6 +15,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsTitle => 'Налаштування';
 
   @override
+  String get logoutLabel => 'Вийти';
+
+  @override
   String get themeLabel => 'Тема';
 
   @override
@@ -24,7 +27,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get themeLight => 'Світла';
 
   @override
-  String get themeDark => 'Темна (чорна + помаранчева)';
+  String get themeDark => 'Темна (чорна + синя)';
 
   @override
   String get themeSystem => 'Системна';
@@ -225,6 +228,27 @@ class AppLocalizationsUk extends AppLocalizations {
       'Це створює повторюваний сигнал для навчання та спокою.';
 
   @override
+  String get startupTitle => 'Давай почнемо зараз!';
+
+  @override
+  String get startupGoogleBtn => 'Продовжити через Google';
+
+  @override
+  String get startupAppleBtn => 'Продовжити через Apple';
+
+  @override
+  String get startupRegisterBtn => 'Зареєструватись';
+
+  @override
+  String get startupRegisterWithEmailBtn => 'Зареєструватись';
+
+  @override
+  String get startupLoginBtn => 'Вхід';
+
+  @override
+  String get startupErrorGeneric => 'Щось пішло не так';
+
+  @override
   String get transformAreasOfLifeTitle => 'Покращ відстаючі сфери життя';
 
   @override
@@ -264,4 +288,123 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get aboutProgram => 'Про програму';
+
+  @override
+  String get nameLabel => 'Ім\'я';
+
+  @override
+  String get genderMale => 'Чоловік';
+
+  @override
+  String get genderFemale => 'Жінка';
+
+  @override
+  String get genderOther => 'Інша стать';
+
+  @override
+  String get missionLabel => 'Місія';
+
+  @override
+  String get sloganLabel => 'Основне гасло';
+
+  @override
+  String get optionalLabel => '(Необов\'язково)';
+
+  @override
+  String get userAgreement => 'Угодою Користувача';
+
+  @override
+  String get privacyPolicy => 'Політикою Конфіденційності';
+
+  @override
+  String signupDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'Натискаючи кнопку \'Зареєструватись\', ви погоджуєтесь з $userAgreement та $privacyPolicy';
+  }
+
+  @override
+  String get errorEmailAlreadyExists => 'Користувач з таким Email вже існує.';
+
+  @override
+  String loginDisclaimer(String userAgreement, String privacyPolicy) {
+    return 'Натискаючи кнопку \'Вхід\', ви погоджуєтесь з $userAgreement та $privacyPolicy';
+  }
+
+  @override
+  String tryAgainIn(int seconds) {
+    return 'Спробуйте ще раз через $seconds с.';
+  }
+
+  @override
+  String get forgotPassword => 'Забули пароль?';
+
+  @override
+  String get principlesAppTitle => 'Principles';
+
+  @override
+  String get loginButton => 'Вхід';
+
+  @override
+  String get fieldRequired => 'Поле обов\'язкове';
+
+  @override
+  String get invalidEmailFormat => 'Невірний формат пошти';
+
+  @override
+  String get passwordMinLength => 'Мінімум 6 символів';
+
+  @override
+  String get forgotPasswordTitle => 'Відновлення пароля';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Введіть вашу електронну пошту та новий пароль. Ми надішлемо код підтвердження.';
+
+  @override
+  String get newPasswordLabel => 'Новий пароль';
+
+  @override
+  String get sendCodeBtn => 'Надіслати код';
+
+  @override
+  String get confirmCodeTitle => 'Код підтвердження';
+
+  @override
+  String get confirmCodeSubtitle =>
+      'Будь ласка, введіть код, який ми щойно відправили на вашу пошту.';
+
+  @override
+  String get codeLabel => 'Код';
+
+  @override
+  String get confirmBtn => 'Підтвердити';
+
+  @override
+  String get wrongCodeError => 'Невірний код підтвердження';
+
+  @override
+  String get passwordChangedSuccess => 'Успіх! Ваш пароль успішно змінено.';
+
+  @override
+  String get errorTitle => 'Помилка';
+
+  @override
+  String get okButton => 'ОК';
+
+  @override
+  String get yesButton => 'Так';
+
+  @override
+  String get noButton => 'Ні';
+
+  @override
+  String get appleAuthUnknownError =>
+      'Не вдалося увійти через Apple. Переконайтесь, що ви увійшли в iCloud на цьому пристрої, і спробуйте ще раз.';
+
+  @override
+  String get appleAuthUnavailableOnDevice =>
+      'Вхід через Apple недоступний. Увійдіть в iCloud і спробуйте ще раз.';
+
+  @override
+  String get somethingWentWrongWhenUserAuthsUsingExternalService =>
+      'Щось пішло не так. Скористайтесь опцією «Зареєструватись через email» або «Вхід».';
 }

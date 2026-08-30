@@ -5,10 +5,11 @@
   "@appTitle": {"description": "Заголовок застосунку"},
   "settingsTitle": "Налаштування",
   "@settingsTitle": {"description": "Заголовок екрана налаштувань"},
+  "logoutLabel": "Вийти",
   "themeLabel": "Тема",
   "themeSubtitle": "Перемикайте між темною та світлою",
   "themeLight": "Світла",
-  "themeDark": "Темна (чорна + помаранчева)",
+  "themeDark": "Темна (чорна + синя)",
   "themeSystem": "Системна",
   "languageLabel": "Мова",
   "languageSubtitle": "Використовуйте системну мову або оберіть вручну",
@@ -119,6 +120,13 @@
   "@recommendedHabitName4": {"description": "Назва стартової рекомендації #4"},
   "recommendedHabitReason4": "Це створює повторюваний сигнал для навчання та спокою.",
   "@recommendedHabitReason4": {"description": "Причина стартової рекомендації #4"},
+  "startupTitle": "Давай почнемо зараз!",
+  "startupGoogleBtn": "Продовжити через Google",
+  "startupAppleBtn": "Продовжити через Apple",
+  "startupRegisterBtn": "Зареєструватись",
+  "startupRegisterWithEmailBtn": "Зареєструватись",
+  "startupLoginBtn": "Вхід",
+  "startupErrorGeneric": "Щось пішло не так",
   "transformAreasOfLifeTitle": "Покращ відстаючі сфери життя",
   "transformAreasOfLifeDescription": "Встановлюй цілі правильно та будуй свої звички.",
   "chatWithHelperTitle": "Чат з ШІ-помічником",
@@ -130,5 +138,65 @@
   "becomeTruePersonalityTitle": "Стань справжньою особистістю",
   "becomeTruePersonalityDescription": "Встанови цілі, що орієнтовані на твою ідентичність. Вперед!",
   "ahead": "Вперед",
-  "aboutProgram": "Про програму"
+  "aboutProgram": "Про програму",
+  "nameLabel": "Ім'я",
+  "genderMale": "Чоловік",
+  "genderFemale": "Жінка",
+  "genderOther": "Інша стать",
+  "missionLabel": "Місія",
+  "sloganLabel": "Основне гасло",
+  "optionalLabel": "(Необов'язково)",
+  "userAgreement": "Угодою Користувача",
+  "@userAgreement": {"description": "Текст посилання на Угоду користувача"},
+  "privacyPolicy": "Політикою Конфіденційності",
+  "@privacyPolicy": {"description": "Текст посилання на Політику конфіденційності"},
+  "signupDisclaimer": "Натискаючи кнопку 'Зареєструватись', ви погоджуєтесь з {userAgreement} та {privacyPolicy}",
+  "@signupDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
+  "errorEmailAlreadyExists": "Користувач з таким Email вже існує.",
+  "loginDisclaimer": "Натискаючи кнопку 'Вхід', ви погоджуєтесь з {userAgreement} та {privacyPolicy}",
+  "@loginDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
+  "tryAgainIn": "Спробуйте ще раз через {seconds} с.",
+  "@tryAgainIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "forgotPassword": "Забули пароль?",
+  "principlesAppTitle": "Principles",
+  "loginButton": "Вхід",
+  "fieldRequired": "Поле обов'язкове",
+  "@fieldRequired": {"description": "Повідомлення валідації, коли обов'язкове поле порожнє"},
+  "invalidEmailFormat": "Невірний формат пошти",
+  "@invalidEmailFormat": {"description": "Повідомлення валідації при невірному форматі email"},
+  "passwordMinLength": "Мінімум 6 символів",
+  "@passwordMinLength": {"description": "Повідомлення валідації, коли пароль коротший за 6 символів"},
+  "forgotPasswordTitle": "Відновлення пароля",
+  "forgotPasswordSubtitle": "Введіть вашу електронну пошту та новий пароль. Ми надішлемо код підтвердження.",
+  "newPasswordLabel": "Новий пароль",
+  "sendCodeBtn": "Надіслати код",
+  "confirmCodeTitle": "Код підтвердження",
+  "confirmCodeSubtitle": "Будь ласка, введіть код, який ми щойно відправили на вашу пошту.",
+  "codeLabel": "Код",
+  "confirmBtn": "Підтвердити",
+  "wrongCodeError": "Невірний код підтвердження",
+  "passwordChangedSuccess": "Успіх! Ваш пароль успішно змінено.",
+  "errorTitle": "Помилка",
+  "okButton": "ОК",
+  "yesButton": "Так",
+  "noButton": "Ні",
+  "appleAuthUnknownError": "Не вдалося увійти через Apple. Переконайтесь, що ви увійшли в iCloud на цьому пристрої, і спробуйте ще раз.",
+  "appleAuthUnavailableOnDevice": "Вхід через Apple недоступний. Увійдіть в iCloud і спробуйте ще раз.",
+  "somethingWentWrongWhenUserAuthsUsingExternalService": "Щось пішло не так. Скористайтесь опцією «Зареєструватись через email» або «Вхід»."
 }

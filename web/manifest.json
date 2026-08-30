@@ -1,6 +1,6 @@
 {
-    "name": "principles_app",
-    "short_name": "principles_app",
+    "name": "Principles",
+    "short_name": "Principles",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

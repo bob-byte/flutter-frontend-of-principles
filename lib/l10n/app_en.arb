@@ -5,12 +5,14 @@
   "@appTitle": {"description": "Application title"},
   "settingsTitle": "Settings",
   "@settingsTitle": {"description": "Settings screen title"},
+  "logoutLabel": "Logout",
+  "@logoutLabel": {"description": "Logout button text"},
   "themeLabel": "Theme",
   "@themeLabel": {"description": "Theme setting label"},
   "themeSubtitle": "Switch between dark and light",
   "@themeSubtitle": {"description": "Theme setting helper text"},
   "themeLight": "Light",
-  "themeDark": "Dark (black + orange)",
+  "themeDark": "Dark (black + blue)",
   "themeSystem": "System",
   "languageLabel": "Language",
   "@languageLabel": {"description": "Language setting label"},
@@ -124,6 +126,13 @@
   "@recommendedHabitName4": {"description": "Seed recommendation title #4"},
   "recommendedHabitReason4": "It creates a repeatable cue for learning and calm.",
   "@recommendedHabitReason4": {"description": "Seed recommendation reason #4"},
+  "startupTitle": "Let's get started now!",
+  "startupGoogleBtn": "Continue with Google",
+  "startupAppleBtn": "Continue with Apple",
+  "startupRegisterBtn": "Sign up",
+  "startupRegisterWithEmailBtn": "Sign up with email",
+  "startupLoginBtn": "Login",
+  "startupErrorGeneric": "Something went wrong",
   "transformAreasOfLifeTitle": "Improve lagging life areas",
   "transformAreasOfLifeDescription": "Set goals correctly and build your habits.",
   "chatWithHelperTitle": "Chat with AI assistant",
@@ -135,5 +144,72 @@
   "becomeTruePersonalityTitle": "Become a true personality",
   "becomeTruePersonalityDescription": "Set goals aligned with your identity. Ahead!",
   "ahead": "Ahead",
-  "aboutProgram": "About program"
+  "aboutProgram": "About program",
+  "nameLabel": "Name",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "missionLabel": "Mission",
+  "sloganLabel": "Main slogan",
+  "optionalLabel": "(Optional)",
+  "userAgreement": "User Agreement",
+  "@userAgreement": {"description": "Clickable User Agreement link label"},
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {"description": "Clickable Privacy Policy link label"},
+  "signupDisclaimer": "By clicking 'Sign up', you agree to the {userAgreement} and {privacyPolicy}",
+  "@signupDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
+  "errorEmailAlreadyExists": "User with this Email already exists.",
+  "loginDisclaimer": "By clicking 'Log in', you agree to the {userAgreement} and {privacyPolicy}",
+  "@loginDisclaimer": {
+    "placeholders": {
+      "userAgreement": {"type": "String"},
+      "privacyPolicy": {"type": "String"}
+    }
+  },
+  "tryAgainIn": "Try again in {seconds} s.",
+  "@tryAgainIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "forgotPassword": "Forgot password?",
+  "principlesAppTitle": "Principles",
+  "loginButton": "Log in",
+  "fieldRequired": "This field is required",
+  "@fieldRequired": {"description": "Validation message when a required form field is empty"},
+  "invalidEmailFormat": "Invalid email format",
+  "@invalidEmailFormat": {"description": "Validation message when email format is invalid"},
+  "passwordMinLength": "Minimum 6 characters",
+  "@passwordMinLength": {"description": "Validation message when password is shorter than 6 characters"},
+  "forgotPasswordTitle": "Reset Password",
+  "forgotPasswordSubtitle": "Enter your email and new password. We will send a confirmation code.",
+  "newPasswordLabel": "New password",
+  "sendCodeBtn": "Send code",
+  "confirmCodeTitle": "Confirmation Code",
+  "confirmCodeSubtitle": "Please enter the code we just sent to your email.",
+  "codeLabel": "Code",
+  "confirmBtn": "Confirm",
+  "wrongCodeError": "Wrong confirmation code",
+  "passwordChangedSuccess": "Success! Your password was changed successfully.",
+  "errorTitle": "Error",
+  "@errorTitle": {"description": "Title for error dialog popups"},
+  "okButton": "OK",
+  "@okButton": {"description": "Dismiss button label on alert dialogs"},
+  "yesButton": "Yes",
+  "@yesButton": {"description": "Confirm button label on confirmation dialogs"},
+  "noButton": "No",
+  "@noButton": {"description": "Cancel button label on confirmation dialogs"},
+  "appleAuthUnknownError": "Couldn't complete Sign in with Apple. Make sure you're signed into iCloud on this device, then try again.",
+  "@appleAuthUnknownError": {"description": "Shown when Apple Sign-In fails with AuthorizationErrorCode.unknown (error 1000)"},
+  "appleAuthUnavailableOnDevice": "Sign in with Apple is unavailable. Please sign in to iCloud and try again.",
+  "@appleAuthUnavailableOnDevice": {"description": "Shown when Sign in with Apple is not available on the device"},
+  "somethingWentWrongWhenUserAuthsUsingExternalService": "Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.",
+  "@somethingWentWrongWhenUserAuthsUsingExternalService": {"description": "Fallback message when Google or Apple sign-in fails"}
 }
