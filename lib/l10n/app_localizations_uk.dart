@@ -21,7 +21,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get themeLabel => 'Тема';
 
   @override
-  String get themeSubtitle => 'Перемикайте між темною та світлою';
+  String get themeSubtitle => 'Темна чи світла, помаранчева чи синя';
 
   @override
   String get themeLight => 'Світла';
@@ -31,6 +31,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get themeSystem => 'Системна';
+
+  @override
+  String get themeDarkOrange => 'Темна помаранчева';
+
+  @override
+  String get themeDarkBlue => 'Темна синя';
+
+  @override
+  String get themeLightOrange => 'Світла помаранчева';
+
+  @override
+  String get themeLightBlue => 'Світла синя';
 
   @override
   String get languageLabel => 'Мова';

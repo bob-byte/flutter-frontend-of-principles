@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// Theme setting helper text
   ///
   /// In en, this message translates to:
-  /// **'Switch between dark and light'**
+  /// **'Dark or light, orange or blue'**
   String get themeSubtitle;
 
   /// No description provided for @themeLight.
@@ -145,6 +145,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get themeSystem;
+
+  /// No description provided for @themeDarkOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark orange'**
+  String get themeDarkOrange;
+
+  /// No description provided for @themeDarkBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark blue'**
+  String get themeDarkBlue;
+
+  /// No description provided for @themeLightOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Light orange'**
+  String get themeLightOrange;
+
+  /// No description provided for @themeLightBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Light blue'**
+  String get themeLightBlue;
 
   /// Language setting label
   ///

@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeLabel => 'Theme';
 
   @override
-  String get themeSubtitle => 'Switch between dark and light';
+  String get themeSubtitle => 'Dark or light, orange or blue';
 
   @override
   String get themeLight => 'Light';
@@ -31,6 +31,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSystem => 'System';
+
+  @override
+  String get themeDarkOrange => 'Dark orange';
+
+  @override
+  String get themeDarkBlue => 'Dark blue';
+
+  @override
+  String get themeLightOrange => 'Light orange';
+
+  @override
+  String get themeLightBlue => 'Light blue';
 
   @override
   String get languageLabel => 'Language';
