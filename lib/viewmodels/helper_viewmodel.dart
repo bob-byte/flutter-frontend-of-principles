@@ -33,14 +33,19 @@ class HelperViewModel extends ChangeNotifier {
     messages.add(assistant);
     notifyListeners();
 
-    _subscription = _aiChatService.streamAnswer(prompt, fallbackResponse: fallbackAnswer).listen(
+    _subscription = _aiChatService
+        .streamAnswer(
+          prompt,
+          fallbackResponse: fallbackAnswer,
+          errorMessage: errorMessage,
+        )
+        .listen(
       (chunk) {
         assistant.text += chunk;
         notifyListeners();
       },
       onDone: () {
         assistant.isComplete = true;
-        _aiChatService.addAssistantAnswer(assistant.text);
         isBusy = false;
         notifyListeners();
       },

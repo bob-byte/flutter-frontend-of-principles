@@ -1,15 +1,11 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = 'https://api.example.com';
-  static const String login = '/auth/login';
-  static const String signup = '/auth/signup';
-  static const String user = '/user';
-  static const String goals = '/goals';
-  static const String habits = '/habits';
-  static const String progresses = '/progresses';
-  static const String reminders = '/reminder';
-  static const String syncBootstrap = '/sync/bootstrap';
-  static const String syncPing = '/sync/ping';
-  static const String tasks = '/tasks';
+  static const account = '/account';
+  static const simpleAuthorization = '$account/simpleauthorization';
+  static const authorization = '$account/authorization';
+  static const apiKey = '$account/apikey';
+  static const tasks = '/tasks';
+  static const aiParseTask = '/ai/parse-task';
+  static const aiChat = '/ai/chat';
 }

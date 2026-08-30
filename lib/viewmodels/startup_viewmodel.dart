@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../core/config/app_config.dart';
 import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 import '../services/dialog_service.dart';
@@ -31,6 +32,11 @@ class StartupViewModel extends ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
+      if (AppConfig.useLocalData) {
+        await _authService.ensureGuestSession();
+        return StartupNextRoute.helper;
+      }
+
       await _syncService.runSync();
       final token = await _authService.getToken();
       final isLoggedIn = token != null && token.isNotEmpty;

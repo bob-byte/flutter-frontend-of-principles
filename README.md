@@ -25,7 +25,7 @@ Root app widget: `lib/app/app.dart`
 - Habit details and progress tracking.
 - Settings and theme switching.
 - Local persistence/sync foundations (`sqflite`, secure storage).
-- AI helper/recommendation service integration stubs.
+- AI helper and task assist via OpenAI (`gpt-5-nano`).
 
 ## Tech Stack
 
@@ -73,6 +73,9 @@ flutter run -d chrome
 flutter run -d ios
 flutter run -d android
 ```
+
+AI key is loaded from the production server (`/account/apikey`), same as MAUI.
+No local key and no `--dart-define=OPENAI_API_KEY` needed for normal runs.
 
 ## Testing
 

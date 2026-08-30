@@ -13,7 +13,7 @@
         {
             "label": "Start Android Emulator",
             "type": "shell",
-            "command": "SDK=\"${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}\"; ADB=\"$SDK/platform-tools/adb\"; EMU=\"$SDK/emulator/emulator\"; DEVICE_ID=\"emulator-5554\"; wait_for_boot() { \"$ADB\" -s \"$DEVICE_ID\" wait-for-device; until [ \"$(\"$ADB\" -s \"$DEVICE_ID\" shell getprop sys.boot_completed 2>/dev/null | tr -d '\\r')\" = \"1\" ]; do sleep 1; done; }; if [ ! -x \"$ADB\" ] || [ ! -x \"$EMU\" ]; then echo \"Android SDK not found at $SDK. Install it from Android Studio.\"; exit 1; fi; if \"$ADB\" devices | grep -q \"^${DEVICE_ID}[[:space:]]\"; then wait_for_boot; exit 0; fi; AVD=$(\"$EMU\" -list-avds | awk 'NF { print; exit }'); if [ -z \"$AVD\" ]; then echo \"No Android Virtual Device found. Create one in Android Studio > Device Manager.\"; exit 1; fi; nohup \"$EMU\" -avd \"$AVD\" >/dev/null 2>&1 & wait_for_boot",
+            "command": "\"${workspaceFolder}/.vscode/start-android-emulator.sh\"",
             "presentation": {
                 "reveal": "never"
             },

@@ -9,8 +9,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import '../core/storage/secure_store.dart';
+import '../core/config/app_config.dart';
 import '../core/helpers/password_changer.dart';
+import '../core/network/api_endpoints.dart';
+import '../core/security/password_encryptor.dart';
+import '../core/storage/secure_store.dart';
 
 class AuthService {
   static const _isLocalDebug = bool.fromEnvironment('LOCALDEBUG');
@@ -34,11 +37,9 @@ class AuthService {
 
   AuthService(this._secureStore);
 
-  static const _tokenKey = _isLocalDebug
-      ? 'local_access_token'
-      : 'auth_access_token';
-
   final SecureStore _secureStore;
+
+  String get _tokenKey => AppConfig.tokenStorageKey;
 
   Dio _createDio() {
     final dio = Dio();
@@ -60,8 +61,23 @@ class AuthService {
     return dio;
   }
 
+  Future<void> _storeSessionToken(String token) async {
+    await _secureStore.write(_tokenKey, token);
+    if (!AppConfig.isLocal) {
+      await _secureStore.write(AppConfig.productionAuthTokenKey, token);
+    }
+  }
+
   Future<bool> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) return false;
+
+    // Always try production so the AI key can be fetched from the server.
+    await _tryStoreProductionToken(email, password);
+
+    if (AppConfig.useLocalData) {
+      await ensureGuestSession();
+      return true;
+    }
 
     try {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
@@ -73,7 +89,7 @@ class AuthService {
 
       final appToken = response.data['token'] ?? response.data['Token'];
       if (appToken != null) {
-        await _secureStore.write(_tokenKey, appToken);
+        await _storeSessionToken(appToken.toString());
         return true;
       }
       return false;
@@ -176,7 +192,60 @@ class AuthService {
     }
   }
 
-  Future<void> logout() => _secureStore.delete(_tokenKey);
+  /// Production login for `/account/apikey` even when tasks stay local.
+  Future<void> _tryStoreProductionToken(String email, String password) async {
+    try {
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: AppConfig.productionApiBaseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 20),
+          headers: const {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+      final encrypted = PasswordEncryptor.encryptPassword(
+        password,
+        AppConfig.passwordEncryptionFirstKey,
+        AppConfig.passwordEncryptionSecondKey,
+      );
+      final response = await dio.post<dynamic>(
+        ApiEndpoints.authorization,
+        data: {'email': email, 'password': encrypted},
+      );
+      final token = _extractToken(response.data);
+      if (token != null && token.isNotEmpty) {
+        await _secureStore.write(AppConfig.productionAuthTokenKey, token);
+        await _secureStore.delete('openai_api_key_from_server_v1');
+      }
+    } catch (e) {
+      debugPrint('Production auth for AI key skipped: $e');
+    }
+  }
+
+  String? _extractToken(dynamic data) {
+    if (data is Map) {
+      return (data['token'] ?? data['Token'])?.toString();
+    }
+    return null;
+  }
+
+  Future<void> logout() async {
+    await _secureStore.delete(_tokenKey);
+    await _secureStore.delete(AppConfig.productionAuthTokenKey);
+    await _secureStore.delete('openai_api_key_from_server_v1');
+  }
+
+  /// Guest session so the frontend can run without a backend.
+  Future<void> ensureGuestSession() async {
+    if (!AppConfig.useLocalData) return;
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      await _secureStore.write(AppConfig.tokenStorageKey, AppConfig.offlineToken);
+    }
+  }
 
   Future<String?> getToken() => _secureStore.read(_tokenKey);
 
@@ -255,9 +324,7 @@ class AuthService {
       final appToken = backendResponse.data['token'] ?? backendResponse.data['Token'];
       if (appToken == null) return false;
 
-      // 7. Save token
-      await _secureStore.write(_tokenKey, appToken);
-
+      await _storeSessionToken(appToken.toString());
       return true;
     } catch (e) {
       debugPrint('Google Auth Error: $e');
@@ -296,7 +363,7 @@ class AuthService {
           backendResponse.data['token'] ?? backendResponse.data['Token'];
       if (appToken == null) return false;
 
-      await _secureStore.write(_tokenKey, appToken);
+      await _storeSessionToken(appToken.toString());
       return true;
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
