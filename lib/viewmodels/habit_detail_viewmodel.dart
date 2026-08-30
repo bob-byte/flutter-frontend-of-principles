@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../models/progress_of_habit.dart';
 import '../models/user_habit.dart';
@@ -39,7 +40,7 @@ class HabitDetailViewModel extends ChangeNotifier {
 
   Future<void> load({int? localHabitId}) async {
     isLoading = true;
-    notifyListeners();
+    _notifySafe();
     try {
       final habits = await _habitService.getHabits();
       if (habits.isEmpty) {
@@ -82,6 +83,18 @@ class HabitDetailViewModel extends ChangeNotifier {
     await _habitService.setArchived(localId: localId, archived: !habit!.isArchived);
     habit = await _habitService.getHabitByLocalId(localId);
     notifyListeners();
+  }
+
+  void _notifySafe() {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.idle ||
+        phase == SchedulerPhase.postFrameCallbacks) {
+      notifyListeners();
+      return;
+    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   void _resetStats() {
