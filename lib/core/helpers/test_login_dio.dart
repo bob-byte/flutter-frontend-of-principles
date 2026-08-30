@@ -3,11 +3,11 @@ import 'package:encrypt/encrypt.dart';
 import 'dart:convert';
 
 void main() async {
-  const _firstKey = 'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
-  const _secondKey = 'M%m5Vy9R(_k74t^M';
+  const firstKey = 'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
+  const secondKey = 'M%m5Vy9R(_k74t^M';
 
-  final key = Key.fromUtf8(_firstKey);
-  final iv = IV.fromUtf8(_secondKey);
+  final key = Key.fromUtf8(firstKey);
+  final iv = IV.fromUtf8(secondKey);
   final encrypter = Encrypter(AES(key, mode: AESMode.cbc, padding: 'PKCS7'));
   final encrypted = encrypter.encrypt('MyPassword123!', iv: iv);
 

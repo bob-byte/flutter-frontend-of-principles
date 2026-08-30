@@ -199,9 +199,9 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   keyboardType: TextInputType.emailAddress,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Поле обов\'язкове';
+                    if (value == null || value.isEmpty) return l10n.fieldRequired;
                     if (!RegExp(r'^.+@[a-zA-Z]+\.{1}[a-zA-Z]+(\.{0,1}[a-zA-Z]+)$').hasMatch(value)) {
-                      return 'Невірний формат пошти';
+                      return l10n.invalidEmailFormat;
                     }
                     return null;
                   },
@@ -215,8 +215,8 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   obscureText: _obscurePassword,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Поле обов\'язкове';
-                    if (value.length < 6) return 'Мінімум 6 символів';
+                    if (value == null || value.isEmpty) return l10n.fieldRequired;
+                    if (value.length < 6) return l10n.passwordMinLength;
                     return null;
                   },
                   decoration: _inputDecoration(l10n.newPasswordLabel, Icons.lock_outline).copyWith(
