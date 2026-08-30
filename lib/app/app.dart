@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -47,6 +48,7 @@ import '../views/progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/startup_view.dart';
 import '../views/tasks_view.dart';
+import '../views/main_shell.dart';
 import 'router.dart';
 
 class PrinciplesApp extends StatelessWidget {
@@ -136,61 +138,67 @@ class PrinciplesApp extends StatelessWidget {
       ],
       child: Consumer2<ThemeController, LocaleController>(
         builder: (context, themeController, localeController, child) {
-          return MaterialApp(
-            navigatorKey: context.read<DialogService>().navigatorKey,
-            builder: (context, child) => AndroidHardwareTextInput(
-              child: child ?? const SizedBox.shrink(),
-            ),
-            onGenerateTitle: (context) =>
-                AppLocalizations.of(context)!.appTitle,
-            theme: themeController.lightTheme,
-            darkTheme: themeController.darkTheme,
-            themeMode: themeController.themeMode,
-            locale: localeController.localeOverride ?? const Locale('uk', 'UA'),
-            localeListResolutionCallback: (deviceLocales, supported) {
-              if (localeController.localeOverride != null) {
-                return localeController.localeOverride;
-              }
-              for (final device in deviceLocales ?? const <Locale>[]) {
-                if (device.languageCode == 'uk') {
-                  return const Locale('uk', 'UA');
+          return LiquidGlassWidgets.wrap(
+            brightnessResolver: Theme.maybeBrightnessOf,
+            adaptiveQuality: true,
+            child: MaterialApp(
+              navigatorKey: context.read<DialogService>().navigatorKey,
+              builder: (context, child) => AndroidHardwareTextInput(
+                child: child ?? const SizedBox.shrink(),
+              ),
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context)!.appTitle,
+              theme: themeController.lightTheme,
+              darkTheme: themeController.darkTheme,
+              themeMode: themeController.themeMode,
+              locale:
+                  localeController.localeOverride ?? const Locale('uk', 'UA'),
+              localeListResolutionCallback: (deviceLocales, supported) {
+                if (localeController.localeOverride != null) {
+                  return localeController.localeOverride;
                 }
-                for (final s in supported) {
-                  if (s.languageCode == device.languageCode) return s;
+                for (final device in deviceLocales ?? const <Locale>[]) {
+                  if (device.languageCode == 'uk') {
+                    return const Locale('uk', 'UA');
+                  }
+                  for (final s in supported) {
+                    if (s.languageCode == device.languageCode) return s;
+                  }
                 }
-              }
-              return const Locale('uk', 'UA');
-            },
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [
-              Locale('uk', 'UA'),
-              Locale('uk'),
-              Locale('en'),
-            ],
-            onGenerateRoute: AppRouter.generateRoute,
-            initialRoute: StartupView.routeName,
-            routes: {
-              StartupView.routeName: (_) => const StartupView(),
-              LoginView.routeName: (_) => const LoginView(),
-              SignupView.routeName: (_) => const SignupView(),
-              AppBenefitsView.routeName: (_) => const AppBenefitsView(),
-              ForgetPasswordView.routeName: (ctx) {
-                final email = ModalRoute.of(ctx)?.settings.arguments as String?;
-                return ForgetPasswordView(initialEmail: email);
+                return const Locale('uk', 'UA');
               },
-              HelperView.routeName: (_) => const HelperView(),
-              HabitDetailView.routeName: (_) => const HabitDetailView(),
-              EditHabitView.routeName: (_) => const EditHabitView(),
-              GoalsView.routeName: (_) => const GoalsView(),
-              ProgressView.routeName: (_) => const ProgressView(),
-              SettingsView.routeName: (_) => const SettingsView(),
-              TasksView.routeName: (_) => const TasksView(),
-            },
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('uk', 'UA'),
+                Locale('uk'),
+                Locale('en'),
+              ],
+              onGenerateRoute: AppRouter.generateRoute,
+              initialRoute: StartupView.routeName,
+              routes: {
+                StartupView.routeName: (_) => const StartupView(),
+                LoginView.routeName: (_) => const LoginView(),
+                SignupView.routeName: (_) => const SignupView(),
+                AppBenefitsView.routeName: (_) => const AppBenefitsView(),
+                ForgetPasswordView.routeName: (ctx) {
+                  final email =
+                      ModalRoute.of(ctx)?.settings.arguments as String?;
+                  return ForgetPasswordView(initialEmail: email);
+                },
+                HelperView.routeName: (_) => const MainShell(),
+                HabitDetailView.routeName: (_) => const HabitDetailView(),
+                EditHabitView.routeName: (_) => const EditHabitView(),
+                GoalsView.routeName: (_) => const GoalsView(),
+                ProgressView.routeName: (_) => const ProgressView(),
+                SettingsView.routeName: (_) => const SettingsView(),
+                TasksView.routeName: (_) => const TasksView(),
+              },
+            ),
           );
         },
       ),

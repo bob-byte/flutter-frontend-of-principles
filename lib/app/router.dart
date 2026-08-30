@@ -4,6 +4,7 @@ import '../views/edit_habit_view.dart';
 import '../views/goals_view.dart';
 import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
+import '../views/main_shell.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
 import '../views/progress_view.dart';
@@ -21,7 +22,7 @@ class AppRouter {
       case AppBenefitsView.routeName:
         return MaterialPageRoute(builder: (_) => const AppBenefitsView());
       case HelperView.routeName:
-        return MaterialPageRoute(builder: (_) => const HelperView());
+        return MaterialPageRoute(builder: (_) => const MainShell());
       case HabitDetailView.routeName:
         return MaterialPageRoute(builder: (_) => const HabitDetailView());
       case EditHabitView.routeName:
