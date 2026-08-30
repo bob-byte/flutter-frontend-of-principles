@@ -182,6 +182,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get helperTitle => 'Чат з помічником';
 
   @override
+  String get tabChat => 'Чат';
+
+  @override
+  String get tabTasks => 'Завдання';
+
+  @override
+  String get tabGoals => 'Цілі';
+
+  @override
+  String get tabProgress => 'Прогрес';
+
+  @override
+  String get tabHabits => 'Звички';
+
+  @override
+  String get tabSettings => 'Налаштування';
+
+  @override
   String get helperInputHint => 'Введіть текст';
 
   @override

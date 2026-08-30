@@ -422,6 +422,42 @@ abstract class AppLocalizations {
   /// **'Chat With Helper'**
   String get helperTitle;
 
+  /// Bottom tab label for the AI chat screen
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get tabChat;
+
+  /// Bottom tab label for the tasks screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get tabTasks;
+
+  /// Bottom tab label for the goals screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get tabGoals;
+
+  /// Bottom tab label for the progress screen
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get tabProgress;
+
+  /// Bottom tab label for the habits screen
+  ///
+  /// In en, this message translates to:
+  /// **'Habits'**
+  String get tabHabits;
+
+  /// Bottom tab label for the settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get tabSettings;
+
   /// No description provided for @helperInputHint.
   ///
   /// In en, this message translates to:

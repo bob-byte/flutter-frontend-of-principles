@@ -181,6 +181,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helperTitle => 'Chat With Helper';
 
   @override
+  String get tabChat => 'Chat';
+
+  @override
+  String get tabTasks => 'Tasks';
+
+  @override
+  String get tabGoals => 'Goals';
+
+  @override
+  String get tabProgress => 'Progress';
+
+  @override
+  String get tabHabits => 'Habits';
+
+  @override
+  String get tabSettings => 'Settings';
+
+  @override
   String get helperInputHint => 'Enter text';
 
   @override
