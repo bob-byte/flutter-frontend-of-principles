@@ -42,3 +42,4 @@ app.*.map.json
 # Local secrets (do not commit)
 lib/core/config/ai_api_key.dart
 
+/maui/
