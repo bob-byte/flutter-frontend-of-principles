@@ -50,6 +50,7 @@ dependencies:
   url_launcher: ^6.3.2
   google_fonts: ^8.2.1
   speech_to_text: ^7.4.0
+  liquid_glass_widgets: ^1.2.1
 
 dev_dependencies:
   flutter_test:
