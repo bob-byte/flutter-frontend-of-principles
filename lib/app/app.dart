@@ -60,9 +60,17 @@ class PrinciplesApp extends StatelessWidget {
       providers: [
         Provider(create: (_) => SecureStore()),
         Provider(create: (_) => LocalDb()),
-        ChangeNotifierProvider(create: (_) => ThemeController()),
-        ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
+        ChangeNotifierProvider(
+          create: (ctx) {
+            final controller = ThemeController(
+              settingsService: ctx.read<SettingsService>(),
+            );
+            controller.restore();
+            return controller;
+          },
+        ),
+        ChangeNotifierProvider(create: (_) => LocaleController()),
         Provider(create: (_) => DialogService()),
         Provider(create: (ctx) => ApiClient(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
@@ -125,12 +133,17 @@ class PrinciplesApp extends StatelessWidget {
           ),
         ),
         Provider(create: (_) => kIsWeb ? null : TaskDb()),
-        Provider(create: (ctx) => TaskService(
-              apiClient: ctx.read<ApiClient>(),
-              taskDb: ctx.read<TaskDb?>(),
-            )),
+        Provider(
+          create: (ctx) => TaskService(
+            apiClient: ctx.read<ApiClient>(),
+            taskDb: ctx.read<TaskDb?>(),
+          ),
+        ),
         ChangeNotifierProvider(
-          create: (ctx) => TasksViewModel(ctx.read<TaskService>()),
+          create: (ctx) => TasksViewModel(
+            ctx.read<TaskService>(),
+            ctx.read<ThemeController>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => EditTaskViewModel(ctx.read<TaskService>()),

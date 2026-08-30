@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/utils/date_helpers.dart';
 import '../core/theme/task_theme_palette.dart';
+import '../core/theme/theme_controller.dart';
 import '../l10n/task_strings.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
@@ -15,9 +16,12 @@ enum TaskStatusFilter { all, active, done }
 const taskNoCategoryFilterKey = '__no_category__';
 
 class TasksViewModel extends ChangeNotifier {
-  TasksViewModel(this._taskService);
+  TasksViewModel(this._taskService, this._themeController) {
+    _themeController.addListener(_onThemeChanged);
+  }
 
   final TaskService _taskService;
+  final ThemeController _themeController;
 
   final List<Task> tasks = [];
   Map<String, int> themeColors = {};
@@ -26,9 +30,10 @@ class TasksViewModel extends ChangeNotifier {
   TaskStatusFilter statusFilter = TaskStatusFilter.all;
   TasksListMode listMode = TasksListMode.today;
   DateTime selectedDay = dateOnly(DateTime.now());
-  TasksUiTheme uiTheme = TasksUiTheme.darkOrange;
 
-  TasksUiPalette get palette => TasksUiPalette.of(uiTheme);
+  TasksUiTheme get uiTheme => _themeController.uiTheme;
+
+  TasksUiPalette get palette => _themeController.palette;
 
   bool filtersVisible = false;
   bool isLoading = false;
@@ -58,8 +63,9 @@ class TasksViewModel extends ChangeNotifier {
       result = result.where((t) => t.theme == selectedThemeFilter).toList();
     }
     if (selectedPriorityFilter != null) {
-      result =
-          result.where((t) => t.priority == selectedPriorityFilter).toList();
+      result = result
+          .where((t) => t.priority == selectedPriorityFilter)
+          .toList();
     }
     result = result.where(_matchesStatusFilter).toList();
     final today = dateOnly(DateTime.now());
@@ -75,8 +81,9 @@ class TasksViewModel extends ChangeNotifier {
       final bOverdue =
           !b.isDone && b.dueDate != null && b.dueDate!.isBefore(today);
       if (aOverdue != bOverdue) return aOverdue ? -1 : 1;
-      final priorityCmp =
-          _priorityRank(b.priority).compareTo(_priorityRank(a.priority));
+      final priorityCmp = _priorityRank(
+        b.priority,
+      ).compareTo(_priorityRank(a.priority));
       if (priorityCmp != 0) return priorityCmp;
       if (a.dueDate != null && b.dueDate != null) {
         return a.dueDate!.compareTo(b.dueDate!);
@@ -95,9 +102,7 @@ class TasksViewModel extends ChangeNotifier {
 
   List<Task> get todayTasks {
     final today = dateOnly(DateTime.now());
-    return tasks
-        .where((t) => isSameDay(t.dueDate, today))
-        .toList();
+    return tasks.where((t) => isSameDay(t.dueDate, today)).toList();
   }
 
   /// Дні, на які є хоча б одне завдання (для крапок у календарі).
@@ -124,11 +129,11 @@ class TasksViewModel extends ChangeNotifier {
   }
 
   String listModeTitle(TaskStrings strings) => switch (listMode) {
-        TasksListMode.today => strings.taskMenuToday,
-        TasksListMode.day => formatTaskDate(selectedDay),
-        TasksListMode.inbox => strings.taskMenuInbox,
-        TasksListMode.completed => strings.taskMenuCompleted,
-      };
+    TasksListMode.today => strings.taskMenuToday,
+    TasksListMode.day => formatTaskDate(selectedDay),
+    TasksListMode.inbox => strings.taskMenuInbox,
+    TasksListMode.completed => strings.taskMenuCompleted,
+  };
 
   void toggleFiltersVisible() {
     filtersVisible = !filtersVisible;
@@ -207,10 +212,10 @@ class TasksViewModel extends ChangeNotifier {
   }
 
   bool _matchesStatusFilter(Task task) => switch (statusFilter) {
-        TaskStatusFilter.all => true,
-        TaskStatusFilter.active => !task.isDone,
-        TaskStatusFilter.done => task.isDone,
-      };
+    TaskStatusFilter.all => true,
+    TaskStatusFilter.active => !task.isDone,
+    TaskStatusFilter.done => task.isDone,
+  };
 
   Future<void> load() async {
     isLoading = true;
@@ -220,7 +225,6 @@ class TasksViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(await _taskService.getTasks());
       themeColors = await _taskService.getThemeColors();
-      uiTheme = await _taskService.getUiTheme();
     } finally {
       isLoading = false;
       notifyListeners();
@@ -228,9 +232,16 @@ class TasksViewModel extends ChangeNotifier {
   }
 
   Future<void> setUiTheme(TasksUiTheme theme) async {
-    uiTheme = theme;
-    notifyListeners();
+    await _themeController.setUiTheme(theme);
     await _taskService.setUiTheme(theme);
+  }
+
+  void _onThemeChanged() => notifyListeners();
+
+  @override
+  void dispose() {
+    _themeController.removeListener(_onThemeChanged);
+    super.dispose();
   }
 
   Future<void> toggleTask(String id) async {
@@ -269,8 +280,8 @@ class TasksViewModel extends ChangeNotifier {
 }
 
 int _priorityRank(TaskPriority? priority) => switch (priority) {
-      TaskPriority.high => 3,
-      TaskPriority.medium => 2,
-      TaskPriority.low => 1,
-      null => 0,
-    };
+  TaskPriority.high => 3,
+  TaskPriority.medium => 2,
+  TaskPriority.low => 1,
+  null => 0,
+};
