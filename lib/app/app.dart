@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/input/android_hardware_text_input.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/local_db.dart';
@@ -126,6 +127,9 @@ class PrinciplesApp extends StatelessWidget {
       child: Consumer2<ThemeController, LocaleController>(
         builder: (context, themeController, localeController, child) {
           return MaterialApp(
+            builder: (context, child) => AndroidHardwareTextInput(
+              child: child ?? const SizedBox.shrink(),
+            ),
             onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
