@@ -61,12 +61,6 @@ class ThemePickerSection extends StatelessWidget {
                 onThemeSelected(null);
               },
             ),
-            if (existingThemes.isNotEmpty)
-              _ModeChip(
-                label: strings.taskExistingTheme,
-                selected: mode == ThemePickerMode.existing,
-                onTap: () => onModeChanged(ThemePickerMode.existing),
-              ),
             _ModeChip(
               label: strings.taskNewTheme,
               selected: mode == ThemePickerMode.newTheme,
@@ -74,16 +68,18 @@ class ThemePickerSection extends StatelessWidget {
             ),
           ],
         ),
-        if (mode == ThemePickerMode.existing && existingThemes.isNotEmpty) ...[
+        if (existingThemes.isNotEmpty) ...[
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: existingThemes.map((theme) {
-              final selected = selectedTheme == theme;
+              final selected =
+                  mode == ThemePickerMode.existing && selectedTheme == theme;
               final color = colorForTheme(theme);
               return GestureDetector(
                 onTap: () {
+                  onModeChanged(ThemePickerMode.existing);
                   onThemeSelected(theme);
                   onColorSelected(color);
                 },

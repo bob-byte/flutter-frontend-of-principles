@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -15,10 +16,8 @@ Future<AiTaskDraft?> showTaskAiAssistSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Theme(
-      data: vm.themeData,
-      child: const TaskAiAssistSheet(),
-    ),
+    builder: (sheetContext) =>
+        Theme(data: vm.themeData, child: const TaskAiAssistSheet()),
   );
 }
 
@@ -61,6 +60,7 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
       if (mounted) {
         setState(() {});
         _focus.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.show');
       }
     });
   }
@@ -113,10 +113,7 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
     );
   }
 
-  String _resolveSpeechLocaleId(
-    List<LocaleName> locales,
-    Locale preferred,
-  ) {
+  String _resolveSpeechLocaleId(List<LocaleName> locales, Locale preferred) {
     String? find(bool Function(String normalizedId) test) {
       for (final locale in locales) {
         final normalized = locale.localeId.toLowerCase().replaceAll('-', '_');
@@ -242,6 +239,7 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
                         child: TextField(
                           controller: _controller,
                           focusNode: _focus,
+                          autofocus: true,
                           minLines: 2,
                           maxLines: 5,
                           enabled: !_isProcessing,
@@ -363,8 +361,8 @@ class _RoundAction extends StatelessWidget {
           tint: primary
               ? palette.primary.withValues(alpha: palette.isDark ? 0.88 : 0.92)
               : active
-                  ? palette.primary.withValues(alpha: 0.35)
-                  : palette.glassChipFill,
+              ? palette.primary.withValues(alpha: 0.35)
+              : palette.glassChipFill,
           child: SizedBox(
             width: 44,
             height: 44,
@@ -382,8 +380,8 @@ class _RoundAction extends StatelessWidget {
                     color: primary
                         ? palette.onPrimary
                         : active
-                            ? palette.primary
-                            : palette.textPrimary,
+                        ? palette.primary
+                        : palette.textPrimary,
                   ),
           ),
         ),

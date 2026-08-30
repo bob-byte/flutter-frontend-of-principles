@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
@@ -8,22 +9,23 @@ import '../models/ai_task_draft.dart';
 import '../models/task_priority.dart';
 import '../viewmodels/edit_task_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
 import 'tasks_glass.dart';
 
 Future<bool?> showTaskEditSheet(
   BuildContext context, {
   String? taskId,
-  AiTaskDraft? draft,
+  AiTaskDraft? aiDraft,
 }) async {
   final tasksVm = context.read<TasksViewModel>();
   final editVm = context.read<EditTaskViewModel>();
 
-  await editVm.load(taskId: taskId, draft: draft);
+  await editVm.load(taskId: taskId, aiDraft: aiDraft);
   if (!context.mounted) return null;
 
   // Для нового завдання без дати від AI — підставити дату з режиму списку.
-  if (taskId == null && (draft == null || !draft.hasDueDate)) {
+  if (taskId == null && (aiDraft == null || !aiDraft.hasDueDate)) {
     switch (tasksVm.listMode) {
       case TasksListMode.inbox:
         editVm.setHasDueDate(false);
@@ -81,7 +83,10 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final vm = context.read<EditTaskViewModel>();
       _syncControllers(vm);
-      if (widget.taskId == null) _titleFocus.requestFocus();
+      if (widget.taskId == null) {
+        _titleFocus.requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.show');
+      }
     });
   }
 
@@ -96,6 +101,23 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     _descriptionController.dispose();
     _titleFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _openAiAssist(EditTaskViewModel vm) async {
+    if (vm.isSaving) return;
+    final aiDraft = await showTaskAiAssistSheet(context);
+    if (!mounted || aiDraft == null) return;
+
+    vm.applyAiDraft(aiDraft);
+    _syncControllers(vm);
+    setState(() {
+      if (vm.themeMode != ThemePickerMode.none) {
+        _optionsExpanded = true;
+      }
+      if (_titleError && vm.title.trim().isNotEmpty) {
+        _titleError = false;
+      }
+    });
   }
 
   Future<void> _pickDate(EditTaskViewModel vm) async {
@@ -212,6 +234,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         TextField(
                           controller: _titleController,
                           focusNode: _titleFocus,
+                          autofocus: widget.taskId == null,
                           keyboardType: TextInputType.text,
                           textCapitalization: TextCapitalization.sentences,
                           enableSuggestions: true,
@@ -227,6 +250,26 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                               color: palette.textMuted.withValues(alpha: 0.75),
                               fontWeight: FontWeight.w400,
                               fontSize: 17,
+                            ),
+                            suffixIcon: widget.taskId == null
+                                ? Tooltip(
+                                    message: strings.taskAiAssistTitle,
+                                    child: GestureDetector(
+                                      onTap: vm.isSaving
+                                          ? null
+                                          : () => _openAiAssist(vm),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Icon(
+                                        Icons.auto_awesome,
+                                        size: 20,
+                                        color: palette.primary,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                            suffixIconConstraints: const BoxConstraints(
+                              minWidth: 20,
+                              minHeight: 20,
                             ),
                           ),
                           textInputAction: TextInputAction.next,
@@ -388,10 +431,7 @@ class _SheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TasksGlassSheet(
-      palette: palette,
-      child: child,
-    );
+    return TasksGlassSheet(palette: palette, child: child);
   }
 }
 
@@ -462,10 +502,12 @@ class _PriorityChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final hasPriority = priority != null;
-    final color =
-        hasPriority ? priorityColor(priority!, scheme) : palette.textMuted;
-    final label =
-        hasPriority ? priority!.label(strings) : strings.taskPriorityNone;
+    final color = hasPriority
+        ? priorityColor(priority!, scheme)
+        : palette.textMuted;
+    final label = hasPriority
+        ? priority!.label(strings)
+        : strings.taskPriorityNone;
 
     return PopupMenuButton<TaskPriority?>(
       initialValue: priority,
@@ -475,9 +517,15 @@ class _PriorityChip extends StatelessWidget {
       itemBuilder: (context) => [
         PopupMenuItem(
           value: null,
+          // PopupMenuButton treats a null result as cancel, not a selection.
+          onTap: () => onSelected(null),
           child: Row(
             children: [
-              Icon(Icons.remove_circle_outline, size: 16, color: palette.textMuted),
+              Icon(
+                Icons.remove_circle_outline,
+                size: 16,
+                color: palette.textMuted,
+              ),
               const SizedBox(width: 10),
               Text(strings.taskPriorityNone),
             ],

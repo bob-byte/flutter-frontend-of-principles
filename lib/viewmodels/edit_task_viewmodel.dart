@@ -46,7 +46,7 @@ class EditTaskViewModel extends ChangeNotifier {
     return fallbackThemeColor(theme);
   }
 
-  Future<void> load({String? taskId, AiTaskDraft? draft}) async {
+  Future<void> load({String? taskId, AiTaskDraft? aiDraft}) async {
     isLoading = true;
     notifyListeners();
     try {
@@ -54,28 +54,17 @@ class EditTaskViewModel extends ChangeNotifier {
 
       if (taskId == null) {
         editingId = null;
-        title = draft?.title ?? '';
-        description = draft?.description ?? '';
-        priority = draft?.priority;
+        title = '';
+        description = '';
+        priority = null;
         themeMode = ThemePickerMode.none;
         selectedTheme = null;
         newThemeName = '';
         themeColor = taskCategoryPalette.first;
-        hasDueDate = draft?.hasDueDate ?? true;
-        dueDate = draft?.dueDate ?? dateOnly(DateTime.now());
-
-        final themeName = draft?.theme?.trim();
-        if (themeName != null && themeName.isNotEmpty) {
-          final themes = themeColors.keys.toSet();
-          if (themes.contains(themeName)) {
-            themeMode = ThemePickerMode.existing;
-            selectedTheme = themeName;
-            themeColor = colorForTheme(themeName);
-          } else {
-            themeMode = ThemePickerMode.newTheme;
-            newThemeName = themeName;
-            themeColor = fallbackThemeColor(themeName);
-          }
+        hasDueDate = true;
+        dueDate = dateOnly(DateTime.now());
+        if (aiDraft != null) {
+          _applyAiDraft(aiDraft, overwriteDueDateIfMissing: true);
         }
         return;
       }
@@ -112,6 +101,49 @@ class EditTaskViewModel extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Підставляє чернетку ШІ в уже відкриту форму.
+  /// Дату з режиму списку не затирає, якщо ШІ її не визначив.
+  void applyAiDraft(AiTaskDraft aiDraft) {
+    _applyAiDraft(aiDraft, overwriteDueDateIfMissing: false);
+    notifyListeners();
+  }
+
+  void _applyAiDraft(
+    AiTaskDraft aiDraft, {
+    required bool overwriteDueDateIfMissing,
+  }) {
+    title = aiDraft.title;
+    description = aiDraft.description;
+    priority = aiDraft.priority;
+
+    themeMode = ThemePickerMode.none;
+    selectedTheme = null;
+    newThemeName = '';
+    themeColor = taskCategoryPalette.first;
+
+    final themeName = aiDraft.theme?.trim();
+    if (themeName != null && themeName.isNotEmpty) {
+      final themes = themeColors.keys.toSet();
+      if (themes.contains(themeName)) {
+        themeMode = ThemePickerMode.existing;
+        selectedTheme = themeName;
+        themeColor = colorForTheme(themeName);
+      } else {
+        themeMode = ThemePickerMode.newTheme;
+        newThemeName = themeName;
+        themeColor = fallbackThemeColor(themeName);
+      }
+    }
+
+    if (aiDraft.hasDueDate && aiDraft.dueDate != null) {
+      hasDueDate = true;
+      dueDate = aiDraft.dueDate;
+    } else if (overwriteDueDateIfMissing) {
+      hasDueDate = aiDraft.hasDueDate;
+      dueDate = aiDraft.dueDate ?? dateOnly(DateTime.now());
     }
   }
 

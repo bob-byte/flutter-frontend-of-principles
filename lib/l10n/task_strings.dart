@@ -20,7 +20,6 @@ class TaskStrings {
     required this.taskPriorityNone,
     required this.taskThemeOptional,
     required this.taskNoTheme,
-    required this.taskExistingTheme,
     required this.taskNewTheme,
     required this.taskThemeColor,
     required this.taskThemes,
@@ -61,12 +60,6 @@ class TaskStrings {
     required this.uiThemeLightOrange,
     required this.uiThemeLightBlue,
     required this.taskUiThemeTooltip,
-    required this.taskCreateHowTitle,
-    required this.taskCreateHowHint,
-    required this.taskCreateManual,
-    required this.taskCreateManualHint,
-    required this.taskCreateWithAi,
-    required this.taskCreateWithAiHint,
     required this.taskAiAssistTitle,
     required this.taskAiAssistHint,
     required this.taskAiPromptHint,
@@ -100,7 +93,6 @@ class TaskStrings {
   final String taskPriorityNone;
   final String taskThemeOptional;
   final String taskNoTheme;
-  final String taskExistingTheme;
   final String taskNewTheme;
   final String taskThemeColor;
   final String taskThemes;
@@ -141,12 +133,6 @@ class TaskStrings {
   final String uiThemeLightOrange;
   final String uiThemeLightBlue;
   final String taskUiThemeTooltip;
-  final String taskCreateHowTitle;
-  final String taskCreateHowHint;
-  final String taskCreateManual;
-  final String taskCreateManualHint;
-  final String taskCreateWithAi;
-  final String taskCreateWithAiHint;
   final String taskAiAssistTitle;
   final String taskAiAssistHint;
   final String taskAiPromptHint;
@@ -199,7 +185,6 @@ class TaskStrings {
     taskPriorityNone: 'No priority',
     taskThemeOptional: 'Category (optional)',
     taskNoTheme: 'No category',
-    taskExistingTheme: 'Existing',
     taskNewTheme: 'New category',
     taskThemeColor: 'Category color',
     taskThemes: 'Categories',
@@ -240,12 +225,6 @@ class TaskStrings {
     uiThemeLightOrange: 'Light orange',
     uiThemeLightBlue: 'Light blue',
     taskUiThemeTooltip: 'Color theme',
-    taskCreateHowTitle: 'How do you want to add a task?',
-    taskCreateHowHint: 'Choose manual entry or describe it to the AI assistant.',
-    taskCreateManual: 'Create myself',
-    taskCreateManualHint: 'Fill in the task details manually',
-    taskCreateWithAi: 'With AI assistant',
-    taskCreateWithAiHint: 'Describe the task in text or by voice',
     taskAiAssistTitle: 'AI task assistant',
     taskAiAssistHint:
         'Example: “Buy groceries tomorrow, high priority, category home — don’t forget milk”',
@@ -281,7 +260,6 @@ class TaskStrings {
     taskPriorityNone: 'Без пріоритету',
     taskThemeOptional: 'Категорія (необов\'язково)',
     taskNoTheme: 'Без категорії',
-    taskExistingTheme: 'Існуюча',
     taskNewTheme: 'Нова категорія',
     taskThemeColor: 'Колір категорії',
     taskThemes: 'Категорії',
@@ -323,13 +301,6 @@ class TaskStrings {
     uiThemeLightOrange: 'Світла помаранчева',
     uiThemeLightBlue: 'Світла синя',
     taskUiThemeTooltip: 'Кольорова тема',
-    taskCreateHowTitle: 'Як додати завдання?',
-    taskCreateHowHint:
-        'Оберіть ручне створення або опишіть завдання помічнику.',
-    taskCreateManual: 'Створити власноруч',
-    taskCreateManualHint: 'Заповнити поля завдання самостійно',
-    taskCreateWithAi: 'За допомогою ШІ',
-    taskCreateWithAiHint: 'Опишіть завдання текстом або голосом',
     taskAiAssistTitle: 'ШІ-помічник завдань',
     taskAiAssistHint:
         'Наприклад: «Купити продукти завтра, пріоритет високий, категорія дім. Опис: не забути молоко»',
