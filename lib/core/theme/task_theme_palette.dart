@@ -14,6 +14,13 @@ enum TasksUiTheme {
 
   bool get isDark => this == darkOrange || this == darkBlue;
 
+  bool get isOrange => this == darkOrange || this == lightOrange;
+
+  /// Orange vs blue fire loop used on startup / signup.
+  String get fireLottieAsset => isOrange
+      ? 'assets/lottie/orange_fire_loading.json'
+      : 'assets/lottie/blue_fire_loading.json';
+
   String get storageKey => name;
 
   static TasksUiTheme fromStorage(String? value) => switch (value) {
@@ -94,11 +101,11 @@ class TasksUiPalette {
               cardBg: Color(0xFF121212),
               textPrimary: Color(0xFFFFFFFF),
               textMuted: Color(0x80FFFFFF),
-              primary: Color(0xFFF76024),
-              primaryGradientStart: Color(0xFFFF8917),
-              primaryGradientEnd: Color(0xFFF76024),
+              primary: Color(0xFFFF6B00),
+              primaryGradientStart: Color(0xFFFF8A00),
+              primaryGradientEnd: Color(0xFFFF6B00),
               onPrimary: Color(0xFF180C06),
-              accentMuted: Color(0xFFFFA178),
+              accentMuted: Color(0xFFFF9A40),
               cardBorder: Color(0x80FFFFFF),
               softBg: Color(0x0DFFFFFF),
               headerBorder: Color(0xFF222222),
@@ -124,11 +131,11 @@ class TasksUiPalette {
               cardBg: Color(0xFFFFFFFF),
               textPrimary: Color(0xFF18130F),
               textMuted: Color(0x80000000),
-              primary: Color(0xFFF76024),
-              primaryGradientStart: Color(0xFFFF8917),
-              primaryGradientEnd: Color(0xFFF76024),
+              primary: Color(0xFFFF6B00),
+              primaryGradientStart: Color(0xFFFF8A00),
+              primaryGradientEnd: Color(0xFFFF6B00),
               onPrimary: Color(0xFFFFFFFF),
-              accentMuted: Color(0xFFB95827),
+              accentMuted: Color(0xFFC45600),
               cardBorder: Color(0xFFDDCFBF),
               softBg: Color(0x14000000),
               headerBorder: Color(0xFFE8DDD0),
@@ -224,7 +231,7 @@ class TasksUiPalette {
 
 /// Кольори категорій завдань (не плутати з UI-темами).
 const taskCategoryPalette = [
-  Color(0xFFF76024),
+  Color(0xFFFF6B00),
   Color(0xFF007BFF),
   Color(0xFF10B981),
   Color(0xFF8B5CF6),

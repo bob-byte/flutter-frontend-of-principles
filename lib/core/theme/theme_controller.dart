@@ -1,39 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/settings_service.dart';
+import 'task_theme_palette.dart';
+
+/// App-wide color theme: four palettes (dark/light × orange/blue).
 class ThemeController extends ChangeNotifier {
-  static const Color _primaryBlue = Color(0xFF3B82F6);
-  static const Color _secondaryBlue = Color(0xFF7CB6FA);
+  ThemeController({SettingsService? settingsService})
+    : _settingsService = settingsService;
 
-  ThemeMode _themeMode = ThemeMode.system;
+  static const tasksPrefsKey = 'tasks_module_ui_theme_v1';
 
-  ThemeMode get themeMode => _themeMode;
+  final SettingsService? _settingsService;
+  TasksUiTheme _uiTheme = TasksUiTheme.darkOrange;
+  bool _restoring = false;
 
-  ThemeData get lightTheme => ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _primaryBlue,
-          brightness: Brightness.light,
-          primary: _primaryBlue,
-          surface: Colors.white,
-          surfaceTint: Colors.transparent,
-        ),
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
-      );
+  TasksUiTheme get uiTheme => _uiTheme;
 
-  ThemeData get darkTheme => ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: const ColorScheme.dark(
-          primary: _primaryBlue,
-          secondary: _secondaryBlue,
-          surface: Color(0xFF000000),
-          surfaceTint: Colors.transparent,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF000000),
-        useMaterial3: true,
-      );
+  TasksUiPalette get palette => TasksUiPalette.of(_uiTheme);
 
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
-    notifyListeners();
+  ThemeData get theme => palette.toThemeData();
+
+  ThemeData get lightTheme => TasksUiPalette.of(
+    _uiTheme.isOrange ? TasksUiTheme.lightOrange : TasksUiTheme.lightBlue,
+  ).toThemeData();
+
+  ThemeData get darkTheme => TasksUiPalette.of(
+    _uiTheme.isOrange ? TasksUiTheme.darkOrange : TasksUiTheme.darkBlue,
+  ).toThemeData();
+
+  ThemeMode get themeMode => _uiTheme.isDark ? ThemeMode.dark : ThemeMode.light;
+
+  Future<void> restore() async {
+    if (_restoring) return;
+    _restoring = true;
+    try {
+      final fromSettings = await _settingsService?.getUiTheme();
+      if (fromSettings != null && fromSettings.isNotEmpty) {
+        _setTheme(TasksUiTheme.fromStorage(fromSettings), persist: false);
+        return;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final fromTasks = prefs.getString(tasksPrefsKey);
+      if (fromTasks != null && fromTasks.isNotEmpty) {
+        _setTheme(TasksUiTheme.fromStorage(fromTasks), persist: true);
+        return;
+      }
+
+      final legacy = await _settingsService?.getThemeMode();
+      final migrated = switch (legacy) {
+        'light' => TasksUiTheme.lightBlue,
+        'dark' => TasksUiTheme.darkBlue,
+        _ => TasksUiTheme.darkOrange,
+      };
+      _setTheme(migrated, persist: true);
+    } catch (_) {
+      // Keep the default dark-orange palette if storage is unavailable.
+    } finally {
+      _restoring = false;
+    }
+  }
+
+  Future<void> setUiTheme(TasksUiTheme theme) async {
+    _setTheme(theme, persist: false);
+    await _persist(theme);
+  }
+
+  void _setTheme(TasksUiTheme theme, {required bool persist}) {
+    final changed = _uiTheme != theme;
+    _uiTheme = theme;
+    if (changed) notifyListeners();
+    if (persist) {
+      _persist(theme);
+    }
+  }
+
+  Future<void> _persist(TasksUiTheme theme) async {
+    try {
+      await _settingsService?.setUiTheme(theme.storageKey);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(tasksPrefsKey, theme.storageKey);
+    } catch (_) {
+      // Persistence is best-effort; the in-memory theme still applies.
+    }
   }
 }

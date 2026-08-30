@@ -8,6 +8,9 @@ class SettingsService {
   Future<void> setThemeMode(String mode) => _secureStore.write('theme_mode', mode);
   Future<String?> getThemeMode() => _secureStore.read('theme_mode');
 
+  Future<void> setUiTheme(String theme) => _secureStore.write('ui_theme', theme);
+  Future<String?> getUiTheme() => _secureStore.read('ui_theme');
+
   Future<void> setLocaleOverride(String? localeCode) async {
     if (localeCode == null) {
       await _secureStore.delete('locale_override');
