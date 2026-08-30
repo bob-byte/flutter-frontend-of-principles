@@ -1,4 +1,4 @@
-package com.set.principles.principles_app
+package com.set.principles
 
 import io.flutter.embedding.android.FlutterActivity
 
