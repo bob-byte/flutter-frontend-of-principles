@@ -16,7 +16,7 @@ class AppConfig {
   /// `api` — REST + JWT.
   static const dataSource = String.fromEnvironment(
     'DATA_SOURCE',
-    defaultValue: 'local',
+    defaultValue: 'api',
   );
 
   static const apiEnv = String.fromEnvironment('API_ENV', defaultValue: 'local');
