@@ -5,21 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "app (with backend API)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "debug",
-            "toolArgs": [
-                "--dart-define=DATA_SOURCE=api",
-                "--dart-define=API_ENV=local"
-            ]
-        },
-        {
             "name": "app (macOS)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
             "deviceId": "macos"
+        },
+        {
+            "name": "app (macOS) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "macos",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
         },
         {
             "name": "app (Linux)",
@@ -29,6 +29,16 @@
             "deviceId": "linux"
         },
         {
+            "name": "app (Linux) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "linux",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
+        },
+        {
             "name": "app (Windows)",
             "request": "launch",
             "type": "dart",
@@ -36,18 +46,52 @@
             "deviceId": "windows"
         },
         {
+            "name": "app (Windows) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "windows",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
+        },
+        {
             "name": "app (iOS)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
+            "deviceId": "iPhone",
             "preLaunchTask": "Start iOS Simulator"
+        },
+        {
+            "name": "app (iOS) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "iPhone",
+            "preLaunchTask": "Start iOS Simulator",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
         },
         {
             "name": "app (Android)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "debug",
-            "deviceId": "android"
+            "deviceId": "emulator-5554",
+            "preLaunchTask": "Start Android Emulator"
+        },
+        {
+            "name": "app (Android) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "emulator-5554",
+            "preLaunchTask": "Start Android Emulator",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
         },
         {
             "name": "app (Web)",
@@ -55,6 +99,25 @@
             "type": "dart",
             "flutterMode": "debug",
             "deviceId": "chrome"
+        },
+        {
+            "name": "app (Web) LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "deviceId": "chrome",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
+        },
+        {
+            "name": "LocalDebug",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "debug",
+            "toolArgs": [
+                "--dart-define=LOCALDEBUG=true"
+            ]
         }
     ]
 }
