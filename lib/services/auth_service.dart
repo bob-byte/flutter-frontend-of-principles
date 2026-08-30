@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -12,40 +13,62 @@ import '../core/storage/secure_store.dart';
 import '../core/helpers/password_changer.dart';
 
 class AuthService {
-  // Environment-based API URL configuration
+  static const _isLocalDebug = bool.fromEnvironment('LOCALDEBUG');
+  static const _customLocalApiUrl = String.fromEnvironment('LOCAL_API_URL');
+  static const _productionUrl =
+      'https://principles-server.ckwavh.easypanel.host';
+
+  // Matches MAUI UrlBuilder: LocalDebug uses the machine's API, otherwise prod.
   static String get _baseUrl {
-    if (kDebugMode) {
-      // Check if developer provided a custom local IP via --dart-define
-      const customIp = String.fromEnvironment('LOCAL_API_URL');
-      if (customIp.isNotEmpty) {
-        return customIp;
-      }
-      
-      // Default fallback for Android Emulator
-      return 'http://10.0.2.2:6001'; 
-    } else {
-      // Production server
-      return 'https://principles-server.ckwavh.easypanel.host';
+    if (_customLocalApiUrl.isNotEmpty) {
+      return _customLocalApiUrl;
     }
+    if (_isLocalDebug) {
+      if (!kIsWeb && Platform.isAndroid) {
+        return 'https://10.0.2.2:6001';
+      }
+      return 'https://localhost:6001';
+    }
+    return _productionUrl;
   }
 
   AuthService(this._secureStore);
 
-  static const _tokenKey = 'auth_access_token';
+  static const _tokenKey = _isLocalDebug
+      ? 'local_access_token'
+      : 'auth_access_token';
+
   final SecureStore _secureStore;
+
+  Dio _createDio() {
+    final dio = Dio();
+    if (!_isLocalDebug || kIsWeb) {
+      return dio;
+    }
+
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) {
+          return host == 'localhost' ||
+              host == '127.0.0.1' ||
+              host == '10.0.2.2';
+        };
+        return client;
+      },
+    );
+    return dio;
+  }
 
   Future<bool> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) return false;
-    
+
     try {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.post(
         '${_baseUrl}/api/account/authorization',
-        data: {
-          'email': email,
-          'password': encryptedPassword,
-        },
+        data: {'email': email, 'password': encryptedPassword},
       );
 
       final appToken = response.data['token'] ?? response.data['Token'];
@@ -78,7 +101,7 @@ class AuthService {
 
     try {
       final encryptedPassword = PasswordChanger.encryptNewPassword(password);
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.post(
         '${_baseUrl}/api/account/authentication',
         data: {
@@ -111,7 +134,7 @@ class AuthService {
 
   Future<int?> generateCode(String email) async {
     try {
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.get(
         '${_baseUrl}/api/account/code',
         queryParameters: {'emailWhereSendCode': email},
@@ -135,13 +158,10 @@ class AuthService {
   Future<bool> changePassword(String email, String newPassword) async {
     try {
       final encryptedPassword = PasswordChanger.encryptNewPassword(newPassword);
-      final dio = Dio();
+      final dio = _createDio();
       final response = await dio.put(
         '${_baseUrl}/api/account/password',
-        data: {
-          'email': email,
-          'newPassword': encryptedPassword,
-        },
+        data: {'email': email, 'newPassword': encryptedPassword},
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
@@ -204,7 +224,7 @@ class AuthService {
       }
 
       // 5. Exchange code for tokens
-      final dio = Dio();
+      final dio = _createDio();
       final tokenResponse = await dio.post(
         'https://oauth2.googleapis.com/token',
         data: {
@@ -232,7 +252,7 @@ class AuthService {
         },
       );
 
-      final appToken = backendResponse.data['token'] ?? backendResponse.data['Token']; // ASP.NET might return camelCase or PascalCase
+      final appToken = backendResponse.data['token'] ?? backendResponse.data['Token'];
       if (appToken == null) return false;
 
       // 7. Save token
@@ -266,15 +286,14 @@ class AuthService {
 
       // Send IdToken to our backend
       final backendUrl = '${_baseUrl}/api/account/appleauthorization';
-      final dio = Dio();
+      final dio = _createDio();
       final backendResponse = await dio.post(
         backendUrl,
-        data: {
-          'IdToken': idToken,
-        },
+        data: {'IdToken': idToken},
       );
 
-      final appToken = backendResponse.data['token'] ?? backendResponse.data['Token'];
+      final appToken =
+          backendResponse.data['token'] ?? backendResponse.data['Token'];
       if (appToken == null) return false;
 
       await _secureStore.write(_tokenKey, appToken);
@@ -282,13 +301,13 @@ class AuthService {
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
         debugPrint('Apple Auth canceled by user (code 1001 equivalent).');
-      } else {
-        debugPrint('Apple Auth Exception: $e');
+        return false;
       }
-      return false;
+      debugPrint('Apple Auth Exception: $e');
+      rethrow;
     } catch (e) {
       debugPrint('Apple Auth Error: $e');
-      return false;
+      rethrow;
     }
   }
 }
