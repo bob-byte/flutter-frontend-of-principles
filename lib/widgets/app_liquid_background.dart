@@ -1,6 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/theme/task_theme_palette.dart';
+import '../core/theme/theme_controller.dart';
 
 /// Soft orbs behind glass chrome so Liquid Glass can refract real color.
 class AppLiquidBackground extends StatelessWidget {
@@ -8,9 +12,19 @@ class AppLiquidBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pageBg = isDark ? const Color(0xFF070A10) : const Color(0xFFF2F5FA);
-    final primary = Theme.of(context).colorScheme.primary;
+    TasksUiPalette? palette;
+    try {
+      palette = context.watch<ThemeController>().palette;
+    } on ProviderNotFoundException {
+      palette = null;
+    }
+    final isDark =
+        palette?.isDark ?? Theme.of(context).brightness == Brightness.dark;
+    final pageBg =
+        palette?.pageBg ??
+        (isDark ? const Color(0xFF070707) : const Color(0xFFF8F4EE));
+    final primary = palette?.primary ?? Theme.of(context).colorScheme.primary;
+    final accent = palette?.accentMuted ?? primary;
 
     return Stack(
       fit: StackFit.expand,
@@ -28,7 +42,7 @@ class AppLiquidBackground extends StatelessWidget {
           top: 220,
           left: -90,
           child: _GlowOrb(
-            color: const Color(0xFF7CB6FA).withValues(alpha: isDark ? 0.28 : 0.20),
+            color: accent.withValues(alpha: isDark ? 0.28 : 0.20),
             size: 210,
           ),
         ),
