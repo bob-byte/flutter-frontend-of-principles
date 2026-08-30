@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/habit_detail_viewmodel.dart';
+import '../widgets/app_liquid_background.dart';
+import 'edit_habit_view.dart';
 
 class HabitDetailView extends StatefulWidget {
-  const HabitDetailView({super.key});
+  const HabitDetailView({super.key, this.embedded = false});
 
   static const routeName = '/habit-detail';
+
+  final bool embedded;
 
   @override
   State<HabitDetailView> createState() => _HabitDetailViewState();
 }
 
 class _HabitDetailViewState extends State<HabitDetailView> {
-  bool _loaded = false;
-
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_loaded) return;
-    _loaded = true;
-    final arg = ModalRoute.of(context)?.settings.arguments;
-    final habitId = arg is int ? arg : null;
-    context.read<HabitDetailViewModel>().load(localHabitId: habitId);
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final arg = ModalRoute.of(context)?.settings.arguments;
+      final habitId = arg is int ? arg : null;
+      context.read<HabitDetailViewModel>().load(localHabitId: habitId);
+    });
   }
 
   @override
@@ -32,35 +36,55 @@ class _HabitDetailViewState extends State<HabitDetailView> {
     final l10n = AppLocalizations.of(context)!;
     final localeName = Localizations.localeOf(context).toLanguageTag();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Consumer<HabitDetailViewModel>(
-          builder: (context, vm, child) => Text(vm.habit?.name ?? l10n.habitDetailsFallbackTitle),
-        ),
-        actions: [
-          Consumer<HabitDetailViewModel>(
-            builder: (context, vm, child) => IconButton(
-              tooltip: vm.habit?.isArchived == true ? l10n.unarchiveTooltip : l10n.archiveTooltip,
-              onPressed: vm.habit == null ? null : vm.toggleArchived,
-              icon: Icon(vm.habit?.isArchived == true ? Icons.unarchive : Icons.archive_outlined),
-            ),
-          ),
-          Consumer<HabitDetailViewModel>(
-            builder: (context, vm, child) => IconButton(
-              tooltip: l10n.deleteTooltip,
-              onPressed: vm.habit == null
-                  ? null
-                  : () async {
-                      await vm.deleteHabit();
-                      if (!context.mounted) return;
-                      Navigator.of(context).maybePop();
-                    },
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ),
-        ],
+    final appBar = GlassAppBar(
+      title: Consumer<HabitDetailViewModel>(
+        builder: (context, vm, child) =>
+            Text(vm.habit?.name ?? l10n.habitDetailsFallbackTitle),
       ),
-      body: Consumer<HabitDetailViewModel>(
+      leading: widget.embedded
+          ? null
+          : GlassIconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              onPressed: () => Navigator.maybePop(context),
+            ),
+      actions: [
+        GlassIconButton(
+          icon: const Icon(Icons.auto_awesome),
+          semanticLabel: l10n.editHabitTitle,
+          onPressed: () =>
+              Navigator.of(context).pushNamed(EditHabitView.routeName),
+        ),
+        Consumer<HabitDetailViewModel>(
+          builder: (context, vm, child) => GlassIconButton(
+            icon: Icon(
+              vm.habit?.isArchived == true
+                  ? Icons.unarchive
+                  : Icons.archive_outlined,
+            ),
+            semanticLabel: vm.habit?.isArchived == true
+                ? l10n.unarchiveTooltip
+                : l10n.archiveTooltip,
+            onPressed: vm.habit == null ? null : vm.toggleArchived,
+          ),
+        ),
+        Consumer<HabitDetailViewModel>(
+          builder: (context, vm, child) => GlassIconButton(
+            icon: const Icon(Icons.delete_outline),
+            semanticLabel: l10n.deleteTooltip,
+            onPressed: vm.habit == null
+                ? null
+                : () async {
+                    await vm.deleteHabit();
+                    if (!context.mounted) return;
+                    if (!widget.embedded) {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
+          ),
+        ),
+      ],
+    );
+    final body = Consumer<HabitDetailViewModel>(
         builder: (context, vm, child) {
           if (vm.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -163,7 +187,24 @@ class _HabitDetailViewState extends State<HabitDetailView> {
             ],
           );
         },
-      ),
+      );
+
+    if (widget.embedded) {
+      return SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            appBar,
+            Expanded(child: body),
+          ],
+        ),
+      );
+    }
+
+    return GlassScaffold(
+      background: const AppLiquidBackground(),
+      appBar: appBar,
+      body: body,
     );
   }
 

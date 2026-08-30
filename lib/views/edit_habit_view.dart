@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../models/recommended_habit.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
+import '../widgets/app_liquid_background.dart';
 import 'habit_detail_view.dart';
 
 class EditHabitView extends StatelessWidget {
@@ -21,56 +23,90 @@ class EditHabitView extends StatelessWidget {
       RecommendedHabit(name: l10n.recommendedHabitName4, reasonToFollow: l10n.recommendedHabitReason4),
     ];
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.editHabitTitle)),
+    return GlassScaffold(
+      background: const AppLiquidBackground(),
+      appBar: GlassAppBar(
+        title: Text(l10n.editHabitTitle),
+        leading: GlassIconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        actions: [
+          GlassIconButton(
+            icon: const Icon(Icons.insights_outlined),
+            semanticLabel: l10n.openHabitDetailsButton,
+            onPressed: () =>
+                Navigator.of(context).pushNamed(HabitDetailView.routeName),
+          ),
+        ],
+      ),
       body: Consumer<EditHabitViewModel>(
         builder: (context, vm, child) => Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              TextField(
-                decoration: InputDecoration(labelText: l10n.habitNameLabel),
-                onChanged: (value) => vm.habitName = value,
+              GlassTextField(
+                useOwnLayer: true,
+                placeholder: l10n.habitNameLabel,
                 controller: TextEditingController(text: vm.habitName)
-                  ..selection = TextSelection.collapsed(offset: vm.habitName.length),
+                  ..selection =
+                      TextSelection.collapsed(offset: vm.habitName.length),
+                onChanged: (value) => vm.habitName = value,
               ),
-              TextField(
-                decoration: InputDecoration(labelText: l10n.habitDescriptionLabel),
+              const SizedBox(height: 10),
+              GlassTextField(
+                useOwnLayer: true,
+                placeholder: l10n.habitDescriptionLabel,
                 maxLines: 3,
-                onChanged: (value) => vm.habitDescription = value,
+                minLines: 3,
                 controller: TextEditingController(text: vm.habitDescription)
-                  ..selection = TextSelection.collapsed(offset: vm.habitDescription.length),
+                  ..selection = TextSelection.collapsed(
+                    offset: vm.habitDescription.length,
+                  ),
+                onChanged: (value) => vm.habitDescription = value,
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: vm.isSaving ? null : () => vm.saveHabit(defaultFrequencyText: l10n.defaultFrequencyEveryDay),
+                    child: GlassButton.custom(
+                      useOwnLayer: true,
+                      width: null,
+                      height: 48,
+                      enabled: !vm.isSaving,
+                      shape: const LiquidRoundedSuperellipse(borderRadius: 16),
+                      label: l10n.saveButton,
+                      onTap: () => vm.saveHabit(
+                        defaultFrequencyText: l10n.defaultFrequencyEveryDay,
+                      ),
                       child: Text(l10n.saveButton),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: vm.isRecommendationLoading
-                          ? null
-                          : () => vm.loadRecommendations(localizedFallbacks: localizedRecommendations),
+                    child: GlassButton.custom(
+                      useOwnLayer: true,
+                      width: null,
+                      height: 48,
+                      enabled: !vm.isRecommendationLoading,
+                      shape: const LiquidRoundedSuperellipse(borderRadius: 16),
+                      label: l10n.recommendedHabitsButton,
+                      onTap: () => vm.loadRecommendations(
+                        localizedFallbacks: localizedRecommendations,
+                      ),
                       child: vm.isRecommendationLoading
-                          ? const CircularProgressIndicator()
-                          : Text(l10n.recommendedHabitsButton),
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              l10n.recommendedHabitsButton,
+                              textAlign: TextAlign.center,
+                            ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pushNamed(HabitDetailView.routeName),
-                  icon: const Icon(Icons.insights_outlined),
-                  label: Text(l10n.openHabitDetailsButton),
-                ),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -78,10 +114,13 @@ class EditHabitView extends StatelessWidget {
                   itemCount: vm.recommendations.length,
                   itemBuilder: (_, index) {
                     final item = vm.recommendations[index];
-                    return ListTile(
-                      title: Text(item.name),
-                      subtitle: Text(item.reasonToFollow),
-                      onTap: () => vm.applyRecommendation(item),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GlassListTile.standalone(
+                        title: Text(item.name),
+                        subtitle: Text(item.reasonToFollow),
+                        onTap: () => vm.applyRecommendation(item),
+                      ),
                     );
                   },
                 ),

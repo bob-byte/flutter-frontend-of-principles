@@ -11,9 +11,11 @@ import '../widgets/task_tile.dart';
 import '../widgets/tasks_glass.dart';
 
 class TasksView extends StatefulWidget {
-  const TasksView({super.key});
+  const TasksView({super.key, this.embedded = false});
 
   static const routeName = '/tasks';
+
+  final bool embedded;
 
   @override
   State<TasksView> createState() => _TasksViewState();
@@ -44,6 +46,7 @@ class _TasksViewState extends State<TasksView> {
               backgroundColor: Colors.transparent,
               appBar: TasksGlassAppBar(
                 palette: palette,
+                showLeading: !widget.embedded,
                 title: Text(
                   vm.listModeTitle(strings),
                   style: TextStyle(

@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/helper_viewmodel.dart';
 import 'edit_habit_view.dart';
-import 'goals_view.dart';
-import 'habit_detail_view.dart';
-import 'progress_view.dart';
-import 'settings_view.dart';
-import 'tasks_view.dart';
 
 class HelperView extends StatefulWidget {
-  const HelperView({super.key});
+  const HelperView({super.key, this.embedded = false});
 
   static const routeName = '/helper';
+
+  final bool embedded;
 
   @override
   State<HelperView> createState() => _HelperViewState();
@@ -23,99 +21,148 @@ class _HelperViewState extends State<HelperView> {
   final _controller = TextEditingController();
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send(HelperViewModel vm, AppLocalizations l10n) async {
+    final prompt = _controller.text;
+    _controller.clear();
+    await vm.ask(
+      prompt,
+      fallbackAnswer: l10n.chatFallbackAnswer,
+      errorMessage: l10n.genericErrorOccurred,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final body = _HelperBody(
+      controller: _controller,
+      onSend: _send,
+    );
 
-    return Scaffold(
-      appBar: AppBar(
+    if (widget.embedded) {
+      return SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            GlassAppBar(title: Text(l10n.helperTitle)),
+            Expanded(child: body),
+          ],
+        ),
+      );
+    }
+
+    return GlassScaffold(
+      appBar: GlassAppBar(
         title: Text(l10n.helperTitle),
         actions: [
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(EditHabitView.routeName),
+          GlassIconButton(
             icon: const Icon(Icons.auto_awesome),
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(TasksView.routeName),
-            icon: const Icon(Icons.checklist_outlined),
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(GoalsView.routeName),
-            icon: const Icon(Icons.flag_outlined),
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(ProgressView.routeName),
-            icon: const Icon(Icons.show_chart),
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(HabitDetailView.routeName),
-            icon: const Icon(Icons.insights_outlined),
-          ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pushNamed(SettingsView.routeName),
-            icon: const Icon(Icons.settings),
+            semanticLabel: l10n.editHabitTitle,
+            onPressed: () =>
+                Navigator.of(context).pushNamed(EditHabitView.routeName),
           ),
         ],
       ),
-      body: Consumer<HelperViewModel>(
-        builder: (context, vm, child) => Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: vm.messages.length,
-                itemBuilder: (_, index) {
-                  final msg = vm.messages[index];
-                  return ListTile(
-                    title: Align(
-                      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: msg.isUser
-                              ? Theme.of(context).colorScheme.primaryContainer
-                              : Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(msg.text),
+      body: body,
+    );
+  }
+}
+
+class _HelperBody extends StatelessWidget {
+  const _HelperBody({
+    required this.controller,
+    required this.onSend,
+  });
+
+  final TextEditingController controller;
+  final Future<void> Function(HelperViewModel vm, AppLocalizations l10n) onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Consumer<HelperViewModel>(
+      builder: (context, vm, child) => Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              itemCount: vm.messages.length,
+              itemBuilder: (_, index) {
+                final msg = vm.messages[index];
+
+                return Align(
+                  alignment:
+                      msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.sizeOf(context).width * 0.78,
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: TextField(
-                        controller: _controller,
-                        decoration: InputDecoration(hintText: l10n.helperInputHint),
-                      ),
+                      child: msg.isUser
+                          ? DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.88),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  msg.text,
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : GlassCard(
+                              useOwnLayer: true,
+                              padding: const EdgeInsets.all(12),
+                              child: Text(msg.text),
+                            ),
                     ),
                   ),
-                  vm.isBusy
-                      ? IconButton(
-                          onPressed: vm.cancel,
-                          icon: const Icon(Icons.stop_circle_outlined),
-                        )
-                      : IconButton(
-                          onPressed: () async {
-                            final prompt = _controller.text;
-                            _controller.clear();
-                            await vm.ask(
-                              prompt,
-                              fallbackAnswer: l10n.chatFallbackAnswer,
-                              errorMessage: l10n.genericErrorOccurred,
-                            );
-                          },
-                          icon: const Icon(Icons.send),
-                        ),
-                ],
-              ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GlassTextField(
+                    useOwnLayer: true,
+                    controller: controller,
+                    placeholder: l10n.helperInputHint,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => onSend(vm, l10n),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GlassIconButton(
+                  icon: Icon(
+                    vm.isBusy ? Icons.stop_circle_outlined : Icons.send,
+                  ),
+                  onPressed: vm.isBusy
+                      ? vm.cancel
+                      : () => onSend(vm, l10n),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

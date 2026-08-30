@@ -139,11 +139,13 @@ class TasksGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.palette,
     required this.title,
     this.actions = const [],
+    this.showLeading = true,
   });
 
   final TasksUiPalette palette;
   final Widget title;
   final List<Widget> actions;
+  final bool showLeading;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -170,14 +172,16 @@ class TasksGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                 height: kToolbarHeight,
                 child: NavigationToolbar(
                   centerMiddle: false,
-                  leading: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: palette.textPrimary,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.maybePop(context),
-                  ),
+                  leading: showLeading
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: palette.textPrimary,
+                            size: 20,
+                          ),
+                          onPressed: () => Navigator.maybePop(context),
+                        )
+                      : null,
                   middle: title,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
