@@ -113,7 +113,7 @@ class AiChatService {
       return await _dio.post<dynamic>(path, data: data);
     } on DioException catch (e) {
       final canFallback = kDebugMode &&
-          AppConfig.aiKeyApiBaseUrl != 'http://localhost:6001/api';
+          AppConfig.aiKeyApiBaseUrl != 'https://localhost:6001/api';
       final status = e.response?.statusCode;
       final networkMiss = e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
@@ -124,7 +124,7 @@ class AiChatService {
       debugPrint('AI prod failed ($status), fallback to local backend');
       final local = Dio(
         BaseOptions(
-          baseUrl: 'http://localhost:6001/api',
+          baseUrl: 'https://localhost:6001/api',
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 120),
           headers: const {

@@ -21,7 +21,7 @@ class AppConfig {
 
   static const apiEnv = String.fromEnvironment('API_ENV', defaultValue: 'local');
 
-  static bool get useLocalData => dataSource != 'api';
+  static bool get useLocalData => dataSource == 'local';
 
   static bool get isLocal =>
       apiEnv == 'local' || (apiEnv.isEmpty && kDebugMode);
@@ -30,7 +30,7 @@ class AppConfig {
     if (isLocal) {
       return const String.fromEnvironment(
         'API_BASE_URL',
-        defaultValue: 'http://localhost:6001/api',
+        defaultValue: 'https://localhost:6001/api',
       );
     }
     return productionApiBaseUrl;
@@ -46,7 +46,7 @@ class AppConfig {
     const fromEnv = String.fromEnvironment('AI_KEY_API_BASE_URL');
     if (fromEnv.isNotEmpty) return fromEnv;
     // Debug (зокрема Web): локальний AI-проксі з серверним ключем у AiApiKey.
-    if (kDebugMode) return 'http://localhost:6001/api';
+    if (kDebugMode) return 'https://localhost:6001/api';
     return productionApiBaseUrl;
   }
 
