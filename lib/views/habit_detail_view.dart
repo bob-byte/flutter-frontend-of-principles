@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'edit_habit_view.dart';
 
 class HabitDetailView extends StatefulWidget {
@@ -82,6 +83,7 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                   },
           ),
         ),
+        const AppThemeSwitcher(),
       ],
     );
     final body = Consumer<HabitDetailViewModel>(

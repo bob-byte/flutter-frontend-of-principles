@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/helpers/linked_text.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/signup_viewmodel.dart';
+import '../widgets/ui_theme_switcher.dart';
 import '../widgets/themed_lottie.dart';
 import 'helper_view.dart';
 
@@ -97,6 +98,7 @@ class _SignupViewState extends State<SignupView> {
         elevation: 0,
         iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
+        actions: const [AppThemeSwitcher()],
       ),
       body: SafeArea(
         child: Form(

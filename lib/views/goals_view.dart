@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
 import '../widgets/themed_lottie.dart';
+import '../widgets/ui_theme_switcher.dart';
 
 class GoalsView extends StatefulWidget {
   const GoalsView({super.key, this.embedded = false});
@@ -45,7 +46,10 @@ class _GoalsViewState extends State<GoalsView> {
         bottom: false,
         child: Column(
           children: [
-            GlassAppBar(title: Text(l10n.goalsTitle)),
+            GlassAppBar(
+              title: Text(l10n.goalsTitle),
+              actions: const [AppThemeSwitcher()],
+            ),
             Expanded(child: body),
           ],
         ),
@@ -60,6 +64,7 @@ class _GoalsViewState extends State<GoalsView> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.maybePop(context),
         ),
+        actions: const [AppThemeSwitcher()],
       ),
       body: body,
     );

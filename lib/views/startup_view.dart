@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/themed_lottie.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'app_benefits_view.dart';
 import 'helper_view.dart';
 import 'login_view.dart';
@@ -96,6 +97,13 @@ class _StartupViewState extends State<StartupView> {
       body: SafeArea(
         child: Column(
           children: [
+            const Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: AppThemeSwitcher(),
+              ),
+            ),
             // Top Section (2.5* equivalent in XAML - taking remaining space)
             Expanded(
               child: Center(

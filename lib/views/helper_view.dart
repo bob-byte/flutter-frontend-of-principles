@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/helper_viewmodel.dart';
 import '../widgets/themed_lottie.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'edit_habit_view.dart';
 
 class HelperView extends StatefulWidget {
@@ -47,7 +48,10 @@ class _HelperViewState extends State<HelperView> {
         bottom: false,
         child: Column(
           children: [
-            GlassAppBar(title: Text(l10n.helperTitle)),
+            GlassAppBar(
+              title: Text(l10n.helperTitle),
+              actions: const [AppThemeSwitcher()],
+            ),
             Expanded(child: body),
           ],
         ),
@@ -64,6 +68,7 @@ class _HelperViewState extends State<HelperView> {
             onPressed: () =>
                 Navigator.of(context).pushNamed(EditHabitView.routeName),
           ),
+          const AppThemeSwitcher(),
         ],
       ),
       body: body,

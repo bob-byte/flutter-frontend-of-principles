@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/progress_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
+import '../widgets/ui_theme_switcher.dart';
 
 class ProgressView extends StatefulWidget {
   const ProgressView({super.key, this.embedded = false});
@@ -36,7 +37,10 @@ class _ProgressViewState extends State<ProgressView> {
         bottom: false,
         child: Column(
           children: [
-            GlassAppBar(title: Text(l10n.progressTitle)),
+            GlassAppBar(
+              title: Text(l10n.progressTitle),
+              actions: const [AppThemeSwitcher()],
+            ),
             const Expanded(child: body),
           ],
         ),
@@ -51,6 +55,7 @@ class _ProgressViewState extends State<ProgressView> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.maybePop(context),
         ),
+        actions: const [AppThemeSwitcher()],
       ),
       body: body,
     );

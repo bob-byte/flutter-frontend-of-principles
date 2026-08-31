@@ -58,12 +58,9 @@ class _TasksViewState extends State<TasksView> {
                     color: palette.textPrimary,
                   ),
                 ),
-                actions: [
-                  UiThemeSwitcher(
-                    selected: vm.uiTheme,
-                    onSelected: vm.setUiTheme,
-                  ),
-                  const SizedBox(width: 8),
+                actions: const [
+                  AppThemeSwitcher(),
+                  SizedBox(width: 8),
                 ],
               ),
               body: vm.isLoading && vm.tasks.isEmpty

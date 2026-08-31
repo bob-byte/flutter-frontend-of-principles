@@ -41,7 +41,10 @@ class _SettingsViewState extends State<SettingsView> {
         bottom: false,
         child: Column(
           children: [
-            GlassAppBar(title: Text(l10n.settingsTitle)),
+            GlassAppBar(
+              title: Text(l10n.settingsTitle),
+              actions: const [AppThemeSwitcher()],
+            ),
             const Expanded(child: body),
           ],
         ),
@@ -56,6 +59,7 @@ class _SettingsViewState extends State<SettingsView> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.maybePop(context),
         ),
+        actions: const [AppThemeSwitcher()],
       ),
       body: body,
     );
@@ -82,11 +86,7 @@ class _SettingsBody extends StatelessWidget {
                   leading: const Icon(Icons.palette_outlined),
                   title: Text(l10n.themeLabel),
                   subtitle: Text(l10n.themeSubtitle),
-                  trailing: UiThemeSwitcher(
-                    selected: vm.uiTheme,
-                    onSelected: vm.setUiTheme,
-                    compact: true,
-                  ),
+                  trailing: const AppThemeSwitcher(compact: true),
                 ),
                 GlassListTile(
                   leading: const Icon(Icons.language_outlined),

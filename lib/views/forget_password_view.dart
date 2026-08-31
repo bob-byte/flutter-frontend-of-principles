@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'helper_view.dart';
 
 class ForgetPasswordView extends StatefulWidget {
@@ -196,6 +197,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
         elevation: 0,
         iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
+        actions: const [AppThemeSwitcher()],
       ),
       body: SafeArea(
         child: Form(

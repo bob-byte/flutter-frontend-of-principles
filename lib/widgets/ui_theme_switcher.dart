@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
+import '../core/theme/theme_controller.dart';
 import '../l10n/task_strings.dart';
+
+/// Theme switcher wired to the app-wide [ThemeController].
+class AppThemeSwitcher extends StatelessWidget {
+  const AppThemeSwitcher({super.key, this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeController>(
+      builder: (context, controller, _) {
+        return UiThemeSwitcher(
+          selected: controller.uiTheme,
+          onSelected: controller.setUiTheme,
+          compact: compact,
+        );
+      },
+    );
+  }
+}
 
 /// Popup used in Tasks and Settings to pick one of the four UI themes.
 class UiThemeSwitcher extends StatelessWidget {

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/recommended_habit.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
+import '../widgets/ui_theme_switcher.dart';
 import 'habit_detail_view.dart';
 
 class EditHabitView extends StatelessWidget {
@@ -38,6 +39,7 @@ class EditHabitView extends StatelessWidget {
             onPressed: () =>
                 Navigator.of(context).pushNamed(HabitDetailView.routeName),
           ),
+          const AppThemeSwitcher(),
         ],
       ),
       body: Consumer<EditHabitViewModel>(

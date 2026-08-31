@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/app_benefits_viewmodel.dart';
 import '../widgets/themed_lottie.dart';
+import '../widgets/ui_theme_switcher.dart';
 
 import 'startup_view.dart';
 
@@ -50,6 +51,13 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
           builder: (context, constraints) {
             return Column(
               children: [
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: AppThemeSwitcher(),
+                  ),
+                ),
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
