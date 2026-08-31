@@ -2,13 +2,16 @@ import 'package:flutter/foundation.dart';
 
 /// Конфігурація API (аналог `LOCALDEBUG` у MAUI).
 ///
-/// **Без бекенду (за замовчуванням):**
-/// `flutter run` — локальна БД, будь-який логін/пароль.
-/// AI-ключ завжди з продакшн-сервера `/account/apikey`.
+/// **З продакшн-бекендом (за замовчуванням):**
+/// `flutter run` — REST + JWT на `principles-server`.
+/// AI-ключ з продакшн-сервера `/account/apikey`.
 ///
-/// **З бекендом:**
-/// `flutter run --dart-define=DATA_SOURCE=api`
-/// + `dotnet run --project SET.WebAPI --launch-profile http`
+/// **Локальний бекенд:**
+/// `flutter run --dart-define=API_ENV=local` або `--dart-define=LOCALDEBUG=true`
+/// + `dotnet run --project SET.WebAPI --launch-profile https`
+///
+/// **Без бекенду:**
+/// `flutter run --dart-define=DATA_SOURCE=local`
 class AppConfig {
   AppConfig._();
 
@@ -19,12 +22,16 @@ class AppConfig {
     defaultValue: 'api',
   );
 
-  static const apiEnv = String.fromEnvironment('API_ENV', defaultValue: 'local');
+  static const apiEnv = String.fromEnvironment(
+    'API_ENV',
+    defaultValue: 'production',
+  );
+
+  static const _localDebug = bool.fromEnvironment('LOCALDEBUG');
 
   static bool get useLocalData => dataSource == 'local';
 
-  static bool get isLocal =>
-      apiEnv == 'local' || (apiEnv.isEmpty && kDebugMode);
+  static bool get isLocal => _localDebug || apiEnv == 'local';
 
   static String get apiBaseUrl {
     if (isLocal) {
