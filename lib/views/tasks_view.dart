@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
@@ -202,7 +203,9 @@ class _TasksBody extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _emptyHint(strings, vm),
+                      vm.loadError != null
+                          ? AppLocalizations.of(context)!.genericErrorOccurred
+                          : _emptyHint(strings, vm),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: palette.textMuted),
                     ),

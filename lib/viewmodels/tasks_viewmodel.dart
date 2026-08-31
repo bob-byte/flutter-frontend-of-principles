@@ -37,6 +37,7 @@ class TasksViewModel extends ChangeNotifier {
 
   bool filtersVisible = false;
   bool isLoading = false;
+  String? loadError;
 
   ThemeData get themeData => palette.toThemeData();
 
@@ -219,12 +220,15 @@ class TasksViewModel extends ChangeNotifier {
 
   Future<void> load() async {
     isLoading = true;
+    loadError = null;
     notifyListeners();
     try {
       tasks
         ..clear()
         ..addAll(await _taskService.getTasks());
       themeColors = await _taskService.getThemeColors();
+    } catch (e) {
+      loadError = e.toString();
     } finally {
       isLoading = false;
       notifyListeners();
