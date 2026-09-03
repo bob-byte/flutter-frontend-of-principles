@@ -24,18 +24,18 @@ enum TasksUiTheme {
   String get storageKey => name;
 
   static TasksUiTheme fromStorage(String? value) => switch (value) {
-        'darkBlue' => darkBlue,
-        'lightOrange' => lightOrange,
-        'lightBlue' => lightBlue,
-        _ => darkOrange,
-      };
+    'darkBlue' => darkBlue,
+    'lightOrange' => lightOrange,
+    'lightBlue' => lightBlue,
+    _ => darkOrange,
+  };
 
   String label(TaskStrings strings) => switch (this) {
-        darkOrange => strings.uiThemeDarkOrange,
-        darkBlue => strings.uiThemeDarkBlue,
-        lightOrange => strings.uiThemeLightOrange,
-        lightBlue => strings.uiThemeLightBlue,
-      };
+    darkOrange => strings.uiThemeDarkOrange,
+    darkBlue => strings.uiThemeDarkBlue,
+    lightOrange => strings.uiThemeLightOrange,
+    lightBlue => strings.uiThemeLightBlue,
+  };
 }
 
 @immutable
@@ -70,93 +70,101 @@ class TasksUiPalette {
   final Color headerBorder;
   final bool isDark;
 
-  Color get glassFill =>
-      isDark ? Colors.white.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.58);
+  Color get glassFill => isDark
+      ? Colors.white.withValues(alpha: 0.10)
+      : Colors.white.withValues(alpha: 0.58);
 
-  Color get glassBarFill => isDark
-      ? const Color(0xE6101010)
-      : Colors.white.withValues(alpha: 0.52);
+  Color get glassBarFill =>
+      isDark ? const Color(0xE6101010) : Colors.white.withValues(alpha: 0.52);
 
   Color get glassSheetFill =>
       isDark ? const Color(0xCC141414) : const Color(0xD9F5F8FC);
 
-  Color get glassChipFill =>
-      isDark ? Colors.white.withValues(alpha: 0.07) : Colors.white.withValues(alpha: 0.42);
+  Color get glassChipFill => isDark
+      ? Colors.white.withValues(alpha: 0.07)
+      : Colors.white.withValues(alpha: 0.42);
 
-  Color get glassBorder =>
-      isDark ? Colors.white.withValues(alpha: 0.24) : Colors.white.withValues(alpha: 0.92);
+  Color get glassBorder => isDark
+      ? Colors.white.withValues(alpha: 0.24)
+      : Colors.white.withValues(alpha: 0.92);
 
-  Color get glassShadow =>
-      isDark ? Colors.black.withValues(alpha: 0.35) : Colors.black.withValues(alpha: 0.08);
+  Color get glassShadow => isDark
+      ? Colors.black.withValues(alpha: 0.35)
+      : Colors.black.withValues(alpha: 0.08);
+
+  /// Unselected tab glyphs. Light orange orbs make adaptive brightness pick
+  /// white icons, so light themes share light-blue's dark label color.
+  Color? get tabBarUnselectedIconColor =>
+      isDark ? null : const Color(0xFF101820);
 
   LinearGradient get primaryGradient => LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [primaryGradientStart, primaryGradientEnd],
-      );
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primaryGradientStart, primaryGradientEnd],
+  );
 
   static TasksUiPalette of(TasksUiTheme theme) => switch (theme) {
-        TasksUiTheme.darkOrange => const TasksUiPalette(
-              pageBg: Color(0xFF070707),
-              cardBg: Color(0xFF121212),
-              textPrimary: Color(0xFFFFFFFF),
-              textMuted: Color(0x80FFFFFF),
-              primary: Color(0xFFFF6B00),
-              primaryGradientStart: Color(0xFFFF8A00),
-              primaryGradientEnd: Color(0xFFFF6B00),
-              onPrimary: Color(0xFF180C06),
-              accentMuted: Color(0xFFFF9A40),
-              cardBorder: Color(0x80FFFFFF),
-              softBg: Color(0x0DFFFFFF),
-              headerBorder: Color(0xFF222222),
-              isDark: true,
-            ),
-        TasksUiTheme.darkBlue => const TasksUiPalette(
-              pageBg: Color(0xFF070707),
-              cardBg: Color(0xFF121212),
-              textPrimary: Color(0xFFFFFFFF),
-              textMuted: Color(0x80FFFFFF),
-              primary: Color(0xFF007BFF),
-              primaryGradientStart: Color(0xFF3E9BFF),
-              primaryGradientEnd: Color(0xFF007BFF),
-              onPrimary: Color(0xFF041018),
-              accentMuted: Color(0xFF7EB8FF),
-              cardBorder: Color(0x80FFFFFF),
-              softBg: Color(0x0DFFFFFF),
-              headerBorder: Color(0xFF222222),
-              isDark: true,
-            ),
-        TasksUiTheme.lightOrange => const TasksUiPalette(
-              pageBg: Color(0xFFF8F4EE),
-              cardBg: Color(0xFFFFFFFF),
-              textPrimary: Color(0xFF18130F),
-              textMuted: Color(0x80000000),
-              primary: Color(0xFFFF6B00),
-              primaryGradientStart: Color(0xFFFF8A00),
-              primaryGradientEnd: Color(0xFFFF6B00),
-              onPrimary: Color(0xFFFFFFFF),
-              accentMuted: Color(0xFFC45600),
-              cardBorder: Color(0xFFDDCFBF),
-              softBg: Color(0x14000000),
-              headerBorder: Color(0xFFE8DDD0),
-              isDark: false,
-            ),
-        TasksUiTheme.lightBlue => const TasksUiPalette(
-              pageBg: Color(0xFFEFF6FF),
-              cardBg: Color(0xFFFFFFFF),
-              textPrimary: Color(0xFF101820),
-              textMuted: Color(0x80000000),
-              primary: Color(0xFF007BFF),
-              primaryGradientStart: Color(0xFF3E9BFF),
-              primaryGradientEnd: Color(0xFF007BFF),
-              onPrimary: Color(0xFFFFFFFF),
-              accentMuted: Color(0xFF2F72B8),
-              cardBorder: Color(0xFFC8D9EC),
-              softBg: Color(0x14000000),
-              headerBorder: Color(0xFFD6E4F4),
-              isDark: false,
-            ),
-      };
+    TasksUiTheme.darkOrange => const TasksUiPalette(
+      pageBg: Color(0xFF070707),
+      cardBg: Color(0xFF121212),
+      textPrimary: Color(0xFFFFFFFF),
+      textMuted: Color(0x80FFFFFF),
+      primary: Color(0xFFFF6B00),
+      primaryGradientStart: Color(0xFFFF8A00),
+      primaryGradientEnd: Color(0xFFFF6B00),
+      onPrimary: Color(0xFF180C06),
+      accentMuted: Color(0xFFFF9A40),
+      cardBorder: Color(0x80FFFFFF),
+      softBg: Color(0x0DFFFFFF),
+      headerBorder: Color(0xFF222222),
+      isDark: true,
+    ),
+    TasksUiTheme.darkBlue => const TasksUiPalette(
+      pageBg: Color(0xFF070707),
+      cardBg: Color(0xFF121212),
+      textPrimary: Color(0xFFFFFFFF),
+      textMuted: Color(0x80FFFFFF),
+      primary: Color(0xFF007BFF),
+      primaryGradientStart: Color(0xFF3E9BFF),
+      primaryGradientEnd: Color(0xFF007BFF),
+      onPrimary: Color(0xFF041018),
+      accentMuted: Color(0xFF7EB8FF),
+      cardBorder: Color(0x80FFFFFF),
+      softBg: Color(0x0DFFFFFF),
+      headerBorder: Color(0xFF222222),
+      isDark: true,
+    ),
+    TasksUiTheme.lightOrange => const TasksUiPalette(
+      pageBg: Color(0xFFF8F4EE),
+      cardBg: Color(0xFFFFFFFF),
+      textPrimary: Color(0xFF18130F),
+      textMuted: Color(0x80000000),
+      primary: Color(0xFFFF6B00),
+      primaryGradientStart: Color(0xFFFF8A00),
+      primaryGradientEnd: Color(0xFFFF6B00),
+      onPrimary: Color(0xFFFFFFFF),
+      accentMuted: Color(0xFFC45600),
+      cardBorder: Color(0xFFDDCFBF),
+      softBg: Color(0x14000000),
+      headerBorder: Color(0xFFE8DDD0),
+      isDark: false,
+    ),
+    TasksUiTheme.lightBlue => const TasksUiPalette(
+      pageBg: Color(0xFFEFF6FF),
+      cardBg: Color(0xFFFFFFFF),
+      textPrimary: Color(0xFF101820),
+      textMuted: Color(0x80000000),
+      primary: Color(0xFF007BFF),
+      primaryGradientStart: Color(0xFF3E9BFF),
+      primaryGradientEnd: Color(0xFF007BFF),
+      onPrimary: Color(0xFFFFFFFF),
+      accentMuted: Color(0xFF2F72B8),
+      cardBorder: Color(0xFFC8D9EC),
+      softBg: Color(0x14000000),
+      headerBorder: Color(0xFFD6E4F4),
+      isDark: false,
+    ),
+  };
 
   ThemeData toThemeData() {
     return ThemeData(
@@ -200,7 +208,9 @@ class TasksUiPalette {
         style: FilledButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -223,10 +233,10 @@ class TasksUiPalette {
   }
 
   BoxDecoration cardDecoration({double radius = 16}) => BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: cardBorder.withValues(alpha: 0.45)),
-      );
+    color: cardBg,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: cardBorder.withValues(alpha: 0.45)),
+  );
 }
 
 /// Кольори категорій завдань (не плутати з UI-темами).
@@ -250,15 +260,18 @@ Color fallbackThemeColor(String theme) {
 
 Color priorityColor(TaskPriority priority, ColorScheme scheme) {
   return switch (priority) {
-    TaskPriority.low => scheme.brightness == Brightness.dark
-        ? const Color(0xFF7EB8FF)
-        : const Color(0xFF2563EB),
-    TaskPriority.medium => scheme.brightness == Brightness.dark
-        ? const Color(0xFFFACC15)
-        : const Color(0xFFCA8A04),
-    TaskPriority.high => scheme.brightness == Brightness.dark
-        ? const Color(0xFFEF4444)
-        : const Color(0xFFDC2626),
+    TaskPriority.low =>
+      scheme.brightness == Brightness.dark
+          ? const Color(0xFF7EB8FF)
+          : const Color(0xFF2563EB),
+    TaskPriority.medium =>
+      scheme.brightness == Brightness.dark
+          ? const Color(0xFFFACC15)
+          : const Color(0xFFCA8A04),
+    TaskPriority.high =>
+      scheme.brightness == Brightness.dark
+          ? const Color(0xFFEF4444)
+          : const Color(0xFFDC2626),
   };
 }
 

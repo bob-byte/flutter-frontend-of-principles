@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 
+import '../core/theme/theme_controller.dart';
 import '../widgets/app_liquid_background.dart';
 import 'goals_view.dart';
 import 'habit_detail_view.dart';
@@ -27,6 +29,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
+    final palette = context.watch<ThemeController>().palette;
 
     return GlassScaffold(
       extendBody: true,
@@ -43,6 +46,7 @@ class _MainShellState extends State<MainShell> {
         horizontalPadding: 16,
         spacing: 6,
         glowOpacity: 0.55,
+        unselectedIconColor: palette.tabBarUnselectedIconColor,
         tabs: [
           GlassTab(
             icon: const Icon(Icons.auto_awesome),
@@ -61,11 +65,11 @@ class _MainShellState extends State<MainShell> {
             semanticLabel: l10n.tabGoals,
             glowColor: scheme.primary,
           ),
-          GlassTab(
-            icon: const Icon(Icons.show_chart),
-            semanticLabel: l10n.tabProgress,
-            glowColor: scheme.primary,
-          ),
+          // GlassTab(
+          //   icon: const Icon(Icons.show_chart),
+          //   semanticLabel: l10n.tabProgress,
+          //   glowColor: scheme.primary,
+          // ),
           GlassTab(
             icon: const Icon(Icons.insights_outlined),
             activeIcon: const Icon(Icons.insights),
@@ -88,7 +92,7 @@ class _MainShellState extends State<MainShell> {
             HelperView(embedded: true),
             TasksView(embedded: true),
             GoalsView(embedded: true),
-            ProgressView(embedded: true),
+            // ProgressView(embedded: true),
             HabitDetailView(embedded: true),
             SettingsView(embedded: true),
           ],

@@ -59,43 +59,43 @@ class _TasksViewState extends State<TasksView> {
                     color: palette.textPrimary,
                   ),
                 ),
-                actions: const [
-                  AppThemeSwitcher(),
-                  SizedBox(width: 8),
-                ],
+                actions: const [AppThemeSwitcher(), SizedBox(width: 8)],
               ),
               body: vm.isLoading && vm.tasks.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : _TasksBody(strings: strings, palette: palette),
               bottomNavigationBar: SafeArea(
-                child: TasksGlassBottomBar(
-                  palette: palette,
-                  child: Row(
-                    children: [
-                      TasksGlassCircleButton(
-                        palette: palette,
-                        icon: Icons.menu_rounded,
-                        tooltip: strings.taskListMenuTitle,
-                        onPressed: () => TasksNavigation.openListMenu(context),
-                      ),
-                      const Spacer(),
-                      TasksGlassCircleButton(
-                        palette: palette,
-                        icon: Icons.add,
-                        tooltip: strings.taskAdd,
-                        isPrimary: true,
-                        size: 56,
-                        onPressed: () async {
-                          final changed = await TasksNavigation.openCreateTask(
-                            context,
-                          );
-                          if (!context.mounted) return;
-                          if (changed == true) {
-                            await context.read<TasksViewModel>().load();
-                          }
-                        },
-                      ),
-                    ],
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: widget.embedded ? 35 : 0),
+                  child: TasksGlassBottomBar(
+                    palette: palette,
+                    child: Row(
+                      children: [
+                        TasksGlassCircleButton(
+                          palette: palette,
+                          icon: Icons.menu_rounded,
+                          tooltip: strings.taskListMenuTitle,
+                          onPressed: () =>
+                              TasksNavigation.openListMenu(context),
+                        ),
+                        const Spacer(),
+                        TasksGlassCircleButton(
+                          palette: palette,
+                          icon: Icons.add,
+                          tooltip: strings.taskAdd,
+                          isPrimary: true,
+                          size: 56,
+                          onPressed: () async {
+                            final changed =
+                                await TasksNavigation.openCreateTask(context);
+                            if (!context.mounted) return;
+                            if (changed == true) {
+                              await context.read<TasksViewModel>().load();
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -123,7 +123,7 @@ class _TasksBody extends StatelessWidget {
         final todayProgress = vm.todayProgressPercent;
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 124),
           children: [
             TasksGlassPanel(
               palette: palette,
