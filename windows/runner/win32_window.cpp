@@ -224,6 +224,15 @@ Win32Window::MessageHandler(HWND hwnd,
 void Win32Window::Destroy() {
   OnDestroy();
 
+  if (owned_icon_small_ && owned_icon_small_ != owned_icon_big_) {
+    DestroyIcon(owned_icon_small_);
+  }
+  if (owned_icon_big_) {
+    DestroyIcon(owned_icon_big_);
+  }
+  owned_icon_big_ = nullptr;
+  owned_icon_small_ = nullptr;
+
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
@@ -257,6 +266,50 @@ RECT Win32Window::GetClientArea() {
 
 HWND Win32Window::GetHandle() {
   return window_handle_;
+}
+
+void Win32Window::SetAppIcon(int resource_id) {
+  if (!window_handle_) {
+    return;
+  }
+
+  HINSTANCE instance = GetModuleHandle(nullptr);
+  const int big_size = GetSystemMetrics(SM_CXICON);
+  const int small_size = GetSystemMetrics(SM_CXSMICON);
+
+  HICON big = static_cast<HICON>(LoadImage(
+      instance, MAKEINTRESOURCE(resource_id), IMAGE_ICON, big_size, big_size,
+      0));
+  HICON small = static_cast<HICON>(LoadImage(
+      instance, MAKEINTRESOURCE(resource_id), IMAGE_ICON, small_size,
+      small_size, 0));
+  if (!big) {
+    big = LoadIcon(instance, MAKEINTRESOURCE(resource_id));
+  }
+  if (!small) {
+    small = big;
+  }
+  if (!big) {
+    return;
+  }
+
+  SendMessage(window_handle_, WM_SETICON, ICON_BIG,
+              reinterpret_cast<LPARAM>(big));
+  SendMessage(window_handle_, WM_SETICON, ICON_SMALL,
+              reinterpret_cast<LPARAM>(small));
+  SetClassLongPtr(window_handle_, GCLP_HICON, reinterpret_cast<LONG_PTR>(big));
+  SetClassLongPtr(window_handle_, GCLP_HICONSM,
+                  reinterpret_cast<LONG_PTR>(small));
+
+  if (owned_icon_big_ && owned_icon_big_ != big) {
+    DestroyIcon(owned_icon_big_);
+  }
+  if (owned_icon_small_ && owned_icon_small_ != small &&
+      owned_icon_small_ != owned_icon_big_) {
+    DestroyIcon(owned_icon_small_);
+  }
+  owned_icon_big_ = big;
+  owned_icon_small_ = small;
 }
 
 void Win32Window::SetQuitOnClose(bool quit_on_close) {

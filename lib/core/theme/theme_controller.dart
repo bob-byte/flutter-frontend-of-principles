@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/settings_service.dart';
+import 'app_icon_controller.dart';
 import 'task_theme_palette.dart';
 
 /// App-wide color theme: four palettes (dark/light × orange/blue).
@@ -59,12 +60,14 @@ class ThemeController extends ChangeNotifier {
       // Keep the default dark-orange palette if storage is unavailable.
     } finally {
       _restoring = false;
+      await AppIconController.apply(_uiTheme);
     }
   }
 
   Future<void> setUiTheme(TasksUiTheme theme) async {
     _setTheme(theme, persist: false);
     await _persist(theme);
+    await AppIconController.apply(theme);
   }
 
   void _setTheme(TasksUiTheme theme, {required bool persist}) {

@@ -49,6 +49,10 @@ class Win32Window {
   // window properties. Returns nullptr if the window has been destroyed.
   HWND GetHandle();
 
+  // Switches the running window / taskbar icon. |resource_id| is an ICON
+  // resource such as IDI_APP_ICON or IDI_APP_ICON_BLUE.
+  void SetAppIcon(int resource_id);
+
   // If true, closing this window will quit the application.
   void SetQuitOnClose(bool quit_on_close);
 
@@ -97,6 +101,9 @@ class Win32Window {
 
   // window handle for hosted content.
   HWND child_content_ = nullptr;
+
+  HICON owned_icon_big_ = nullptr;
+  HICON owned_icon_small_ = nullptr;
 };
 
 #endif  // RUNNER_WIN32_WINDOW_H_

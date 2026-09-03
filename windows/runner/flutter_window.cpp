@@ -1,8 +1,12 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <string>
+
+#include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "resource.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +29,7 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  RegisterAppIconChannel();
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -37,6 +42,31 @@ bool FlutterWindow::OnCreate() {
   flutter_controller_->ForceRedraw();
 
   return true;
+}
+
+void FlutterWindow::RegisterAppIconChannel() {
+  app_icon_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(),
+          "com.set.principles/app_icon",
+          &flutter::StandardMethodCodec::GetInstance());
+
+  app_icon_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "setIcon") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* name = std::get_if<std::string>(call.arguments());
+        if (!name) {
+          result->Error("bad_args", "Expected icon name string");
+          return;
+        }
+        SetAppIcon(*name == "blue" ? IDI_APP_ICON_BLUE : IDI_APP_ICON);
+        result->Success();
+      });
 }
 
 void FlutterWindow::OnDestroy() {
