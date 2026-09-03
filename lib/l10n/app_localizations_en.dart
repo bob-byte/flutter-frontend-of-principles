@@ -18,12 +18,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutLabel => 'Logout';
 
   @override
-  String get themeLabel => 'Theme';
-
-  @override
-  String get themeSubtitle => 'Dark or light, orange or blue';
-
-  @override
   String get themeLight => 'Light';
 
   @override
@@ -336,6 +330,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get optionalLabel => '(Optional)';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get yourName => 'Your Name';
+
+  @override
+  String get yourMainSlogan => 'Your Main Slogan';
+
+  @override
+  String get yourMission => 'Your Mission';
+
+  @override
+  String get missionExplanation =>
+      'It will be used to create more appropriate recommended habits for you. A mission is a life goal that keeps you motivated and helps you make the best choices in a variety of situations. For example, a mission might be to become the best and most moral entrepreneur in the world.';
+
+  @override
+  String get mainSloganExplanation =>
+      'The main slogan will be used to form better recommended habits. It helps you determine how to act when you don\'t want to do something or when you are faced with a challenge or temptation. An example of the main slogan: a relationship with God and a strong character determine the quality of life.';
+
+  @override
+  String get nameSavedSuccess => 'Your name successfully saved';
+
+  @override
+  String get sloganSavedSuccess => 'Your main slogan successfully saved';
+
+  @override
+  String get missionSavedSuccess => 'Your mission successfully saved';
+
+  @override
+  String get fieldIsNotEditable => 'This field is not editable.';
+
+  @override
+  String get joinTelegramLabel => 'Join our Telegram channel';
+
+  @override
+  String get rateUsLabel => 'Rate us';
+
+  @override
+  String get shareAppLabel => 'Share app';
+
+  @override
+  String get shareAppMessage =>
+      'Build better habits with Principles: https://principles.top';
+
+  @override
+  String get contactEmailLabel => 'Send an email to us';
+
+  @override
+  String get contactEmailSubtitle => 'Support and Feedback';
+
+  @override
+  String get cannotOpenEmailApp =>
+      'Cannot open an app to send an email. Maybe a mail program is not installed.';
+
+  @override
+  String get settingsPrivacyPolicy => 'Our privacy policy';
+
+  @override
+  String get settingsUserAgreement => 'User agreement';
+
+  @override
+  String get changePasswordLabel => 'Change password';
+
+  @override
+  String get deleteAccountLabel => 'Delete account';
+
+  @override
+  String get deleteAccountQuestion => 'Delete account?';
+
+  @override
+  String get deleteAccountConfirm => 'Once you delete, it\'s gone for good.';
 
   @override
   String get userAgreement => 'User Agreement';

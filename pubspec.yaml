@@ -51,6 +51,9 @@ dependencies:
   google_fonts: ^8.2.1
   speech_to_text: ^7.4.0
   liquid_glass_widgets: ^1.2.1
+  flutter_dynamic_icon_plus: ^1.4.1
+  share_plus: ^12.0.2
+  in_app_review: ^2.0.12
 
 dev_dependencies:
   flutter_test:

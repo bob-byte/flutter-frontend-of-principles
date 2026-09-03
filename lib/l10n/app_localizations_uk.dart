@@ -18,12 +18,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get logoutLabel => 'Вийти';
 
   @override
-  String get themeLabel => 'Тема';
-
-  @override
-  String get themeSubtitle => 'Темна чи світла, помаранчева чи синя';
-
-  @override
   String get themeLight => 'Світла';
 
   @override
@@ -339,6 +333,80 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get optionalLabel => '(Необов\'язково)';
+
+  @override
+  String get cancelButton => 'Скасувати';
+
+  @override
+  String get yourName => 'Твоє Імʼя';
+
+  @override
+  String get yourMainSlogan => 'Твоє Основне Гасло';
+
+  @override
+  String get yourMission => 'Твоя Місія';
+
+  @override
+  String get missionExplanation =>
+      'Вона буде використана для створення більш доцільних для вас рекомендованих звичок. Місія - це життєва мета, яка постійно підтримує високий рівень мотивації й допомагає зробити найкращий вибір у різноманітних ситуаціях. Наприклад, місія може звучати так: “Я створюю IT-додатки, щоб робити світ кращим\".';
+
+  @override
+  String get mainSloganExplanation =>
+      'Основне гасло буде використано для формування кращих рекомендованих звичок. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя.';
+
+  @override
+  String get nameSavedSuccess => 'Твоє імʼя успішно збережене';
+
+  @override
+  String get sloganSavedSuccess => 'Твоє основне гасло успішно збережене';
+
+  @override
+  String get missionSavedSuccess => 'Твоя місія успішно збережена';
+
+  @override
+  String get fieldIsNotEditable => 'Це поле не доступне для редагування.';
+
+  @override
+  String get joinTelegramLabel => 'Приєднуйтесь до нашого Telegram-каналу';
+
+  @override
+  String get rateUsLabel => 'Оцінити додаток';
+
+  @override
+  String get shareAppLabel => 'Поділитися додатком';
+
+  @override
+  String get shareAppMessage =>
+      'Розвивай кращі звички з Principles: https://principles.top';
+
+  @override
+  String get contactEmailLabel => 'Напишіть нам лист';
+
+  @override
+  String get contactEmailSubtitle => 'Підтримка та відгуки';
+
+  @override
+  String get cannotOpenEmailApp =>
+      'Не вдається відкрити програму для надсилання електронного листа. Можливо, її не встановлено.';
+
+  @override
+  String get settingsPrivacyPolicy => 'Політика конфіденційності';
+
+  @override
+  String get settingsUserAgreement => 'Угода користувача';
+
+  @override
+  String get changePasswordLabel => 'Змінити пароль';
+
+  @override
+  String get deleteAccountLabel => 'Видалити акаунт';
+
+  @override
+  String get deleteAccountQuestion => 'Видалити акаунт?';
+
+  @override
+  String get deleteAccountConfirm =>
+      'Акаунт буде видалено назавжди. Ця дія не може бути скасована.';
 
   @override
   String get userAgreement => 'Угодою Користувача';

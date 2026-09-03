@@ -116,18 +116,6 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logoutLabel;
 
-  /// Theme setting label
-  ///
-  /// In en, this message translates to:
-  /// **'Theme'**
-  String get themeLabel;
-
-  /// Theme setting helper text
-  ///
-  /// In en, this message translates to:
-  /// **'Dark or light, orange or blue'**
-  String get themeSubtitle;
-
   /// No description provided for @themeLight.
   ///
   /// In en, this message translates to:
@@ -715,6 +703,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'(Optional)'**
   String get optionalLabel;
+
+  /// Cancel button on edit dialogs
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// Dialog title when editing the user's name
+  ///
+  /// In en, this message translates to:
+  /// **'Your Name'**
+  String get yourName;
+
+  /// Dialog title when editing the main slogan
+  ///
+  /// In en, this message translates to:
+  /// **'Your Main Slogan'**
+  String get yourMainSlogan;
+
+  /// Dialog title when editing the mission
+  ///
+  /// In en, this message translates to:
+  /// **'Your Mission'**
+  String get yourMission;
+
+  /// Help text explaining what a personal mission is
+  ///
+  /// In en, this message translates to:
+  /// **'It will be used to create more appropriate recommended habits for you. A mission is a life goal that keeps you motivated and helps you make the best choices in a variety of situations. For example, a mission might be to become the best and most moral entrepreneur in the world.'**
+  String get missionExplanation;
+
+  /// Help text explaining what a main slogan is
+  ///
+  /// In en, this message translates to:
+  /// **'The main slogan will be used to form better recommended habits. It helps you determine how to act when you don\'t want to do something or when you are faced with a challenge or temptation. An example of the main slogan: a relationship with God and a strong character determine the quality of life.'**
+  String get mainSloganExplanation;
+
+  /// Toast after the user name is saved
+  ///
+  /// In en, this message translates to:
+  /// **'Your name successfully saved'**
+  String get nameSavedSuccess;
+
+  /// Toast after the main slogan is saved
+  ///
+  /// In en, this message translates to:
+  /// **'Your main slogan successfully saved'**
+  String get sloganSavedSuccess;
+
+  /// Toast after the mission is saved
+  ///
+  /// In en, this message translates to:
+  /// **'Your mission successfully saved'**
+  String get missionSavedSuccess;
+
+  /// Shown when the user tries to edit email
+  ///
+  /// In en, this message translates to:
+  /// **'This field is not editable.'**
+  String get fieldIsNotEditable;
+
+  /// Settings row that opens the Telegram channel
+  ///
+  /// In en, this message translates to:
+  /// **'Join our Telegram channel'**
+  String get joinTelegramLabel;
+
+  /// Settings row that opens the app store listing
+  ///
+  /// In en, this message translates to:
+  /// **'Rate us'**
+  String get rateUsLabel;
+
+  /// Settings row that opens the system share sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Share app'**
+  String get shareAppLabel;
+
+  /// Text copied into the system share sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Build better habits with Principles: https://principles.top'**
+  String get shareAppMessage;
+
+  /// Settings row that opens a mail draft to support
+  ///
+  /// In en, this message translates to:
+  /// **'Send an email to us'**
+  String get contactEmailLabel;
+
+  /// Subtitle for the contact email settings row
+  ///
+  /// In en, this message translates to:
+  /// **'Support and Feedback'**
+  String get contactEmailSubtitle;
+
+  /// Shown when mailto cannot be launched
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open an app to send an email. Maybe a mail program is not installed.'**
+  String get cannotOpenEmailApp;
+
+  /// Settings row that opens the privacy policy
+  ///
+  /// In en, this message translates to:
+  /// **'Our privacy policy'**
+  String get settingsPrivacyPolicy;
+
+  /// Settings row that opens the user agreement
+  ///
+  /// In en, this message translates to:
+  /// **'User agreement'**
+  String get settingsUserAgreement;
+
+  /// Settings row that opens change password
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordLabel;
+
+  /// Settings row that deletes the account
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccountLabel;
+
+  /// Title of the delete-account confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account?'**
+  String get deleteAccountQuestion;
+
+  /// Body of the delete-account confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Once you delete, it\'s gone for good.'**
+  String get deleteAccountConfirm;
 
   /// Clickable User Agreement link label
   ///

@@ -23,6 +23,7 @@ import '../services/progress_service.dart';
 import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
 import '../services/task_service.dart';
+import '../services/user_service.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../viewmodels/edit_task_viewmodel.dart';
 import '../viewmodels/goals_viewmodel.dart';
@@ -74,6 +75,9 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (_) => DialogService()),
         Provider(create: (ctx) => ApiClient(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
+        Provider(
+          create: (ctx) => UserService(apiClient: ctx.read<ApiClient>()),
+        ),
         Provider(create: (_) => GoalService()),
         Provider(create: (_) => HabitService()),
         Provider(create: (_) => ProgressService()),
@@ -128,8 +132,8 @@ class PrinciplesApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (ctx) => SettingsViewModel(
             settingsService: ctx.read<SettingsService>(),
-            themeController: ctx.read<ThemeController>(),
             localeController: ctx.read<LocaleController>(),
+            userService: ctx.read<UserService>(),
           ),
         ),
         Provider(create: (_) => kIsWeb ? null : TaskDb()),

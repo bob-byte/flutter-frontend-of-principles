@@ -7,6 +7,7 @@ import '../views/helper_view.dart';
 import '../views/main_shell.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
+import '../views/forget_password_view.dart';
 import '../views/progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/tasks_view.dart';
@@ -35,6 +36,11 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ProgressView());
       case SettingsView.routeName:
         return MaterialPageRoute(builder: (_) => const SettingsView());
+      case ForgetPasswordView.routeName:
+        final email = settings.arguments as String?;
+        return MaterialPageRoute(
+          builder: (_) => ForgetPasswordView(initialEmail: email),
+        );
       default:
         return MaterialPageRoute(builder: (_) => const StartupView());
     }
