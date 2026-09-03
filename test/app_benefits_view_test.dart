@@ -45,7 +45,9 @@ Future<void> _pumpThroughTransitions(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Prev button is hidden on first slide and visible on next', (tester) async {
+  testWidgets('Prev button is hidden on first slide and visible on next', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildWidget(locale: const Locale('en')));
     await _pumpThroughTransitions(tester);
 
@@ -56,32 +58,50 @@ void main() {
     expect(find.byKey(const Key('appBenefitsPrevButton')), findsOneWidget);
   });
 
-  testWidgets('Next button transforms to Ahead on last slide and resets when going back', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildWidget(locale: const Locale('en')));
-    await _pumpThroughTransitions(tester);
+  testWidgets(
+    'Next button transforms to Ahead on last slide and resets when going back',
+    (tester) async {
+      await tester.pumpWidget(_buildWidget(locale: const Locale('en')));
+      await _pumpThroughTransitions(tester);
 
-    for (var i = 0; i < 4; i++) {
-      await tester.tap(find.byKey(const Key('appBenefitsNextButton')));
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.byKey(const Key('appBenefitsNextButton')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+      await tester.pump(const Duration(milliseconds: 1000));
+
+      expect(find.text('Ahead'), findsOneWidget);
+      final expandedWidth = tester
+          .getSize(find.byKey(const Key('appBenefitsNextContainer')))
+          .width;
+      expect(expandedWidth, greaterThan(120));
+
+      final prevRect = tester.getRect(
+        find.byKey(const Key('appBenefitsPrevButton')),
+      );
+      final nextRect = tester.getRect(
+        find.byKey(const Key('appBenefitsNextButton')),
+      );
+      expect(prevRect.overlaps(nextRect), isFalse);
+      expect(
+        find.byKey(const Key('appBenefitsPrevButton')).hitTestable(),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('appBenefitsPrevButton')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-    }
-    await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1100));
 
-    expect(find.text('Ahead'), findsOneWidget);
-    final expandedWidth = tester.getSize(find.byKey(const Key('appBenefitsNextContainer'))).width;
-    expect(expandedWidth, greaterThan(120));
-
-    final element = tester.element(find.byType(AppBenefitsView));
-    Provider.of<AppBenefitsViewModel>(element, listen: false).setCurrentPage(3);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1100));
-
-    expect(find.text('>'), findsOneWidget);
-    final collapsedWidth = tester.getSize(find.byKey(const Key('appBenefitsNextContainer'))).width;
-    expect(collapsedWidth, lessThan(expandedWidth));
-  });
+      expect(find.text('>'), findsOneWidget);
+      final collapsedWidth = tester
+          .getSize(find.byKey(const Key('appBenefitsNextContainer')))
+          .width;
+      expect(collapsedWidth, lessThan(expandedWidth));
+    },
+  );
 
   testWidgets('Localized strings are rendered from arb', (tester) async {
     await tester.pumpWidget(_buildWidget(locale: const Locale('uk')));

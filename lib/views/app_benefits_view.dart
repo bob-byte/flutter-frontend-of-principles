@@ -33,6 +33,20 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
     super.dispose();
   }
 
+  static const double _navButtonSize = 50;
+  static const double _navBarPadding = 20;
+  static const double _navButtonGap = 12;
+
+  double _nextButtonWidth({
+    required double maxWidth,
+    required bool isLastPage,
+    required bool isFirstPage,
+  }) {
+    if (!isLastPage) return _navButtonSize;
+    final reservedForPrev = isFirstPage ? 0.0 : _navButtonSize + _navButtonGap;
+    return maxWidth - _navBarPadding - reservedForPrev;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -79,56 +93,28 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                     padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                     child: Stack(
                       children: [
-                        if (!vm.isFirstPage)
+                        if (!vm.isLastPage)
                           Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: ElevatedButton(
-                                key: const Key('appBenefitsPrevButton'),
-                                onPressed: () {
-                                  _pageController.previousPage(
-                                    duration: const Duration(milliseconds: 250),
-                                    curve: Curves.easeOut,
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primary,
-                                  foregroundColor: palette.onPrimary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  elevation: 0,
-                                ),
-                                child: const Text(
-                                  '<',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                            alignment: Alignment.center,
+                            child: IgnorePointer(
+                              child: _DotsIndicator(
+                                itemCount: slides.length,
+                                currentIndex: vm.currentPage,
+                                activeColor: primary,
                               ),
                             ),
                           ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: _DotsIndicator(
-                            itemCount: slides.length,
-                            currentIndex: vm.currentPage,
-                            activeColor: primary,
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
+                        Positioned(
+                          right: 0,
                           child: AnimatedContainer(
                             key: const Key('appBenefitsNextContainer'),
                             duration: animationDuration,
                             curve: Curves.easeOut,
-                            width: vm.isLastPage
-                                ? constraints.maxWidth - 80
-                                : 50,
+                            width: _nextButtonWidth(
+                              maxWidth: constraints.maxWidth,
+                              isLastPage: vm.isLastPage,
+                              isFirstPage: vm.isFirstPage,
+                            ),
                             height: 50,
                             child: ElevatedButton(
                               key: const Key('appBenefitsNextButton'),
@@ -162,6 +148,8 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                 ),
                                 padding: EdgeInsets.zero,
                                 elevation: 0,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                minimumSize: const Size(50, 50),
                               ),
                               child: Text(
                                 vm.isLastPage ? l10n.ahead : '>',
@@ -173,6 +161,42 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                             ),
                           ),
                         ),
+                        if (!vm.isFirstPage)
+                          Positioned(
+                            left: 0,
+                            child: SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: ElevatedButton(
+                                key: const Key('appBenefitsPrevButton'),
+                                onPressed: () {
+                                  _pageController.previousPage(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeOut,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primary,
+                                  foregroundColor: palette.onPrimary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  elevation: 0,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  minimumSize: const Size(50, 50),
+                                ),
+                                child: const Text(
+                                  '<',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
