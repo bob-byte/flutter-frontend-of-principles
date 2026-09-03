@@ -189,14 +189,6 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _isCompletedInLast24Hours(Task task) {
-    if (!task.isDone) return false;
-    final completedAt = task.completedAt;
-    if (completedAt == null) return false;
-    final cutoff = DateTime.now().subtract(const Duration(hours: 24));
-    return !completedAt.isBefore(cutoff);
-  }
-
   bool _matchesListMode(Task task) {
     final today = dateOnly(DateTime.now());
     return switch (listMode) {
@@ -208,7 +200,7 @@ class TasksViewModel extends ChangeNotifier {
                 task.dueDate!.isBefore(today)),
       TasksListMode.day => isSameDay(task.dueDate, selectedDay),
       TasksListMode.inbox => task.dueDate == null,
-      TasksListMode.completed => _isCompletedInLast24Hours(task),
+      TasksListMode.completed => task.isDone,
     };
   }
 
