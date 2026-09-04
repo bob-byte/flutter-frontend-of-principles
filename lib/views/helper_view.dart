@@ -4,16 +4,24 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/helper_viewmodel.dart';
+import '../core/road_guide/road_guide_controller.dart';
+import '../widgets/app_alert_dialog.dart';
 import '../widgets/themed_lottie.dart';
-import '../widgets/ui_theme_switcher.dart';
 import 'edit_habit_view.dart';
 
 class HelperView extends StatefulWidget {
-  const HelperView({super.key, this.embedded = false});
+  const HelperView({
+    super.key,
+    this.embedded = false,
+    this.bottomBarClearance = 80,
+  });
 
   static const routeName = '/helper';
 
   final bool embedded;
+
+  /// Space reserved for the shell tab bar. Pass 0 when that bar is hidden.
+  final double bottomBarClearance;
 
   @override
   State<HelperView> createState() => _HelperViewState();
@@ -21,6 +29,18 @@ class HelperView extends StatefulWidget {
 
 class _HelperViewState extends State<HelperView> {
   final _controller = TextEditingController();
+
+  Future<void> _showHelperInfo(AppLocalizations l10n) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AppAlertDialog.message(
+        title: l10n.helperTitle,
+        message: l10n.helperWarning,
+        buttonLabel: l10n.okButton,
+        onDismiss: () => Navigator.of(dialogContext).pop(),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -50,9 +70,18 @@ class _HelperViewState extends State<HelperView> {
           children: [
             GlassAppBar(
               title: Text(l10n.helperTitle),
-              actions: const [AppThemeSwitcher()],
+              leading: GlassIconButton(
+                icon: const Icon(Icons.info_outline),
+                semanticLabel: l10n.helperTitle,
+                onPressed: () => _showHelperInfo(l10n),
+              ),
             ),
-            Expanded(child: body),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: widget.bottomBarClearance),
+                child: body,
+              ),
+            ),
           ],
         ),
       );
@@ -61,14 +90,17 @@ class _HelperViewState extends State<HelperView> {
     return GlassScaffold(
       appBar: GlassAppBar(
         title: Text(l10n.helperTitle),
+        leading: GlassIconButton(
+          icon: const Icon(Icons.info_outline),
+          semanticLabel: l10n.helperTitle,
+          onPressed: () => _showHelperInfo(l10n),
+        ),
         actions: [
           GlassIconButton(
             icon: const Icon(Icons.auto_awesome),
             semanticLabel: l10n.editHabitTitle,
-            onPressed: () =>
-                Navigator.of(context).pushNamed(EditHabitView.routeName),
+            onPressed: () => EditHabitView.show(context),
           ),
-          const AppThemeSwitcher(),
         ],
       ),
       body: body,
@@ -91,12 +123,46 @@ class _HelperBody extends StatelessWidget {
         children: [
           Expanded(
             child: vm.messages.isEmpty
-                ? const Center(
-                    child: ThemedLottie(
-                      assetPath: 'assets/lottie/emptychat_light.json',
-                      width: 220,
-                      height: 220,
-                    ),
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const ThemedLottie(
+                                    assetPath:
+                                        'assets/lottie/emptychat_light.json',
+                                    width: 220,
+                                    height: 220,
+                                  ),
+                                  Text(
+                                    l10n.helperEmptyDescription,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          fontSize: 18,
+                                          height: 1.25,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -147,6 +213,7 @@ class _HelperBody extends StatelessWidget {
                   ),
           ),
           Padding(
+            key: context.read<RoadGuideController>().keys.chatInput,
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
             child: Row(
               children: [

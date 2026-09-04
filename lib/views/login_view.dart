@@ -103,9 +103,7 @@ class _LoginViewState extends State<LoginView> {
                 Center(
                   child: SizedBox(
                     child: Image.asset(
-                      themeController.uiTheme.isOrange
-                          ? 'assets/images/orange_logo.png'
-                          : 'assets/images/blue_logo.png',
+                      themeController.uiTheme.logoAsset,
                       width: 220,
                       height: 220,
                       fit: BoxFit.contain,

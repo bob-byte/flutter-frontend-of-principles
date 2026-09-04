@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/themed_lottie.dart';
 import '../widgets/ui_theme_switcher.dart';
 import 'app_benefits_view.dart';
@@ -13,9 +14,10 @@ import 'login_view.dart';
 import 'signup_view.dart';
 
 class StartupView extends StatefulWidget {
-  const StartupView({super.key});
+  const StartupView({super.key, this.showAuthenticationImmediately = false});
 
   static const routeName = '/';
+  final bool showAuthenticationImmediately;
 
   @override
   State<StartupView> createState() => _StartupViewState();
@@ -27,6 +29,18 @@ class _StartupViewState extends State<StartupView> {
   @override
   void initState() {
     super.initState();
+    if (widget.showAuthenticationImmediately) {
+      _isChecking = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        try {
+          context.read<StartupViewModel>().acknowledgeAppBenefitsShown();
+        } on ProviderNotFoundException {
+          // Widget tests may mount StartupView without the full graph.
+        }
+      });
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final vm = context.read<StartupViewModel>();
       try {
@@ -83,7 +97,7 @@ class _StartupViewState extends State<StartupView> {
     if (_isChecking) {
       return Scaffold(
         backgroundColor: palette.pageBg,
-        body: const Center(child: CircularProgressIndicator()),
+        body: const AppLoadingIndicator(),
       );
     }
 
@@ -236,9 +250,10 @@ class _AuthButton extends StatelessWidget {
     final backgroundColor = isPrimary ? primary : Colors.transparent;
     final textColor = isPrimary ? onPrimary : primary;
     final borderColor = primary;
+    const padding = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
 
     return SizedBox(
-      height: 50, // Fixed height per requirements
+      height: 44,
       child: isPrimary
           ? ElevatedButton(
               onPressed: onPressed,
@@ -246,8 +261,9 @@ class _AuthButton extends StatelessWidget {
                 backgroundColor: backgroundColor,
                 foregroundColor: textColor,
                 elevation: 0,
+                padding: padding,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25), // Radius ~25
+                  borderRadius: BorderRadius.circular(22),
                 ),
               ),
               child: _buildContent(),
@@ -256,12 +272,13 @@ class _AuthButton extends StatelessWidget {
               onPressed: onPressed,
               style: OutlinedButton.styleFrom(
                 foregroundColor: textColor,
+                padding: padding,
                 side: BorderSide(
                   color: borderColor,
                   width: 2,
-                ), // border thickness 2
+                ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25), // Radius ~25
+                  borderRadius: BorderRadius.circular(22),
                 ),
               ),
               child: _buildContent(),
@@ -272,11 +289,16 @@ class _AuthButton extends StatelessWidget {
   Widget _buildContent() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[icon!, const SizedBox(width: 8)],
-        Text(
-          text,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        if (icon != null) ...[icon!, const SizedBox(width: 6)],
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );

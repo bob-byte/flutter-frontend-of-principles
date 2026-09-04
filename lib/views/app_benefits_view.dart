@@ -127,18 +127,32 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                   return;
                                 }
 
-                                final action = await vm
-                                    .navigateToNextViewAction();
+                                final navigator = Navigator.of(context);
+                                final action = await vm.resolveAheadAction(
+                                  canPop: navigator.canPop(),
+                                );
                                 if (!context.mounted) return;
                                 if (action ==
-                                    AppBenefitsNavigationAction.goBack) {
-                                  Navigator.of(context).pop();
-                                } else {
-                                  Navigator.of(context).pushNamedAndRemoveUntil(
-                                    StartupView.routeName,
-                                    (_) => false,
-                                  );
+                                        AppBenefitsNavigationAction.goBack &&
+                                    navigator.canPop()) {
+                                  navigator.pop();
+                                  return;
                                 }
+
+                                // Same pattern as logout: construct StartupView
+                                // directly so a leftover token or reused `/`
+                                // route cannot leave the user on this slide.
+                                navigator.pushAndRemoveUntil(
+                                  MaterialPageRoute<void>(
+                                    settings: const RouteSettings(
+                                      name: StartupView.routeName,
+                                    ),
+                                    builder: (_) => const StartupView(
+                                      showAuthenticationImmediately: true,
+                                    ),
+                                  ),
+                                  (route) => false,
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primary,
@@ -151,13 +165,15 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 minimumSize: const Size(50, 50),
                               ),
-                              child: Text(
-                                vm.isLastPage ? l10n.ahead : '>',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child: vm.isLastPage
+                                  ? Text(
+                                      l10n.ahead,
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : const Icon(Icons.chevron_right, size: 32),
                             ),
                           ),
                         ),
@@ -187,13 +203,7 @@ class _AppBenefitsViewState extends State<AppBenefitsView> {
                                       MaterialTapTargetSize.shrinkWrap,
                                   minimumSize: const Size(50, 50),
                                 ),
-                                child: const Text(
-                                  '<',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: const Icon(Icons.chevron_left, size: 32),
                               ),
                             ),
                           ),

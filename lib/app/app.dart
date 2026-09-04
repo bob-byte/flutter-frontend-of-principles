@@ -6,16 +6,35 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/input/android_hardware_text_input.dart';
+import '../core/launch_data_loader.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/network/api_client.dart';
+import '../core/network/network_service.dart';
+import '../core/road_guide/main_shell_controller.dart';
+import '../core/road_guide/road_guide_controller.dart';
 import '../core/storage/local_db.dart';
 import '../core/storage/secure_store.dart';
 import '../core/storage/task_db.dart';
+import '../core/sync/handlers/goal_sync_handler.dart';
+import '../core/sync/handlers/habit_sync_handler.dart';
+import '../core/sync/handlers/progress_sync_handler.dart';
+import '../core/sync/handlers/reminder_sync_handler.dart';
+import '../core/sync/handlers/task_sync_handler.dart';
+import '../core/sync/handlers/user_sync_handler.dart';
+import '../core/sync/local_data_cleaner.dart';
+import '../core/sync/local_remote_executor.dart';
+import '../core/sync/sync_orchestrator.dart';
+import '../core/sync/sync_queue_service.dart';
+import '../core/sync/sync_reachability_service.dart';
 import '../core/sync/sync_service.dart';
+import '../core/sync/sync_snapshot_merge_service.dart';
+import '../core/sync/sync_trigger.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/ai_chat_service.dart';
 import '../services/ai_recommendation_service.dart';
+import '../services/app_open_tracker_service.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
@@ -33,24 +52,30 @@ import '../viewmodels/habit_detail_viewmodel.dart';
 import '../viewmodels/login_viewmodel.dart';
 import '../viewmodels/signup_viewmodel.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
-import '../viewmodels/progress_viewmodel.dart';
+import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
-import '../views/edit_habit_view.dart';
+import '../models/habit.dart';
 import '../views/goals_view.dart';
 import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
+import '../views/edit_habit_view.dart';
 import '../views/habit_detail_view.dart';
 import '../views/login_view.dart';
 import '../views/signup_view.dart';
 import '../views/forget_password_view.dart';
-import '../views/progress_view.dart';
+import '../views/main_view.dart';
+import '../views/habit_progress_view.dart';
 import '../views/settings_view.dart';
 import '../views/startup_view.dart';
 import '../views/tasks_view.dart';
 import '../views/main_shell.dart';
+import '../views/video_splash_view.dart';
 import 'router.dart';
+
+/// Survives [MaterialApp] rebuilds when [ThemeController] finishes restore.
+final GlobalKey _videoSplashKey = GlobalKey();
 
 class PrinciplesApp extends StatelessWidget {
   const PrinciplesApp({super.key});
@@ -76,31 +101,149 @@ class PrinciplesApp extends StatelessWidget {
         Provider(create: (ctx) => ApiClient(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
         Provider(
-          create: (ctx) => UserService(apiClient: ctx.read<ApiClient>()),
+          create: (ctx) => SyncQueueService(localDb: ctx.read<LocalDb>()),
         ),
-        Provider(create: (_) => GoalService()),
-        Provider(create: (_) => HabitService()),
+        ChangeNotifierProvider(create: (_) => NetworkService()),
+        Provider(
+          create: (ctx) => LocalRemoteExecutor(
+            queue: ctx.read<SyncQueueService>(),
+            network: ctx.read<NetworkService>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => DatabaseService(localDb: ctx.read<LocalDb>()),
+        ),
+        Provider(
+          create: (ctx) => UserService(
+            apiClient: ctx.read<ApiClient>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => GoalService(
+            ctx.read<AuthService>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+            queue: ctx.read<SyncQueueService>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => HabitService(
+            ctx.read<AuthService>(),
+            dbService: ctx.read<DatabaseService>(),
+            network: ctx.read<NetworkService>(),
+            queue: ctx.read<SyncQueueService>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+          ),
+        ),
         Provider(create: (_) => ProgressService()),
-        Provider(create: (_) => ReminderService()),
-        Provider(create: (_) => AiChatService()),
-        Provider(create: (_) => AiRecommendationService()),
-        ProxyProvider2<LocalDb, AuthService, SyncService>(
-          update: (context, db, auth, previous) =>
-              SyncService(db: db, authService: auth),
+        Provider(
+          create: (ctx) => ReminderService(
+            apiClient: ctx.read<ApiClient>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+          ),
         ),
+        Provider(create: (ctx) => AiChatService(ctx.read<ApiClient>())),
+        Provider(
+          create: (ctx) => AiRecommendationService(ctx.read<ApiClient>()),
+        ),
+        Provider(create: (_) => kIsWeb ? null : TaskDb()),
+        Provider(
+          create: (ctx) => TaskService(
+            apiClient: ctx.read<ApiClient>(),
+            taskDb: ctx.read<TaskDb?>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) {
+            final queue = ctx.read<SyncQueueService>();
+            final apiClient = ctx.read<ApiClient>();
+            final goalService = ctx.read<GoalService>();
+            final habitService = ctx.read<HabitService>();
+            final reminderService = ctx.read<ReminderService>();
+            final taskService = ctx.read<TaskService>();
+            return SyncService(
+              queue: queue,
+              authService: ctx.read<AuthService>(),
+              apiClient: apiClient,
+              mergeService: SyncSnapshotMergeService(
+                queue: queue,
+                databaseService: ctx.read<DatabaseService>(),
+                userService: ctx.read<UserService>(),
+                reminderService: reminderService,
+                taskService: taskService,
+              ),
+              databaseService: ctx.read<DatabaseService>(),
+              handlers: [
+                UserSyncHandler(apiClient),
+                GoalSyncHandler(apiClient, goalService: goalService),
+                HabitSyncHandler(habitService),
+                ProgressSyncHandler(habitService),
+                ReminderSyncHandler(
+                  apiClient,
+                  reminderService: reminderService,
+                ),
+                TaskSyncHandler(apiClient, taskService: taskService),
+              ],
+            );
+          },
+        ),
+        Provider(
+          create: (ctx) => LocalDataCleaner(
+            localDb: ctx.read<LocalDb>(),
+            userService: ctx.read<UserService>(),
+            authService: ctx.read<AuthService>(),
+            reminderService: ctx.read<ReminderService>(),
+            goalService: ctx.read<GoalService>(),
+            secureStore: ctx.read<SecureStore>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) {
+            final network = ctx.read<NetworkService>();
+            final orchestrator = SyncOrchestrator(
+              network: network,
+              settings: ctx.read<SettingsService>(),
+              reachability: SyncReachabilityService(
+                apiClient: ctx.read<ApiClient>(),
+                authService: ctx.read<AuthService>(),
+              ),
+              syncService: ctx.read<SyncService>(),
+              authService: ctx.read<AuthService>(),
+            );
+            final cleaner = ctx.read<LocalDataCleaner>();
+            network.onConnectivityRestored = () =>
+                orchestrator.run(SyncTrigger.connectivityRestored);
+            network.onAuthenticationFailure = cleaner.clearLocalData;
+            network.start();
+            return orchestrator;
+          },
+        ),
+        Provider(create: (_) => AppOpenTrackerService()),
         ChangeNotifierProvider(
           create: (ctx) => StartupViewModel(
             authService: ctx.read<AuthService>(),
             syncService: ctx.read<SyncService>(),
             reminderService: ctx.read<ReminderService>(),
             dialogService: ctx.read<DialogService>(),
+            appOpenTracker: ctx.read<AppOpenTrackerService>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => LoginViewModel(ctx.read<AuthService>()),
+          create: (ctx) => LoginViewModel(
+            ctx.read<AuthService>(),
+            syncService: ctx.read<SyncService>(),
+          ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => SignupViewModel(ctx.read<AuthService>()),
+          create: (ctx) => SignupViewModel(
+            ctx.read<AuthService>(),
+            syncService: ctx.read<SyncService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => AppBenefitsViewModel(ctx.read<AuthService>()),
@@ -113,44 +256,66 @@ class PrinciplesApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (ctx) => EditHabitViewModel(
-            habitService: ctx.read<HabitService>(),
-            recommendationService: ctx.read<AiRecommendationService>(),
+            ctx.read<HabitService>(),
+            ctx.read<ReminderService>(),
+            ctx.read<GoalService>(),
+            ctx.read<AiRecommendationService>(),
+            ctx.read<UserService>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => GoalsViewModel(ctx.read<GoalService>()),
-        ),
-        ChangeNotifierProvider(
-          create: (ctx) => ProgressViewModel(ctx.read<ProgressService>()),
-        ),
-        ChangeNotifierProvider(
-          create: (ctx) => HabitDetailViewModel(
-            habitService: ctx.read<HabitService>(),
-            progressService: ctx.read<ProgressService>(),
+          create: (ctx) => GoalsViewModel(
+            ctx.read<GoalService>(),
+            ctx.read<DialogService>(),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => HabitProgressViewModel(
+            ctx.read<HabitService>(),
+            appOpenTracker: ctx.read<AppOpenTrackerService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) =>
+              HabitDetailViewModel(habitService: ctx.read<HabitService>()),
         ),
         ChangeNotifierProvider(
           create: (ctx) => SettingsViewModel(
             settingsService: ctx.read<SettingsService>(),
             localeController: ctx.read<LocaleController>(),
             userService: ctx.read<UserService>(),
+            localDataCleaner: ctx.read<LocalDataCleaner>(),
           ),
         ),
-        Provider(create: (_) => kIsWeb ? null : TaskDb()),
-        Provider(
-          create: (ctx) => TaskService(
-            apiClient: ctx.read<ApiClient>(),
-            taskDb: ctx.read<TaskDb?>(),
+        ChangeNotifierProvider(create: (_) => MainShellController()),
+        ChangeNotifierProvider(
+          create: (ctx) => RoadGuideController(
+            userService: ctx.read<UserService>(),
+            shell: ctx.read<MainShellController>(),
           ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => TasksViewModel(
             ctx.read<TaskService>(),
             ctx.read<ThemeController>(),
+            reminderService: ctx.read<ReminderService>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => EditTaskViewModel(ctx.read<TaskService>()),
+          create: (ctx) => EditTaskViewModel(
+            ctx.read<TaskService>(),
+            reminderService: ctx.read<ReminderService>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => LaunchDataLoader(
+            startup: ctx.read<StartupViewModel>(),
+            orchestrator: ctx.read<SyncOrchestrator>(),
+            goals: ctx.read<GoalsViewModel>(),
+            tasks: ctx.read<TasksViewModel>(),
+            habits: ctx.read<HabitProgressViewModel>(),
+            settings: ctx.read<SettingsViewModel>(),
+          ),
         ),
       ],
       child: Consumer2<ThemeController, LocaleController>(
@@ -161,7 +326,10 @@ class PrinciplesApp extends StatelessWidget {
             child: MaterialApp(
               navigatorKey: context.read<DialogService>().navigatorKey,
               builder: (context, child) => AndroidHardwareTextInput(
-                child: child ?? const SizedBox.shrink(),
+                child: VideoSplashOverlay(
+                  key: _videoSplashKey,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
               onGenerateTitle: (context) =>
                   AppLocalizations.of(context)!.appTitle,
@@ -198,7 +366,10 @@ class PrinciplesApp extends StatelessWidget {
               onGenerateRoute: AppRouter.generateRoute,
               initialRoute: StartupView.routeName,
               routes: {
-                StartupView.routeName: (_) => const StartupView(),
+                StartupView.routeName: (ctx) => StartupView(
+                  showAuthenticationImmediately:
+                      ModalRoute.of(ctx)?.settings.arguments == true,
+                ),
                 LoginView.routeName: (_) => const LoginView(),
                 SignupView.routeName: (_) => const SignupView(),
                 AppBenefitsView.routeName: (_) => const AppBenefitsView(),
@@ -208,10 +379,15 @@ class PrinciplesApp extends StatelessWidget {
                   return ForgetPasswordView(initialEmail: email);
                 },
                 HelperView.routeName: (_) => const MainShell(),
+                MainView.routeName: (_) => const MainView(),
                 HabitDetailView.routeName: (_) => const HabitDetailView(),
-                EditHabitView.routeName: (_) => const EditHabitView(),
+                EditHabitView.routeName: (ctx) {
+                  final habit =
+                      ModalRoute.of(ctx)?.settings.arguments as Habit?;
+                  return EditHabitView(habit: habit);
+                },
                 GoalsView.routeName: (_) => const GoalsView(),
-                ProgressView.routeName: (_) => const ProgressView(),
+                HabitProgressView.routeName: (_) => const HabitProgressView(),
                 SettingsView.routeName: (_) => const SettingsView(),
                 TasksView.routeName: (_) => const TasksView(),
               },

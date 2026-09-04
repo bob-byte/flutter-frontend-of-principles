@@ -232,22 +232,22 @@ class _SignupViewState extends State<SignupView> {
                         prefixIcon: Icons.flag_outlined,
                         maxLines: 3,
                         suffixIcon: IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.info_outline,
-                            color: Colors.grey,
+                            color: palette.textMuted,
                           ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text(
+                                content: Text(
                                   'Вона буде використана для створення більш доцільних для вас рекомендованих звичок. Місія - це життєва мета, яка постійно підтримує високий рівень мотивації й допомагає зробити найкращий вибір у різноманітних ситуаціях. Наприклад, місія може звучати так: “Я створюю ІТ-додатки, щоб робити світ кращим”.',
-                                  style: TextStyle(color: Colors.black87),
+                                  style: TextStyle(color: palette.onPrimary),
                                 ),
-                                backgroundColor: palette.accentMuted,
+                                backgroundColor: palette.primary,
                                 duration: const Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: 'OK',
-                                  textColor: Colors.white,
+                                  textColor: palette.onPrimary,
                                   onPressed: () {
                                     ScaffoldMessenger.of(
                                       context,
@@ -279,22 +279,22 @@ class _SignupViewState extends State<SignupView> {
                         prefixIcon: Icons.assignment_outlined,
                         maxLines: 3,
                         suffixIcon: IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.info_outline,
-                            color: Colors.grey,
+                            color: palette.textMuted,
                           ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text(
+                                content: Text(
                                   'Основне гасло буде використано для формування кращих рекомендованих звичок. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя.',
-                                  style: TextStyle(color: Colors.black87),
+                                  style: TextStyle(color: palette.onPrimary),
                                 ),
-                                backgroundColor: palette.accentMuted,
+                                backgroundColor: palette.primary,
                                 duration: const Duration(seconds: 10),
                                 action: SnackBarAction(
                                   label: 'OK',
-                                  textColor: Colors.white,
+                                  textColor: palette.onPrimary,
                                   onPressed: () {
                                     ScaffoldMessenger.of(
                                       context,

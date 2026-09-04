@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
-import '../widgets/ui_theme_switcher.dart';
+import '../widgets/app_alert_dialog.dart';
 import 'helper_view.dart';
 
 class ForgetPasswordView extends StatefulWidget {
@@ -69,10 +69,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+            return AppAlertDialog(
               title: Text(l10n.confirmCodeTitle, textAlign: TextAlign.center),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -141,32 +138,12 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
     if (success) {
       await showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 60),
-              const SizedBox(height: 16),
-              Text(
-                l10n.passwordChangedSuccess,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
+        builder: (ctx) => AppAlertDialog(
+          title: Text(l10n.passwordChangedSuccess, textAlign: TextAlign.center),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-            ElevatedButton(
+            FilledButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
               child: const Text('OK'),
             ),
           ],
@@ -197,7 +174,6 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
         elevation: 0,
         iconTheme: IconThemeData(color: palette.primary),
         centerTitle: true,
-        actions: const [AppThemeSwitcher()],
       ),
       body: SafeArea(
         child: Form(
