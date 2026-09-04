@@ -1,0 +1,9 @@
+---
+description: Always reply to the user in English
+alwaysApply: true
+---
+
+# Communication
+
+- Always respond to the user in **English**, even if the app UI, screenshots, or source strings are in Ukrainian or another language.
+- UI copy in the product may remain localized (EN/UK ARB files); only assistant chat replies must be English.

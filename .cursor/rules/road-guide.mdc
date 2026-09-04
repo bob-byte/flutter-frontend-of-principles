@@ -1,0 +1,14 @@
+---
+description: Post-login road guide spotlight patterns
+globs: lib/core/road_guide/**/*.dart,lib/views/main_shell.dart,lib/views/habit_progress_view.dart,lib/views/edit_habit_view.dart,lib/views/habit_detail_view.dart
+alwaysApply: false
+---
+
+# Road guide
+
+- Do **not** wrap `GlassScaffold` in `Stack` or `OverlayPortal`.
+- Do **not** put `GlobalKey`s on `GlassTabBar` / tab icons; tab holes use `RoadGuideKeys.tabHole`.
+- Spotlight targets need full-width keys (`SizedBox(width: double.infinity)` or the real button).
+- Remeasure holes after route open/close (~120–480ms); mid-transition sizes are wrong.
+- Habit detail guide step has **no** spotlight hole (dim + card only).
+- Skip only on step 0; later steps show Back.
