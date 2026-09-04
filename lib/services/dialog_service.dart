@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 enum DialogType { frequencyConfig, addEditGoal }
-enum BottomSheetType { goalSelection, archive }
+enum BottomSheetType { goalSelection, archive, areaSelection }
 
 class DialogResponse {
   final bool confirmed;

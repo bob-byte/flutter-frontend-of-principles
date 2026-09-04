@@ -199,6 +199,36 @@ class _DataTabState extends State<_DataTab> {
           ),
           const SizedBox(height: 16),
 
+          // Areas of habit
+          InkWell(
+            onTap: () => vm.requestAreaSelection(),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Сфери звички',
+                prefixIcon: const Icon(Icons.category_outlined),
+                suffixIcon: const Icon(Icons.more_horiz),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              child: Wrap(
+                spacing: 8.0,
+                runSpacing: 4.0,
+                children: vm.selectedAreas.map((area) {
+                  final isAllAreas = area.id == 0;
+                  return Chip(
+                    label: Text(area.name, style: const TextStyle(fontSize: 12)),
+                    backgroundColor: isAllAreas ? Colors.grey.shade200 : Colors.blue.shade50,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onDeleted: isAllAreas ? null : () => vm.toggleArea(area),
+                    deleteIcon: isAllAreas ? null : const Icon(Icons.close, size: 14),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Segmented Control (Flexible / Strict)
           Row(
             children: [

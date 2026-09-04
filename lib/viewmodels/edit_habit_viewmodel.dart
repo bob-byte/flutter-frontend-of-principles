@@ -8,6 +8,7 @@ import '../services/goal_service.dart';
 import '../models/frequency_config.dart';
 import '../models/user_goal.dart';
 import '../models/habit_reminder.dart';
+import '../models/area_of_life.dart';
 import '../services/dialog_service.dart';
 
 class EditHabitViewModel extends ChangeNotifier {
@@ -32,6 +33,10 @@ class EditHabitViewModel extends ChangeNotifier {
       reminders = List.from(habit.reminders ?? []);
       notes = habit.notes ?? '';
       difficulty = habit.difficulty ?? 5;
+      selectedAreas = List.from(habit.areasOfLife ?? []);
+      if (selectedAreas.isEmpty) {
+        selectedAreas.add(allAreasFakeItem);
+      }
     } else {
       editingHabitId = null;
       habitName = '';
@@ -42,6 +47,56 @@ class EditHabitViewModel extends ChangeNotifier {
       reminders = [];
       notes = '';
       difficulty = 5;
+      selectedAreas = [allAreasFakeItem];
+    }
+  }
+
+  final List<AreaOfLife> allAreas = [
+    allAreasFakeItem,
+    const AreaOfLife(id: 1, name: 'Spirituality'),
+    const AreaOfLife(id: 2, name: 'Character'),
+    const AreaOfLife(id: 3, name: 'Mentality'),
+    const AreaOfLife(id: 4, name: 'Health'),
+    const AreaOfLife(id: 5, name: 'Career'),
+    const AreaOfLife(id: 6, name: 'Household chores'),
+    const AreaOfLife(id: 7, name: 'Family'),
+    const AreaOfLife(id: 8, name: 'Relationships'),
+    const AreaOfLife(id: 9, name: 'Sociality'),
+    const AreaOfLife(id: 10, name: 'Other'),
+  ];
+
+  List<AreaOfLife> selectedAreas = [];
+
+  void toggleArea(AreaOfLife area) {
+    if (selectedAreas.contains(area)) {
+      selectedAreas.remove(area);
+      if (selectedAreas.isEmpty) {
+        selectedAreas.add(allAreasFakeItem);
+      }
+    } else {
+      if (area.id == 0) {
+        selectedAreas.clear();
+        selectedAreas.add(area);
+      } else {
+        selectedAreas.removeWhere((a) => a.id == 0);
+        selectedAreas.add(area);
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> requestAreaSelection() async {
+    final response = await _dialogService.showCustomSheet(
+      variant: BottomSheetType.areaSelection,
+      data: selectedAreas,
+    );
+
+    if (response != null && response.confirmed == true) {
+      selectedAreas = List.from(response.data as List<AreaOfLife>);
+      if (selectedAreas.isEmpty) {
+        selectedAreas.add(allAreasFakeItem);
+      }
+      notifyListeners();
     }
   }
 
@@ -143,9 +198,10 @@ class EditHabitViewModel extends ChangeNotifier {
         targetGoalId: targetGoalId,
         isFlexible: isFlexible,
         frequency: frequency,
+        reminders: reminders,
+        areasOfLife: selectedAreas.where((a) => a.id != 0).toList(),
         difficulty: difficulty,
         notes: notes,
-        reminders: reminders,
       );
       
       if (editingHabitId == null) {

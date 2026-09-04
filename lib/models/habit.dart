@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'frequency_config.dart';
 import 'habit_reminder.dart';
+import 'area_of_life.dart';
 
 enum HabitFrequency { daily, weekly, monthly, custom }
 
@@ -16,6 +17,7 @@ class Habit {
   final String notes;
   final bool isArchived;
   final List<HabitReminder> reminders;
+  final List<AreaOfLife> areasOfLife;
 
   Habit({
     this.id,
@@ -29,6 +31,7 @@ class Habit {
     this.notes = '',
     this.isArchived = false,
     this.reminders = const [],
+    this.areasOfLife = const [],
   });
 
   Habit copyWith({
@@ -43,6 +46,7 @@ class Habit {
     String? notes,
     bool? isArchived,
     List<HabitReminder>? reminders,
+    List<AreaOfLife>? areasOfLife,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -56,6 +60,7 @@ class Habit {
       notes: notes ?? this.notes,
       isArchived: isArchived ?? this.isArchived,
       reminders: reminders ?? this.reminders,
+      areasOfLife: areasOfLife ?? this.areasOfLife,
     );
   }
 
@@ -72,6 +77,7 @@ class Habit {
       'notes': notes,
       'isArchived': isArchived ? 1 : 0,
       'reminders': jsonEncode(reminders.map((r) => r.toMap()).toList()),
+      'areasOfLife': jsonEncode(areasOfLife.map((a) => a.toMap()).toList()),
     };
   }
 
@@ -96,6 +102,14 @@ class Habit {
       } catch (_) {}
     }
 
+    List<AreaOfLife> parsedAreas = [];
+    if (map['areasOfLife'] != null) {
+      try {
+        final List<dynamic> decoded = jsonDecode(map['areasOfLife'] as String);
+        parsedAreas = decoded.map((e) => AreaOfLife.fromMap(e as Map<String, dynamic>)).toList();
+      } catch (_) {}
+    }
+
     return Habit(
       id: map['id'] as int?,
       name: map['name'] as String,
@@ -108,6 +122,7 @@ class Habit {
       notes: map['notes'] as String? ?? '',
       isArchived: (map['isArchived'] as int? ?? 0) == 1,
       reminders: parsedReminders,
+      areasOfLife: parsedAreas,
     );
   }
 }

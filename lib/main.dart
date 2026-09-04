@@ -8,7 +8,9 @@ import 'views/widgets/add_edit_goal_dialog.dart';
 import 'views/widgets/goal_selection_sheet.dart';
 import 'models/frequency_config.dart';
 import 'models/user_goal.dart';
+import 'models/area_of_life.dart';
 import 'views/widgets/archive_bottom_sheet.dart';
+import 'views/widgets/area_of_life_selection_sheet.dart';
 
 void _setupDialogService() {
   final dialogService = DialogService();
@@ -23,6 +25,9 @@ void _setupDialogService() {
   });
   dialogService.registerSheetBuilder(BottomSheetType.archive, (context, data) {
     return const ArchiveBottomSheet();
+  });
+  dialogService.registerSheetBuilder(BottomSheetType.areaSelection, (context, data) {
+    return AreaOfLifeSelectionSheet(initialSelectedAreas: data as List<AreaOfLife>);
   });
 }
 
