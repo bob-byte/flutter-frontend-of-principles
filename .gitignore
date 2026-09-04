@@ -46,3 +46,5 @@ app.*.map.json
 
 # Local MAUI reference clone
 /maui/
+
+/backend/

@@ -8,6 +8,8 @@
             "name": "app (macOS)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "macos"
         },
@@ -15,6 +17,8 @@
             "name": "app (macOS) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "macos",
             "toolArgs": [
@@ -25,6 +29,8 @@
             "name": "app (Linux)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "linux"
         },
@@ -32,6 +38,8 @@
             "name": "app (Linux) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "linux",
             "toolArgs": [
@@ -42,6 +50,8 @@
             "name": "app (Windows)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "windows"
         },
@@ -49,6 +59,8 @@
             "name": "app (Windows) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "windows",
             "toolArgs": [
@@ -59,6 +71,8 @@
             "name": "app (iOS)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "iPhone",
             "preLaunchTask": "Start iOS Simulator"
@@ -67,6 +81,8 @@
             "name": "app (iOS) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "iPhone",
             "preLaunchTask": "Start iOS Simulator",
@@ -78,6 +94,8 @@
             "name": "app (Android)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "emulator-5554",
             "preLaunchTask": "Start Android Emulator"
@@ -86,6 +104,8 @@
             "name": "app (Android) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "emulator-5554",
             "preLaunchTask": "Start Android Emulator",
@@ -97,6 +117,8 @@
             "name": "app (Web)",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "chrome"
         },
@@ -104,6 +126,8 @@
             "name": "app (Web) LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "deviceId": "chrome",
             "toolArgs": [
@@ -114,6 +138,8 @@
             "name": "LocalDebug",
             "request": "launch",
             "type": "dart",
+            "cwd": "${workspaceFolder}",
+            "program": "lib/main.dart",
             "flutterMode": "debug",
             "toolArgs": [
                 "--dart-define=LOCALDEBUG=true"
