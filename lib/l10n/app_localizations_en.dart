@@ -15,6 +15,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsSectionProfile => 'Profile';
+
+  @override
+  String get settingsSectionAbout => 'About';
+
+  @override
+  String get settingsSectionAccount => 'Account';
+
+  @override
   String get logoutLabel => 'Logout';
 
   @override
@@ -37,6 +46,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeLightBlue => 'Light blue';
+
+  @override
+  String get themeLabel => 'Theme';
+
+  @override
+  String get themeSubtitle => 'Choose the app color theme';
 
   @override
   String get languageLabel => 'Language';
@@ -69,6 +84,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recommendedHabitsButton => 'Recommended Habits';
 
   @override
+  String get recommendedHabitsByAi => 'Recommended habits by AI';
+
+  @override
+  String get confirmRecommendedHabitsTitle =>
+      'Based on goal, mission and slogan';
+
+  @override
+  String get confirmRecommendedHabitsMessage =>
+      'Are you sure you want to load recommended habits based on your chosen goal, mission and main slogan?';
+
+  @override
+  String get recommendedHabitsLoadingHint =>
+      'If you don\'t want to wait, you can change the other fields for now.';
+
+  @override
+  String get recommendedHabitsEmpty => 'No recommendations yet.';
+
+  @override
+  String get recommendedHabitsCaptionNoGoal =>
+      'Select a Goal above — we can recommend habits for it.';
+
+  @override
+  String recommendedHabitsCaptionWithGoal(String goal) {
+    return 'Recommendations will be for \"$goal\" achievement.';
+  }
+
+  @override
+  String recommendedHabitsGoalPopover(String goal) {
+    return 'We can recommend habits for achieving the selected goal: \"$goal\".';
+  }
+
+  @override
+  String get loadingLabel => 'Loading';
+
+  @override
   String get openHabitDetailsButton => 'Open habit details';
 
   @override
@@ -82,6 +132,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteTooltip => 'Delete';
+
+  @override
+  String get habitMenuEdit => 'Edit';
+
+  @override
+  String get habitMenuDetails => 'Details';
 
   @override
   String get noHabitSelected => 'No habit selected';
@@ -100,7 +156,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get topFiveStreaks => 'Top Five Streaks';
+  String get topFiveStreaks => 'Top-5 streaks';
+
+  @override
+  String get topFiveStreaksInfo =>
+      'The Top 5 habit streaks reflect the most consistent periods of personal discipline. This feature helps recognize your ability to take sustained action, supports motivation during times of doubt, and serves as a foundation for forming stable, recommended habits.';
 
   @override
   String get noStreaksYet => 'No streaks yet';
@@ -114,13 +174,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stabilityTitle => 'Stability';
 
   @override
+  String get stabilityInfo =>
+      'The Stability chart measures how consistently you maintain your habit without missing days. It highlights your overall adherence patterns, helping you see where you’re most reliable and where you might need extra focus. By tracking stability, you can celebrate steady progress, identify moments that challenge your routine, and build confidence in sustaining long‑term behavior change.';
+
+  @override
   String get noStabilityData => 'No stability data';
 
   @override
-  String get habitByWeekdays => 'Habit By Weekdays';
+  String get habitByWeekdays => 'Habit by days of the week';
+
+  @override
+  String get habitByWeekdaysInfo =>
+      'The Habit by Day of the Week chart shows how often you complete your habit on each day. It helps you spot which days you\'re most consistent and which ones tend to be missed. By understanding these patterns, you can adjust your routine, address weak spots, and create a more balanced and sustainable habit rhythm throughout the week.';
 
   @override
   String get calendarTitle => 'Calendar';
+
+  @override
+  String get calendarInfo =>
+      'The execution of habits by day is displayed:\n- Blue - habit completed;\n- Cyan - it is not necessary to follow the habit.\nYou can change the status with a press.';
+
+  @override
+  String get executionCountAxis => 'Number of completions';
+
+  @override
+  String get frequencyEveryDay => 'Every day';
+
+  @override
+  String frequencyEveryXDays(int count) {
+    return 'Every $count day(s)';
+  }
+
+  @override
+  String frequencyTimesPerPeriod(int count, String period) {
+    return '$count time(s) per $period';
+  }
+
+  @override
+  String get periodWeek => 'week';
+
+  @override
+  String get periodMonth => 'month';
 
   @override
   String get weekdayMon => 'Mon';
@@ -184,7 +278,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newGoalLabel => 'New goal';
 
   @override
+  String get goalsEmptyList => 'No goals yet. Add one above.';
+
+  @override
+  String get addGoalTitle => 'Add goal';
+
+  @override
+  String get editGoalTitle => 'Edit goal';
+
+  @override
+  String get goalExamplesHint =>
+      'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.';
+
+  @override
+  String get deleteGoalQuestion => 'Delete goal?';
+
+  @override
+  String get deleteGoalMessage =>
+      'The goal will be deleted permanently. This action cannot be undone.';
+
+  @override
+  String get markGoalCompleted => 'Mark as completed';
+
+  @override
+  String get markGoalIncomplete => 'Mark as not completed';
+
+  @override
+  String get completedGoalsHeader => 'Completed';
+
+  @override
+  String goalHabitsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count habits',
+      one: '$count habit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get goalMarkedCompleted => 'Goal marked as completed';
+
+  @override
+  String get goalMarkedIncomplete => 'Goal marked as not completed';
+
+  @override
   String get helperTitle => 'Chat With Helper';
+
+  @override
+  String get helperWarning =>
+      'The AI-assistant knows your habits, goals, mission, gender, and slogan. So you can ask anything about them. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!';
+
+  @override
+  String get helperEmptyDescription =>
+      'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"';
 
   @override
   String get tabChat => 'Chat';
@@ -212,6 +360,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get genericErrorOccurred => 'Error occurred';
+
+  @override
+  String get noInternetConnection => 'No internet connection';
 
   @override
   String get chatFallbackAnswer =>
@@ -264,7 +415,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startupRegisterWithEmailBtn => 'Sign up with email';
 
   @override
-  String get startupLoginBtn => 'Login';
+  String get startupLoginBtn => 'Log in';
 
   @override
   String get startupErrorGeneric => 'Something went wrong';
@@ -314,6 +465,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameLabel => 'Name';
 
   @override
+  String get genderLabel => 'Gender';
+
+  @override
   String get genderMale => 'Male';
 
   @override
@@ -338,6 +492,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourName => 'Your Name';
 
   @override
+  String get yourGender => 'Your Gender';
+
+  @override
   String get yourMainSlogan => 'Your Main Slogan';
 
   @override
@@ -353,6 +510,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameSavedSuccess => 'Your name successfully saved';
+
+  @override
+  String get genderSavedSuccess => 'Your gender successfully saved';
 
   @override
   String get sloganSavedSuccess => 'Your main slogan successfully saved';
@@ -502,4 +662,370 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get somethingWentWrongWhenUserAuthsUsingExternalService =>
       'Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.';
+
+  @override
+  String get tabAssistant => 'AI Assistant';
+
+  @override
+  String get tabProfile => 'Profile';
+
+  @override
+  String get archiveTitle => 'Archive';
+
+  @override
+  String get archiveEmptyDescription =>
+      'This section displays the habits you have archived. You can return to them whenever you are ready to work on them again.';
+
+  @override
+  String get archiveInfoDescription =>
+      'Why do you need an archive?\n✅ Plan habits you want to add or change in the future.\n🔁 Analyze reasons - which habits worked and which ones were too complicated or irrelevant.\n🌱 Try again - sometimes it\'s good to go back to an old habit by changing the difficulty or approach. For example, train in the morning instead of the evening.\n\nTip: before creating a new habit, look at the archive - maybe something similar has already happened, and now you know how to do it better.';
+
+  @override
+  String get archiveInfoTooltip => 'Why do you need an archive?';
+
+  @override
+  String get unarchiveHabitQuestion => 'Unarchive Habit?';
+
+  @override
+  String get unarchiveHabitMessage =>
+      'This action will restore the habit to your active list.';
+
+  @override
+  String get habitScreenTitle => 'Habit';
+
+  @override
+  String get habitDataTab => 'Data';
+
+  @override
+  String get habitHowToKeepTab => 'How to maintain';
+
+  @override
+  String get habitNameField => 'Name';
+
+  @override
+  String get habitNameInfo =>
+      'Specify the habit name and the time or place you will do it. This increases the chance you will stick to it. Example: I pray as soon as I wake up.';
+
+  @override
+  String get habitGoalLabel => 'Goal';
+
+  @override
+  String get selectHabitGoalTitle => 'Select habit goal';
+
+  @override
+  String get selectHabitGoalRecommendation =>
+      'Recommendation: pick a concrete goal or an identity-oriented one — it shapes your life.';
+
+  @override
+  String get habitFlexible => 'Flexible';
+
+  @override
+  String get habitFlexibleInfo =>
+      'This is a habit type that a person follows most of the time, but may make exceptions in special situations. For example, it may be the habit of telling the truth but being able to keep silent or deceive when it could cause serious harm to others.';
+
+  @override
+  String get habitNoExceptions => 'Without exceptions';
+
+  @override
+  String get habitNoExceptionsInfo =>
+      'This is a habit type that a person adheres to strictly and never makes exceptions, even in emergency situations. For example, refusal to drink alcohol or tobacco, regardless of the circumstances.';
+
+  @override
+  String get habitFrequency => 'Frequency';
+
+  @override
+  String get habitReminder => 'Reminder';
+
+  @override
+  String get habitNotes => 'Notes';
+
+  @override
+  String get habitDifficulty => 'Difficulty (1 - 10)';
+
+  @override
+  String get habitDifficultyInfo =>
+      'How difficult is it to stick to the habit in terms of effort, time and self-control';
+
+  @override
+  String habitAutomationExplanation(int days) {
+    return 'Habit automation requires regular performance for $days day(s).';
+  }
+
+  @override
+  String get habitAlreadyAutomated => 'The habit is already automated';
+
+  @override
+  String habitDaysToGoUntilAutomaticJust(int days) {
+    return 'Just $days days to go until your habit becomes fully automatic.';
+  }
+
+  @override
+  String habitDaysToGoUntilAutomaticStill(int days) {
+    return 'There are still $days days to go until your habit becomes fully automatic.';
+  }
+
+  @override
+  String get habitMenuViewDetails => 'View details';
+
+  @override
+  String get habitMenuRestore => 'Restore';
+
+  @override
+  String get habitMenuDelete => 'Delete habit';
+
+  @override
+  String get deleteHabitQuestion => 'Delete habit?';
+
+  @override
+  String get deleteHabitMessage =>
+      'The habit will be deleted permanently. This action cannot be undone.';
+
+  @override
+  String get habitsTodayLabel => 'Today';
+
+  @override
+  String get habitsCompletedToday => 'Completed this day';
+
+  @override
+  String get habitsEmptyList => 'No habits. Tap + to add.';
+
+  @override
+  String get undefinedGoalLabel => '*Goal not defined';
+
+  @override
+  String get habitStreakExplanation =>
+      'Shows how many days in a row you opened the app and completed habits. If you skip even one day, the streak resets.';
+
+  @override
+  String get archiveHabitQuestion => 'Move habit to archive?';
+
+  @override
+  String get archiveHabitMessage =>
+      'This will move the habit to the archive. You can resume working on it later.';
+
+  @override
+  String get cannotCompleteHabitInTheFuture =>
+      'You can\'t mark a habit as done for future days';
+
+  @override
+  String get reminderTitleLabel => 'Title';
+
+  @override
+  String get reminderDescriptionLabel => 'Description';
+
+  @override
+  String get reminderTimeLabel => 'Time';
+
+  @override
+  String get reminderEnableLabel => 'Enable';
+
+  @override
+  String get doneButton => 'Done';
+
+  @override
+  String get habitsReportReminderTitleText => 'Remember today\'s habits';
+
+  @override
+  String get habitsReportReminderDescriptionText =>
+      'time to note what habits were accomplished yesterday and remind yourself of habits and goals';
+
+  @override
+  String get deviceDoesNotSupportNotifications =>
+      'Oops.. It looks like your operating system doesn\'t support notifications. Please try updating it.';
+
+  @override
+  String get notificationsDisabledTitle => 'Notifications are off';
+
+  @override
+  String get notificationsDisabledMessage =>
+      'To receive reminders, allow notifications in device settings. Open settings now?';
+
+  @override
+  String get scheduleDate => 'Date';
+
+  @override
+  String get scheduleDuration => 'Duration';
+
+  @override
+  String get scheduleTime => 'Time';
+
+  @override
+  String get scheduleReminder => 'Reminder';
+
+  @override
+  String get scheduleRepeat => 'Repeat';
+
+  @override
+  String get scheduleClear => 'Clear';
+
+  @override
+  String get scheduleOnTime => 'On time';
+
+  @override
+  String get scheduleCustom => 'Custom';
+
+  @override
+  String get scheduleRecents => 'Recents';
+
+  @override
+  String get scheduleConstantReminder => 'Constant Reminder';
+
+  @override
+  String get scheduleAllDay => 'All Day';
+
+  @override
+  String get scheduleByDueDates => 'By Due Dates';
+
+  @override
+  String get scheduleByCompletion => 'By Completion Date';
+
+  @override
+  String get roadGuideSkip => 'Skip';
+
+  @override
+  String get roadGuideBack => 'Back';
+
+  @override
+  String get roadGuideNext => 'Next';
+
+  @override
+  String get roadGuideDone => 'Done';
+
+  @override
+  String get roadGuideReplayLabel => 'App road guide';
+
+  @override
+  String get roadGuideReplaySubtitle =>
+      'Walk through goals, habits, tasks, and settings';
+
+  @override
+  String get roadGuideExampleBadge => 'example';
+
+  @override
+  String get roadGuideDemoGoalName => 'Get fit';
+
+  @override
+  String get roadGuideDemoHabitName => 'Morning workout';
+
+  @override
+  String get roadGuideDemoTaskName => 'Book a training session';
+
+  @override
+  String get roadGuideGoalsTabTitle => 'Start with a goal';
+
+  @override
+  String get roadGuideGoalsTabBody =>
+      'Principles automates goal achievement. Open Goals to define what you want to reach.';
+
+  @override
+  String get roadGuideGoalsComposerTitle => 'Create your goal';
+
+  @override
+  String get roadGuideGoalsComposerBody =>
+      'Write the outcome you want — habits will be organized under it.';
+
+  @override
+  String get roadGuideGoalsDemoTitle => 'Goals organize habits';
+
+  @override
+  String get roadGuideGoalsDemoBody =>
+      'Each goal becomes a container for the habits that move you toward it.';
+
+  @override
+  String get roadGuideHabitsTabTitle => 'Habits get you there';
+
+  @override
+  String get roadGuideHabitsTabBody =>
+      'Habits are the repeating actions that automate progress toward your goal.';
+
+  @override
+  String get roadGuideHabitsFabTitle => 'Add a habit to a goal';
+
+  @override
+  String get roadGuideHabitsFabBody =>
+      'Create habits and link them to a goal so every completion counts toward achievement.';
+
+  @override
+  String get roadGuideRecommendTitle => 'Get habit recommendations';
+
+  @override
+  String get roadGuideRecommendBody =>
+      'Tap Recommended Habits here. AI suggests habits from your goal, mission, and slogan.';
+
+  @override
+  String get roadGuideHabitsDemoTitle => 'Track habits under a goal';
+
+  @override
+  String get roadGuideHabitsDemoBody =>
+      'Complete habits consistently — that is how goal achievement becomes automatic.';
+
+  @override
+  String get roadGuideHabitDetailTitle => 'Habit details';
+
+  @override
+  String get roadGuideHabitDetailBody =>
+      'Open a habit to see progress, streaks, and stability — how consistently you are following through.';
+
+  @override
+  String get roadGuideTasksTabTitle => 'Tasks free your head';
+
+  @override
+  String get roadGuideTasksTabBody =>
+      'Write down what you must not forget. Tasks hold the details so you can focus on habits and the goal.';
+
+  @override
+  String get roadGuideTasksAddTitle => 'Add a task';
+
+  @override
+  String get roadGuideTasksAddBody =>
+      'Use + for one-off work, reminders, and steps that sit beside your habits.';
+
+  @override
+  String get roadGuideTasksDemoTitle => 'Remember everything';
+
+  @override
+  String get roadGuideTasksDemoBody =>
+      'Tasks hold the details habits do not cover — so nothing slips while you work toward the goal.';
+
+  @override
+  String get roadGuideTasksHabitsTitle => 'Habits stay obvious';
+
+  @override
+  String get roadGuideTasksHabitsBody =>
+      'Today’s habits appear here with tasks, so the next action is always in front of you.';
+
+  @override
+  String get roadGuideChatTabTitle => 'AI Helper';
+
+  @override
+  String get roadGuideChatTabBody =>
+      'The Helper is here for support — questions about habits, goals, time management, and building a plan.';
+
+  @override
+  String get roadGuideChatInputTitle => 'Ask anything about your plan';
+
+  @override
+  String get roadGuideChatInputBody =>
+      'Type a question or describe what you need: habits, goals, scheduling, or a plan to follow.';
+
+  @override
+  String get roadGuideSettingsTabTitle => 'Settings';
+
+  @override
+  String get roadGuideSettingsTabBody =>
+      'Profile, theme, language, password, and support live here. Slogan and mission also help AI recommend habits.';
+
+  @override
+  String get roadGuideSettingsProfileTitle => 'Profile fuels recommendations';
+
+  @override
+  String get roadGuideSettingsProfileBody =>
+      'Name, slogan, and mission describe who you are becoming — AI uses them when suggesting habits.';
+
+  @override
+  String get roadGuideSettingsReplayTitle => 'Replay anytime';
+
+  @override
+  String get roadGuideSettingsReplayBody =>
+      'You can run this road guide again from Settings → About. Theme and language are just above.';
 }

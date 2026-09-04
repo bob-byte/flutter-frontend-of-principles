@@ -15,6 +15,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsTitle => 'Налаштування';
 
   @override
+  String get settingsSectionProfile => 'Профіль';
+
+  @override
+  String get settingsSectionAbout => 'Про застосунок';
+
+  @override
+  String get settingsSectionAccount => 'Обліковий запис';
+
+  @override
   String get logoutLabel => 'Вийти';
 
   @override
@@ -37,6 +46,12 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get themeLightBlue => 'Світла синя';
+
+  @override
+  String get themeLabel => 'Тема';
+
+  @override
+  String get themeSubtitle => 'Оберіть кольорову тему застосунку';
 
   @override
   String get languageLabel => 'Мова';
@@ -70,6 +85,40 @@ class AppLocalizationsUk extends AppLocalizations {
   String get recommendedHabitsButton => 'Рекомендовані звички';
 
   @override
+  String get recommendedHabitsByAi => 'Рекомендовані звички штучним інтелектом';
+
+  @override
+  String get confirmRecommendedHabitsTitle => 'На основі цілі, місії та гасла';
+
+  @override
+  String get confirmRecommendedHabitsMessage =>
+      'Ви впевнені, що хочете завантажити звички на основі вибраної цілі, місії та основного гасла?';
+
+  @override
+  String get recommendedHabitsLoadingHint =>
+      'Якщо ви не хочете чекати, ви можете поки що змінити інші поля.';
+
+  @override
+  String get recommendedHabitsEmpty => 'Рекомендацій ще немає.';
+
+  @override
+  String get recommendedHabitsCaptionNoGoal =>
+      'Оберіть ціль вище — ми можемо рекомендувати звички на її основі.';
+
+  @override
+  String recommendedHabitsCaptionWithGoal(String goal) {
+    return 'Рекомендації будуть для досягнення «$goal».';
+  }
+
+  @override
+  String recommendedHabitsGoalPopover(String goal) {
+    return 'Ми можемо рекомендувати звички для досягнення вибраної цілі: «$goal».';
+  }
+
+  @override
+  String get loadingLabel => 'Завантаження';
+
+  @override
   String get openHabitDetailsButton => 'Відкрити деталі звички';
 
   @override
@@ -83,6 +132,12 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get deleteTooltip => 'Видалити';
+
+  @override
+  String get habitMenuEdit => 'Змінити';
+
+  @override
+  String get habitMenuDetails => 'Деталі';
 
   @override
   String get noHabitSelected => 'Звичку не вибрано';
@@ -101,7 +156,11 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get topFiveStreaks => 'Топ 5 серій';
+  String get topFiveStreaks => 'Топ-5 найтриваліших серій';
+
+  @override
+  String get topFiveStreaksInfo =>
+      'Топ-5 серій виконання звички відображає найстабільніші періоди особистої дисципліни. Цей інструмент допомагає усвідомити власну здатність до послідовних дій, підтримує мотивацію в моменти сумнівів і слугує основою для формування стійких, рекомендованих звичок.';
 
   @override
   String get noStreaksYet => 'Серій поки немає';
@@ -115,13 +174,47 @@ class AppLocalizationsUk extends AppLocalizations {
   String get stabilityTitle => 'Стабільність';
 
   @override
+  String get stabilityInfo =>
+      'Діаграма стабільності показує, наскільки послідовно ви дотримуєтеся звички без пропусків. Вона висвітлює ваші загальні патерни дотримання, допомагаючи побачити, де ви найнадійніші, а де варто звернути додаткову увагу. Відстежуючи стабільність, ви можете святкувати стабільний прогрес, виявляти моменти, які ставлять під виклик вашу рутину, та нарощувати впевненість у здатності підтримувати довгострокові зміни поведінки.';
+
+  @override
   String get noStabilityData => 'Немає даних про стабільність';
 
   @override
   String get habitByWeekdays => 'Звичка за днями тижня';
 
   @override
+  String get habitByWeekdaysInfo =>
+      'Діаграма звички за днями тижня показує, як часто ви виконуєте звичку в кожен конкретний день. Вона допомагає виявити дні, коли ви найпослідовніші, та ті, які частіше пропускаєте. Аналізуючи ці закономірності, ви можете скоригувати свій розклад, посилити слабкі сторони та вибудувати більш стабільний ритм звички протягом тижня.';
+
+  @override
   String get calendarTitle => 'Календар';
+
+  @override
+  String get calendarInfo =>
+      'Відображає виконання звичок за днями:\n- Синій – звичка виконана;\n- Голубий – дотримуватися звички не обов\'язково.\nВи можете змінити статус натисканням по дню.';
+
+  @override
+  String get executionCountAxis => 'Кількість виконань';
+
+  @override
+  String get frequencyEveryDay => 'Кожного дня';
+
+  @override
+  String frequencyEveryXDays(int count) {
+    return 'Кожні $count дні(-ів)';
+  }
+
+  @override
+  String frequencyTimesPerPeriod(int count, String period) {
+    return '$count рази(-ів) на $period';
+  }
+
+  @override
+  String get periodWeek => 'тиждень';
+
+  @override
+  String get periodMonth => 'місяць';
 
   @override
   String get weekdayMon => 'Пн';
@@ -185,7 +278,63 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newGoalLabel => 'Нова ціль';
 
   @override
+  String get goalsEmptyList => 'Ще немає цілей. Додайте одну вище.';
+
+  @override
+  String get addGoalTitle => 'Додати ціль';
+
+  @override
+  String get editGoalTitle => 'Редагувати ціль';
+
+  @override
+  String get goalExamplesHint =>
+      'Приклади цілей спрямованих на вашу ідентичність: бути олімпійським чемпіоном, бути впевненим в собі, бути вільним від куріння.';
+
+  @override
+  String get deleteGoalQuestion => 'Видалити ціль?';
+
+  @override
+  String get deleteGoalMessage =>
+      'Ціль буде видалено назавжди. Ця дія не може бути скасована.';
+
+  @override
+  String get markGoalCompleted => 'Позначити як виконану';
+
+  @override
+  String get markGoalIncomplete => 'Позначити як невиконану';
+
+  @override
+  String get completedGoalsHeader => 'Виконані';
+
+  @override
+  String goalHabitsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count звички',
+      many: '$count звичок',
+      few: '$count звички',
+      one: '$count звичка',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get goalMarkedCompleted => 'Ціль позначено як виконану';
+
+  @override
+  String get goalMarkedIncomplete => 'Ціль позначено як невиконану';
+
+  @override
   String get helperTitle => 'Чат з помічником';
+
+  @override
+  String get helperWarning =>
+      'ШІ-помічник знає ваші звички, цілі, місію, стать та гасло. Тому можете спитати щось стосовно них. Наприклад, “Яку поставити наступну ціль?” Зауважте: він може інколи помилятись. Перевіряйте важливу інформацію!';
+
+  @override
+  String get helperEmptyDescription =>
+      'Я - ШІ-асистент зі саморозвитку. Ви можете звертатися до мене стосовно різних питань. Наприклад, \"Як моя особистість впливає на моє життя?\"';
 
   @override
   String get tabChat => 'Чат';
@@ -213,6 +362,9 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get genericErrorOccurred => 'Сталася помилка';
+
+  @override
+  String get noInternetConnection => 'Немає з\'єднання з інтернетом';
 
   @override
   String get chatFallbackAnswer =>
@@ -317,6 +469,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get nameLabel => 'Ім\'я';
 
   @override
+  String get genderLabel => 'Стать';
+
+  @override
   String get genderMale => 'Чоловік';
 
   @override
@@ -341,6 +496,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get yourName => 'Твоє Імʼя';
 
   @override
+  String get yourGender => 'Твоя Стать';
+
+  @override
   String get yourMainSlogan => 'Твоє Основне Гасло';
 
   @override
@@ -356,6 +514,9 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get nameSavedSuccess => 'Твоє імʼя успішно збережене';
+
+  @override
+  String get genderSavedSuccess => 'Твою стать успішно збережено';
 
   @override
   String get sloganSavedSuccess => 'Твоє основне гасло успішно збережене';
@@ -505,4 +666,370 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get somethingWentWrongWhenUserAuthsUsingExternalService =>
       'Щось пішло не так. Скористайтесь опцією «Зареєструватись через email» або «Вхід».';
+
+  @override
+  String get tabAssistant => 'ШІ-Помічник';
+
+  @override
+  String get tabProfile => 'Профіль';
+
+  @override
+  String get archiveTitle => 'Архів';
+
+  @override
+  String get archiveEmptyDescription =>
+      'Тут відображаються твої завершені або призупинені звички.';
+
+  @override
+  String get archiveInfoDescription =>
+      'Навіщо потрібен архів?\n✅ Запланувати звички, які ви хочете додати чи змінити в майбутньому.\n🔁 Проаналізувати причини — які звички спрацювали, а які були занадто складними чи неактуальними.\n🌱 Спробувати знову — іноді корисно повернутись до старої звички, змінивши складність або підхід. Наприклад, тренуватись вранці, а не ввечері.\n\nПідказка: перед створенням нової звички подивіться архів — можливо, щось подібне вже було, і тепер ви знаєте, як зробити краще.';
+
+  @override
+  String get archiveInfoTooltip => 'Навіщо потрібен архів?';
+
+  @override
+  String get unarchiveHabitQuestion => 'Видалити звичку з архіву?';
+
+  @override
+  String get unarchiveHabitMessage =>
+      'Ця дія відновить звичку у ваш активний список.';
+
+  @override
+  String get habitScreenTitle => 'Звичка';
+
+  @override
+  String get habitDataTab => 'Дані';
+
+  @override
+  String get habitHowToKeepTab => 'Як утримувати';
+
+  @override
+  String get habitNameField => 'Назва';
+
+  @override
+  String get habitNameInfo =>
+      'Вкажіть назву звички та час або місце її виконання. Це збільшить ймовірність її дотримання. Приклад: я молюсь, як тільки прокинусь.';
+
+  @override
+  String get habitGoalLabel => 'Ціль';
+
+  @override
+  String get selectHabitGoalTitle => 'Оберіть ціль звички';
+
+  @override
+  String get selectHabitGoalRecommendation =>
+      'Рекомендація: виберіть конкретну ціль або ту, яка орієнтована на вашу ідентичність, оскільки вона визначає ваше життя.';
+
+  @override
+  String get habitFlexible => 'Гнучка';
+
+  @override
+  String get habitFlexibleInfo =>
+      'Зберігання у більшості випадків, але дозволено робити винятки у ситуаціях, коли існує більш важлива звичка. Наприклад, виконувати усі цілі за високим пріоритетом протягом дня, але оскільки звичка дотримання режиму є важливішою, то слід почати готуватись до сну у відмічений час.';
+
+  @override
+  String get habitNoExceptions => 'Без винятків';
+
+  @override
+  String get habitNoExceptionsInfo =>
+      'Неухильне дотримування звички, навіть у надзвичайних ситуаціях. Наприклад, відмова від вживання алкоголю чи тютюну.';
+
+  @override
+  String get habitFrequency => 'Частота';
+
+  @override
+  String get habitReminder => 'Нагадування';
+
+  @override
+  String get habitNotes => 'Нотатки';
+
+  @override
+  String get habitDifficulty => 'Складність (1 - 10)';
+
+  @override
+  String get habitDifficultyInfo =>
+      'Наскільки важко дотримуватися звички за зусиллями, часом і самоконтролем';
+
+  @override
+  String habitAutomationExplanation(int days) {
+    return 'Для автоматизації звички потрібно регулярне виконання протягом $days дні(-ів).';
+  }
+
+  @override
+  String get habitAlreadyAutomated => 'Звичка вже автоматична';
+
+  @override
+  String habitDaysToGoUntilAutomaticJust(int days) {
+    return 'Тільки $days залишилось днів до повної автоматизації звички.';
+  }
+
+  @override
+  String habitDaysToGoUntilAutomaticStill(int days) {
+    return 'Ще $days залишилось днів до повної автоматизації звички.';
+  }
+
+  @override
+  String get habitMenuViewDetails => 'Переглянути деталі';
+
+  @override
+  String get habitMenuRestore => 'Відновити';
+
+  @override
+  String get habitMenuDelete => 'Видалити звичку';
+
+  @override
+  String get deleteHabitQuestion => 'Видалити звичку?';
+
+  @override
+  String get deleteHabitMessage =>
+      'Звичку буде видалено назавжди. Ця дія не може бути скасована.';
+
+  @override
+  String get habitsTodayLabel => 'Сьогодні';
+
+  @override
+  String get habitsCompletedToday => 'Виконано цього дня';
+
+  @override
+  String get habitsEmptyList => 'Немає звичок. Натисніть + щоб додати.';
+
+  @override
+  String get undefinedGoalLabel => '*Ціль не визначена';
+
+  @override
+  String get habitStreakExplanation =>
+      'Показує кількість днів поспіль, коли ви відкривали додаток і виконували звички. Якщо пропустити хоча б один день — серія обнуляється.';
+
+  @override
+  String get archiveHabitQuestion => 'Перемістити звичку в архів?';
+
+  @override
+  String get archiveHabitMessage =>
+      'Ця дія перемістить звичку в архів. Ви зможете відновити роботу над нею пізніше.';
+
+  @override
+  String get cannotCompleteHabitInTheFuture =>
+      'Неможливо позначити звичку, як виконана для майбутніх днів';
+
+  @override
+  String get reminderTitleLabel => 'Заголовок';
+
+  @override
+  String get reminderDescriptionLabel => 'Опис';
+
+  @override
+  String get reminderTimeLabel => 'Час';
+
+  @override
+  String get reminderEnableLabel => 'Увімкнути';
+
+  @override
+  String get doneButton => 'Готово';
+
+  @override
+  String get habitsReportReminderTitleText => 'Нагадайте сьогоднішні звички';
+
+  @override
+  String get habitsReportReminderDescriptionText =>
+      'час відзначити, які звички було виконано вчора, і нагадати про свої звички та цілі';
+
+  @override
+  String get deviceDoesNotSupportNotifications =>
+      'Отакої.. Схоже, що ваша операційна система не підтримує сповіщення. Будь ласка, спробуйте оновити її.';
+
+  @override
+  String get notificationsDisabledTitle => 'Сповіщення вимкнено';
+
+  @override
+  String get notificationsDisabledMessage =>
+      'Щоб отримувати нагадування, дозвольте сповіщення в налаштуваннях пристрою. Відкрити налаштування зараз?';
+
+  @override
+  String get scheduleDate => 'Дата';
+
+  @override
+  String get scheduleDuration => 'Тривалість';
+
+  @override
+  String get scheduleTime => 'Час';
+
+  @override
+  String get scheduleReminder => 'Нагадування';
+
+  @override
+  String get scheduleRepeat => 'Повтор';
+
+  @override
+  String get scheduleClear => 'Очистити';
+
+  @override
+  String get scheduleOnTime => 'Вчасно';
+
+  @override
+  String get scheduleCustom => 'Власне';
+
+  @override
+  String get scheduleRecents => 'Нещодавні';
+
+  @override
+  String get scheduleConstantReminder => 'Постійне нагадування';
+
+  @override
+  String get scheduleAllDay => 'Весь день';
+
+  @override
+  String get scheduleByDueDates => 'За датою виконання';
+
+  @override
+  String get scheduleByCompletion => 'За датою завершення';
+
+  @override
+  String get roadGuideSkip => 'Пропустити';
+
+  @override
+  String get roadGuideBack => 'Назад';
+
+  @override
+  String get roadGuideNext => 'Далі';
+
+  @override
+  String get roadGuideDone => 'Готово';
+
+  @override
+  String get roadGuideReplayLabel => 'Дорожній гід';
+
+  @override
+  String get roadGuideReplaySubtitle =>
+      'Огляд цілей, звичок, завдань і налаштувань';
+
+  @override
+  String get roadGuideExampleBadge => 'приклад';
+
+  @override
+  String get roadGuideDemoGoalName => 'Стати в формі';
+
+  @override
+  String get roadGuideDemoHabitName => 'Ранкове тренування';
+
+  @override
+  String get roadGuideDemoTaskName => 'Записатися на тренування';
+
+  @override
+  String get roadGuideGoalsTabTitle => 'Почніть з цілі';
+
+  @override
+  String get roadGuideGoalsTabBody =>
+      'Principles автоматизує досягнення цілей. Відкрийте Цілі, щоб визначити, чого хочете досягти.';
+
+  @override
+  String get roadGuideGoalsComposerTitle => 'Створіть ціль';
+
+  @override
+  String get roadGuideGoalsComposerBody =>
+      'Опишіть результат — під ним будуть згруповані звички, які ведуть до нього.';
+
+  @override
+  String get roadGuideGoalsDemoTitle => 'Цілі організовують звички';
+
+  @override
+  String get roadGuideGoalsDemoBody =>
+      'Кожна ціль стає контейнером для звичок, що наближають вас до результату.';
+
+  @override
+  String get roadGuideHabitsTabTitle => 'Звички ведуть до цілі';
+
+  @override
+  String get roadGuideHabitsTabBody =>
+      'Звички — це повторювані дії, які автоматизують прогрес до вашої цілі.';
+
+  @override
+  String get roadGuideHabitsFabTitle => 'Додайте звичку до цілі';
+
+  @override
+  String get roadGuideHabitsFabBody =>
+      'Створюйте звички й прив’язуйте їх до цілі — кожне виконання наближає досягнення.';
+
+  @override
+  String get roadGuideRecommendTitle => 'Отримайте рекомендації звичок';
+
+  @override
+  String get roadGuideRecommendBody =>
+      'Натисніть «Рекомендовані звички». ШІ запропонує звички на основі цілі, місії та гасла.';
+
+  @override
+  String get roadGuideHabitsDemoTitle => 'Відстежуйте звички під ціллю';
+
+  @override
+  String get roadGuideHabitsDemoBody =>
+      'Виконуйте звички стабільно — так досягнення цілі стає автоматичним.';
+
+  @override
+  String get roadGuideHabitDetailTitle => 'Деталі звички';
+
+  @override
+  String get roadGuideHabitDetailBody =>
+      'Відкрийте звичку, щоб бачити прогрес, серії та стабільність — наскільки послідовно ви її виконуєте.';
+
+  @override
+  String get roadGuideTasksTabTitle => 'Завдання розвантажують голову';
+
+  @override
+  String get roadGuideTasksTabBody =>
+      'Записуйте те, що не можна забути. Завдання тримають деталі, щоб ви зосередились на звичках і цілі.';
+
+  @override
+  String get roadGuideTasksAddTitle => 'Додайте завдання';
+
+  @override
+  String get roadGuideTasksAddBody =>
+      'Кнопка + — для разових справ, нагадувань і кроків поруч зі звичками.';
+
+  @override
+  String get roadGuideTasksDemoTitle => 'Нічого не забути';
+
+  @override
+  String get roadGuideTasksDemoBody =>
+      'У завданнях те, чого не покривають звички — щоб ніщо не випало, поки ви йдете до цілі.';
+
+  @override
+  String get roadGuideTasksHabitsTitle => 'Звички завжди на видноті';
+
+  @override
+  String get roadGuideTasksHabitsBody =>
+      'Сьогоднішні звички з’являються тут разом із завданнями, тож наступна дія завжди перед очима.';
+
+  @override
+  String get roadGuideChatTabTitle => 'AI-помічник';
+
+  @override
+  String get roadGuideChatTabBody =>
+      'Помічник — це підтримка: відповіді про звички, цілі, тайм-менеджмент і створення плану.';
+
+  @override
+  String get roadGuideChatInputTitle => 'Запитайте про свій план';
+
+  @override
+  String get roadGuideChatInputBody =>
+      'Напишіть питання або опишіть, що потрібно: звички, цілі, розклад чи план дій.';
+
+  @override
+  String get roadGuideSettingsTabTitle => 'Налаштування';
+
+  @override
+  String get roadGuideSettingsTabBody =>
+      'Тут профіль, тема, мова, пароль і підтримка. Гасло та місія також допомагають ШІ рекомендувати звички.';
+
+  @override
+  String get roadGuideSettingsProfileTitle => 'Профіль для рекомендацій';
+
+  @override
+  String get roadGuideSettingsProfileBody =>
+      'Ім’я, гасло й місія описують, ким ви стаєте — ШІ бере їх, коли пропонує звички.';
+
+  @override
+  String get roadGuideSettingsReplayTitle => 'Запуск у будь-який час';
+
+  @override
+  String get roadGuideSettingsReplayBody =>
+      'Цей гід можна пройти знову в Налаштуваннях → Про застосунок. Тема й мова — трохи вище.';
 }

@@ -110,6 +110,24 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// Settings grouped-section header for profile fields
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get settingsSectionProfile;
+
+  /// Settings grouped-section header for app information and support
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsSectionAbout;
+
+  /// Settings grouped-section header for account actions
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsSectionAccount;
+
   /// Logout button text
   ///
   /// In en, this message translates to:
@@ -157,6 +175,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Light blue'**
   String get themeLightBlue;
+
+  /// Theme setting label
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeLabel;
+
+  /// Theme setting helper text
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the app color theme'**
+  String get themeSubtitle;
 
   /// Language setting label
   ///
@@ -218,6 +248,60 @@ abstract class AppLocalizations {
   /// **'Recommended Habits'**
   String get recommendedHabitsButton;
 
+  /// Title of the recommended-habits bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended habits by AI'**
+  String get recommendedHabitsByAi;
+
+  /// Confirm-dialog title before loading AI habit recommendations
+  ///
+  /// In en, this message translates to:
+  /// **'Based on goal, mission and slogan'**
+  String get confirmRecommendedHabitsTitle;
+
+  /// Confirm-dialog body before loading AI habit recommendations
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to load recommended habits based on your chosen goal, mission and main slogan?'**
+  String get confirmRecommendedHabitsMessage;
+
+  /// Hint shown while AI habit recommendations are loading
+  ///
+  /// In en, this message translates to:
+  /// **'If you don\'t want to wait, you can change the other fields for now.'**
+  String get recommendedHabitsLoadingHint;
+
+  /// Empty-state text in the recommended-habits sheet
+  ///
+  /// In en, this message translates to:
+  /// **'No recommendations yet.'**
+  String get recommendedHabitsEmpty;
+
+  /// Hint under Recommended Habits when no goal is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Select a Goal above — we can recommend habits for it.'**
+  String get recommendedHabitsCaptionNoGoal;
+
+  /// Hint under Recommended Habits when a goal is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendations will be for \"{goal}\" achievement.'**
+  String recommendedHabitsCaptionWithGoal(String goal);
+
+  /// Popover shown on Recommended Habits after the user selects a goal
+  ///
+  /// In en, this message translates to:
+  /// **'We can recommend habits for achieving the selected goal: \"{goal}\".'**
+  String recommendedHabitsGoalPopover(String goal);
+
+  /// Generic loading label
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get loadingLabel;
+
   /// No description provided for @openHabitDetailsButton.
   ///
   /// In en, this message translates to:
@@ -248,6 +332,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get deleteTooltip;
 
+  /// Short edit action in the habit long-press menu
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get habitMenuEdit;
+
+  /// Open habit details from the habits-tab long-press menu
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get habitMenuDetails;
+
   /// No description provided for @noHabitSelected.
   ///
   /// In en, this message translates to:
@@ -275,8 +371,14 @@ abstract class AppLocalizations {
   /// No description provided for @topFiveStreaks.
   ///
   /// In en, this message translates to:
-  /// **'Top Five Streaks'**
+  /// **'Top-5 streaks'**
   String get topFiveStreaks;
+
+  /// MAUI TopFiveStreaksExplanation snackbar on the top-5 streaks info button
+  ///
+  /// In en, this message translates to:
+  /// **'The Top 5 habit streaks reflect the most consistent periods of personal discipline. This feature helps recognize your ability to take sustained action, supports motivation during times of doubt, and serves as a foundation for forming stable, recommended habits.'**
+  String get topFiveStreaksInfo;
 
   /// No description provided for @noStreaksYet.
   ///
@@ -296,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Stability'**
   String get stabilityTitle;
 
+  /// MAUI StabilityExplanation snackbar on the stability chart info button
+  ///
+  /// In en, this message translates to:
+  /// **'The Stability chart measures how consistently you maintain your habit without missing days. It highlights your overall adherence patterns, helping you see where you’re most reliable and where you might need extra focus. By tracking stability, you can celebrate steady progress, identify moments that challenge your routine, and build confidence in sustaining long‑term behavior change.'**
+  String get stabilityInfo;
+
   /// No description provided for @noStabilityData.
   ///
   /// In en, this message translates to:
@@ -305,14 +413,62 @@ abstract class AppLocalizations {
   /// No description provided for @habitByWeekdays.
   ///
   /// In en, this message translates to:
-  /// **'Habit By Weekdays'**
+  /// **'Habit by days of the week'**
   String get habitByWeekdays;
+
+  /// MAUI HabitByDayweeksExplanation snackbar on the weekdays chart info button
+  ///
+  /// In en, this message translates to:
+  /// **'The Habit by Day of the Week chart shows how often you complete your habit on each day. It helps you spot which days you\'re most consistent and which ones tend to be missed. By understanding these patterns, you can adjust your routine, address weak spots, and create a more balanced and sustainable habit rhythm throughout the week.'**
+  String get habitByWeekdaysInfo;
 
   /// No description provided for @calendarTitle.
   ///
   /// In en, this message translates to:
   /// **'Calendar'**
   String get calendarTitle;
+
+  /// MAUI CalendarInfoExplanation snackbar on the calendar info button
+  ///
+  /// In en, this message translates to:
+  /// **'The execution of habits by day is displayed:\n- Blue - habit completed;\n- Cyan - it is not necessary to follow the habit.\nYou can change the status with a press.'**
+  String get calendarInfo;
+
+  /// Y-axis title on habit detail bar charts
+  ///
+  /// In en, this message translates to:
+  /// **'Number of completions'**
+  String get executionCountAxis;
+
+  /// Frequency chip text for a daily habit
+  ///
+  /// In en, this message translates to:
+  /// **'Every day'**
+  String get frequencyEveryDay;
+
+  /// Frequency chip text for every-N-days habits
+  ///
+  /// In en, this message translates to:
+  /// **'Every {count} day(s)'**
+  String frequencyEveryXDays(int count);
+
+  /// Frequency chip text for N times per week/month
+  ///
+  /// In en, this message translates to:
+  /// **'{count} time(s) per {period}'**
+  String frequencyTimesPerPeriod(int count, String period);
+
+  /// No description provided for @periodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'week'**
+  String get periodWeek;
+
+  /// No description provided for @periodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'month'**
+  String get periodMonth;
 
   /// No description provided for @weekdayMon.
   ///
@@ -428,11 +584,95 @@ abstract class AppLocalizations {
   /// **'New goal'**
   String get newGoalLabel;
 
+  /// Empty-state message on the goals tab
+  ///
+  /// In en, this message translates to:
+  /// **'No goals yet. Add one above.'**
+  String get goalsEmptyList;
+
+  /// Title of the dialog used to create a goal
+  ///
+  /// In en, this message translates to:
+  /// **'Add goal'**
+  String get addGoalTitle;
+
+  /// Title of the dialog used to rename a goal
+  ///
+  /// In en, this message translates to:
+  /// **'Edit goal'**
+  String get editGoalTitle;
+
+  /// Hint text in the add/edit goal dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.'**
+  String get goalExamplesHint;
+
+  /// Title of the delete-goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete goal?'**
+  String get deleteGoalQuestion;
+
+  /// Body of the delete-goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'The goal will be deleted permanently. This action cannot be undone.'**
+  String get deleteGoalMessage;
+
+  /// Context-menu action to mark a goal as completed
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as completed'**
+  String get markGoalCompleted;
+
+  /// Context-menu action to mark a completed goal as active again
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as not completed'**
+  String get markGoalIncomplete;
+
+  /// Section header for completed goals in the goals list
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completedGoalsHeader;
+
+  /// Subtitle on a goal showing how many habits are grouped under it
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} habit} other{{count} habits}}'**
+  String goalHabitsCount(int count);
+
+  /// Toast shown after marking a goal as completed
+  ///
+  /// In en, this message translates to:
+  /// **'Goal marked as completed'**
+  String get goalMarkedCompleted;
+
+  /// Toast shown after marking a completed goal as active again
+  ///
+  /// In en, this message translates to:
+  /// **'Goal marked as not completed'**
+  String get goalMarkedIncomplete;
+
   /// No description provided for @helperTitle.
   ///
   /// In en, this message translates to:
   /// **'Chat With Helper'**
   String get helperTitle;
+
+  /// Information shown from the AI helper screen's info button
+  ///
+  /// In en, this message translates to:
+  /// **'The AI-assistant knows your habits, goals, mission, gender, and slogan. So you can ask anything about them. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!'**
+  String get helperWarning;
+
+  /// Empty-state text shown below the AI helper animation
+  ///
+  /// In en, this message translates to:
+  /// **'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"'**
+  String get helperEmptyDescription;
 
   /// Bottom tab label for the AI chat screen
   ///
@@ -487,6 +727,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error occurred'**
   String get genericErrorOccurred;
+
+  /// Toast when connectivity is lost
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get noInternetConnection;
 
   /// Fallback AI helper response used in demo mode
   ///
@@ -581,7 +827,7 @@ abstract class AppLocalizations {
   /// No description provided for @startupLoginBtn.
   ///
   /// In en, this message translates to:
-  /// **'Login'**
+  /// **'Log in'**
   String get startupLoginBtn;
 
   /// No description provided for @startupErrorGeneric.
@@ -668,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Name'**
   String get nameLabel;
 
+  /// Settings and signup label for gender
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get genderLabel;
+
   /// No description provided for @genderMale.
   ///
   /// In en, this message translates to:
@@ -716,6 +968,12 @@ abstract class AppLocalizations {
   /// **'Your Name'**
   String get yourName;
 
+  /// Dialog title when editing gender
+  ///
+  /// In en, this message translates to:
+  /// **'Your Gender'**
+  String get yourGender;
+
   /// Dialog title when editing the main slogan
   ///
   /// In en, this message translates to:
@@ -745,6 +1003,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your name successfully saved'**
   String get nameSavedSuccess;
+
+  /// Toast after gender is saved
+  ///
+  /// In en, this message translates to:
+  /// **'Your gender successfully saved'**
+  String get genderSavedSuccess;
 
   /// Toast after the main slogan is saved
   ///
@@ -1015,6 +1279,660 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please use the \"Sign up with email\" or \"Log in\" option.'**
   String get somethingWentWrongWhenUserAuthsUsingExternalService;
+
+  /// Bottom tab label for the AI assistant
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get tabAssistant;
+
+  /// Bottom tab label for the profile screen
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get tabProfile;
+
+  /// Title of the archived habits bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get archiveTitle;
+
+  /// Empty-state text shown when there are no archived habits
+  ///
+  /// In en, this message translates to:
+  /// **'This section displays the habits you have archived. You can return to them whenever you are ready to work on them again.'**
+  String get archiveEmptyDescription;
+
+  /// Full archive explanation shown after tapping the info button
+  ///
+  /// In en, this message translates to:
+  /// **'Why do you need an archive?\n✅ Plan habits you want to add or change in the future.\n🔁 Analyze reasons - which habits worked and which ones were too complicated or irrelevant.\n🌱 Try again - sometimes it\'s good to go back to an old habit by changing the difficulty or approach. For example, train in the morning instead of the evening.\n\nTip: before creating a new habit, look at the archive - maybe something similar has already happened, and now you know how to do it better.'**
+  String get archiveInfoDescription;
+
+  /// Tooltip for the archive info button
+  ///
+  /// In en, this message translates to:
+  /// **'Why do you need an archive?'**
+  String get archiveInfoTooltip;
+
+  /// Title of the unarchive confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive Habit?'**
+  String get unarchiveHabitQuestion;
+
+  /// Body of the unarchive confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This action will restore the habit to your active list.'**
+  String get unarchiveHabitMessage;
+
+  /// Title of the add/edit habit page
+  ///
+  /// In en, this message translates to:
+  /// **'Habit'**
+  String get habitScreenTitle;
+
+  /// First tab on the add/edit habit page
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get habitDataTab;
+
+  /// Second tab on the add/edit habit page
+  ///
+  /// In en, this message translates to:
+  /// **'How to maintain'**
+  String get habitHowToKeepTab;
+
+  /// Habit name field label
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get habitNameField;
+
+  /// Info text shown next to the habit name field
+  ///
+  /// In en, this message translates to:
+  /// **'Specify the habit name and the time or place you will do it. This increases the chance you will stick to it. Example: I pray as soon as I wake up.'**
+  String get habitNameInfo;
+
+  /// Goal picker field label on the habit page
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get habitGoalLabel;
+
+  /// Title of the goal selection bottom sheet when editing a habit
+  ///
+  /// In en, this message translates to:
+  /// **'Select habit goal'**
+  String get selectHabitGoalTitle;
+
+  /// Hint shown at the bottom of the goal selection sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Recommendation: pick a concrete goal or an identity-oriented one — it shapes your life.'**
+  String get selectHabitGoalRecommendation;
+
+  /// Flexible habit type chip
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible'**
+  String get habitFlexible;
+
+  /// Tooltip shown when tapping the Flexible habit type chip
+  ///
+  /// In en, this message translates to:
+  /// **'This is a habit type that a person follows most of the time, but may make exceptions in special situations. For example, it may be the habit of telling the truth but being able to keep silent or deceive when it could cause serious harm to others.'**
+  String get habitFlexibleInfo;
+
+  /// Strict habit type chip
+  ///
+  /// In en, this message translates to:
+  /// **'Without exceptions'**
+  String get habitNoExceptions;
+
+  /// Tooltip shown when tapping the Without exceptions habit type chip
+  ///
+  /// In en, this message translates to:
+  /// **'This is a habit type that a person adheres to strictly and never makes exceptions, even in emergency situations. For example, refusal to drink alcohol or tobacco, regardless of the circumstances.'**
+  String get habitNoExceptionsInfo;
+
+  /// Frequency picker field label
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency'**
+  String get habitFrequency;
+
+  /// Reminder picker field label
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get habitReminder;
+
+  /// Notes field label on the how-to-maintain tab
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get habitNotes;
+
+  /// Difficulty stepper label
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty (1 - 10)'**
+  String get habitDifficulty;
+
+  /// Tooltip shown when tapping the difficulty info icon
+  ///
+  /// In en, this message translates to:
+  /// **'How difficult is it to stick to the habit in terms of effort, time and self-control'**
+  String get habitDifficultyInfo;
+
+  /// Help text under the difficulty control for how many days automation takes on a new habit
+  ///
+  /// In en, this message translates to:
+  /// **'Habit automation requires regular performance for {days} day(s).'**
+  String habitAutomationExplanation(int days);
+
+  /// Help text under difficulty when an existing habit has already reached 100%
+  ///
+  /// In en, this message translates to:
+  /// **'The habit is already automated'**
+  String get habitAlreadyAutomated;
+
+  /// Help text under difficulty when fewer than 30 days remain until 100%
+  ///
+  /// In en, this message translates to:
+  /// **'Just {days} days to go until your habit becomes fully automatic.'**
+  String habitDaysToGoUntilAutomaticJust(int days);
+
+  /// Help text under difficulty when 30 or more days remain until 100%
+  ///
+  /// In en, this message translates to:
+  /// **'There are still {days} days to go until your habit becomes fully automatic.'**
+  String habitDaysToGoUntilAutomaticStill(int days);
+
+  /// Open habit details from the archived habit long-press menu
+  ///
+  /// In en, this message translates to:
+  /// **'View details'**
+  String get habitMenuViewDetails;
+
+  /// Restore an archived habit to the active list
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get habitMenuRestore;
+
+  /// Delete habit action in the archived habit long-press menu
+  ///
+  /// In en, this message translates to:
+  /// **'Delete habit'**
+  String get habitMenuDelete;
+
+  /// Title of the delete-habit confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete habit?'**
+  String get deleteHabitQuestion;
+
+  /// Body of the delete-habit confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'The habit will be deleted permanently. This action cannot be undone.'**
+  String get deleteHabitMessage;
+
+  /// Prefix for the selected date on the habits tab when it is today
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get habitsTodayLabel;
+
+  /// Summary banner on the habits tab showing how many habits are done for the selected day
+  ///
+  /// In en, this message translates to:
+  /// **'Completed this day'**
+  String get habitsCompletedToday;
+
+  /// Empty-state message on the habits tab
+  ///
+  /// In en, this message translates to:
+  /// **'No habits. Tap + to add.'**
+  String get habitsEmptyList;
+
+  /// Group header for habits that are not linked to a goal
+  ///
+  /// In en, this message translates to:
+  /// **'*Goal not defined'**
+  String get undefinedGoalLabel;
+
+  /// Explanation shown when tapping the streak counter on the habits tab
+  ///
+  /// In en, this message translates to:
+  /// **'Shows how many days in a row you opened the app and completed habits. If you skip even one day, the streak resets.'**
+  String get habitStreakExplanation;
+
+  /// Title of the archive confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Move habit to archive?'**
+  String get archiveHabitQuestion;
+
+  /// Body of the archive confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This will move the habit to the archive. You can resume working on it later.'**
+  String get archiveHabitMessage;
+
+  /// Error shown when tapping a future day on the habit calendar
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t mark a habit as done for future days'**
+  String get cannotCompleteHabitInTheFuture;
+
+  /// Label for the habits-report reminder title field
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get reminderTitleLabel;
+
+  /// Label for the habits-report reminder description field
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get reminderDescriptionLabel;
+
+  /// Label for the habits-report reminder time field
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get reminderTimeLabel;
+
+  /// Toggle label to enable the habits-report reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get reminderEnableLabel;
+
+  /// Dismiss button on the reminder time picker
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get doneButton;
+
+  /// Default title for the daily habits-report reminder when the server has none
+  ///
+  /// In en, this message translates to:
+  /// **'Remember today\'s habits'**
+  String get habitsReportReminderTitleText;
+
+  /// Default description body for the daily habits-report reminder. Prefixed with the user name when set.
+  ///
+  /// In en, this message translates to:
+  /// **'time to note what habits were accomplished yesterday and remind yourself of habits and goals'**
+  String get habitsReportReminderDescriptionText;
+
+  /// Shown when enabling a reminder but the device cannot send notifications
+  ///
+  /// In en, this message translates to:
+  /// **'Oops.. It looks like your operating system doesn\'t support notifications. Please try updating it.'**
+  String get deviceDoesNotSupportNotifications;
+
+  /// Title when notification permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off'**
+  String get notificationsDisabledTitle;
+
+  /// Asks whether to open OS settings after notification permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'To receive reminders, allow notifications in device settings. Open settings now?'**
+  String get notificationsDisabledMessage;
+
+  /// No description provided for @scheduleDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get scheduleDate;
+
+  /// No description provided for @scheduleDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get scheduleDuration;
+
+  /// No description provided for @scheduleTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get scheduleTime;
+
+  /// No description provided for @scheduleReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get scheduleReminder;
+
+  /// No description provided for @scheduleRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get scheduleRepeat;
+
+  /// No description provided for @scheduleClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get scheduleClear;
+
+  /// No description provided for @scheduleOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'On time'**
+  String get scheduleOnTime;
+
+  /// No description provided for @scheduleCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get scheduleCustom;
+
+  /// No description provided for @scheduleRecents.
+  ///
+  /// In en, this message translates to:
+  /// **'Recents'**
+  String get scheduleRecents;
+
+  /// No description provided for @scheduleConstantReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Constant Reminder'**
+  String get scheduleConstantReminder;
+
+  /// No description provided for @scheduleAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All Day'**
+  String get scheduleAllDay;
+
+  /// No description provided for @scheduleByDueDates.
+  ///
+  /// In en, this message translates to:
+  /// **'By Due Dates'**
+  String get scheduleByDueDates;
+
+  /// No description provided for @scheduleByCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'By Completion Date'**
+  String get scheduleByCompletion;
+
+  /// Skip the in-app road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get roadGuideSkip;
+
+  /// Go to the previous road guide step
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get roadGuideBack;
+
+  /// Advance to the next road guide step
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get roadGuideNext;
+
+  /// Finish the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get roadGuideDone;
+
+  /// Settings row to replay the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'App road guide'**
+  String get roadGuideReplayLabel;
+
+  /// Settings subtitle for replaying the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Walk through goals, habits, tasks, and settings'**
+  String get roadGuideReplaySubtitle;
+
+  /// Badge on temporary demo items during the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'example'**
+  String get roadGuideExampleBadge;
+
+  /// Demo goal name shown during the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Get fit'**
+  String get roadGuideDemoGoalName;
+
+  /// Demo habit name shown during the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Morning workout'**
+  String get roadGuideDemoHabitName;
+
+  /// Demo task name shown during the road guide
+  ///
+  /// In en, this message translates to:
+  /// **'Book a training session'**
+  String get roadGuideDemoTaskName;
+
+  /// No description provided for @roadGuideGoalsTabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with a goal'**
+  String get roadGuideGoalsTabTitle;
+
+  /// No description provided for @roadGuideGoalsTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Principles automates goal achievement. Open Goals to define what you want to reach.'**
+  String get roadGuideGoalsTabBody;
+
+  /// No description provided for @roadGuideGoalsComposerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your goal'**
+  String get roadGuideGoalsComposerTitle;
+
+  /// No description provided for @roadGuideGoalsComposerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the outcome you want — habits will be organized under it.'**
+  String get roadGuideGoalsComposerBody;
+
+  /// No description provided for @roadGuideGoalsDemoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals organize habits'**
+  String get roadGuideGoalsDemoTitle;
+
+  /// No description provided for @roadGuideGoalsDemoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each goal becomes a container for the habits that move you toward it.'**
+  String get roadGuideGoalsDemoBody;
+
+  /// No description provided for @roadGuideHabitsTabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits get you there'**
+  String get roadGuideHabitsTabTitle;
+
+  /// No description provided for @roadGuideHabitsTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits are the repeating actions that automate progress toward your goal.'**
+  String get roadGuideHabitsTabBody;
+
+  /// No description provided for @roadGuideHabitsFabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a habit to a goal'**
+  String get roadGuideHabitsFabTitle;
+
+  /// No description provided for @roadGuideHabitsFabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create habits and link them to a goal so every completion counts toward achievement.'**
+  String get roadGuideHabitsFabBody;
+
+  /// No description provided for @roadGuideRecommendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get habit recommendations'**
+  String get roadGuideRecommendTitle;
+
+  /// No description provided for @roadGuideRecommendBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Recommended Habits here. AI suggests habits from your goal, mission, and slogan.'**
+  String get roadGuideRecommendBody;
+
+  /// No description provided for @roadGuideHabitsDemoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track habits under a goal'**
+  String get roadGuideHabitsDemoTitle;
+
+  /// No description provided for @roadGuideHabitsDemoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete habits consistently — that is how goal achievement becomes automatic.'**
+  String get roadGuideHabitsDemoBody;
+
+  /// No description provided for @roadGuideHabitDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Habit details'**
+  String get roadGuideHabitDetailTitle;
+
+  /// No description provided for @roadGuideHabitDetailBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a habit to see progress, streaks, and stability — how consistently you are following through.'**
+  String get roadGuideHabitDetailBody;
+
+  /// No description provided for @roadGuideTasksTabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks free your head'**
+  String get roadGuideTasksTabTitle;
+
+  /// No description provided for @roadGuideTasksTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Write down what you must not forget. Tasks hold the details so you can focus on habits and the goal.'**
+  String get roadGuideTasksTabBody;
+
+  /// No description provided for @roadGuideTasksAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a task'**
+  String get roadGuideTasksAddTitle;
+
+  /// No description provided for @roadGuideTasksAddBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use + for one-off work, reminders, and steps that sit beside your habits.'**
+  String get roadGuideTasksAddBody;
+
+  /// No description provided for @roadGuideTasksDemoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember everything'**
+  String get roadGuideTasksDemoTitle;
+
+  /// No description provided for @roadGuideTasksDemoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks hold the details habits do not cover — so nothing slips while you work toward the goal.'**
+  String get roadGuideTasksDemoBody;
+
+  /// No description provided for @roadGuideTasksHabitsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits stay obvious'**
+  String get roadGuideTasksHabitsTitle;
+
+  /// No description provided for @roadGuideTasksHabitsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Today’s habits appear here with tasks, so the next action is always in front of you.'**
+  String get roadGuideTasksHabitsBody;
+
+  /// No description provided for @roadGuideChatTabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Helper'**
+  String get roadGuideChatTabTitle;
+
+  /// No description provided for @roadGuideChatTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The Helper is here for support — questions about habits, goals, time management, and building a plan.'**
+  String get roadGuideChatTabBody;
+
+  /// No description provided for @roadGuideChatInputTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask anything about your plan'**
+  String get roadGuideChatInputTitle;
+
+  /// No description provided for @roadGuideChatInputBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a question or describe what you need: habits, goals, scheduling, or a plan to follow.'**
+  String get roadGuideChatInputBody;
+
+  /// No description provided for @roadGuideSettingsTabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get roadGuideSettingsTabTitle;
+
+  /// No description provided for @roadGuideSettingsTabBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile, theme, language, password, and support live here. Slogan and mission also help AI recommend habits.'**
+  String get roadGuideSettingsTabBody;
+
+  /// No description provided for @roadGuideSettingsProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile fuels recommendations'**
+  String get roadGuideSettingsProfileTitle;
+
+  /// No description provided for @roadGuideSettingsProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, slogan, and mission describe who you are becoming — AI uses them when suggesting habits.'**
+  String get roadGuideSettingsProfileBody;
+
+  /// No description provided for @roadGuideSettingsReplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay anytime'**
+  String get roadGuideSettingsReplayTitle;
+
+  /// No description provided for @roadGuideSettingsReplayBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can run this road guide again from Settings → About. Theme and language are just above.'**
+  String get roadGuideSettingsReplayBody;
 }
 
 class _AppLocalizationsDelegate
