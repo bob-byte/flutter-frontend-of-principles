@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
+import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/viewmodels/app_benefits_viewmodel.dart';
 import 'package:principles_app/views/app_benefits_view.dart';
+import 'package:principles_app/views/startup_view.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -13,19 +15,20 @@ void main() {
 
   testWidgets('not logged in Ahead sends user to startup root', (tester) async {
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AppBenefitsViewModel(
-          AuthService(SecureStore()),
-          tokenReader: () async => null,
-        ),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeController()),
+          ChangeNotifierProvider(
+            create: (_) => AppBenefitsViewModel(
+              AuthService(SecureStore()),
+              tokenReader: () async => null,
+            ),
+          ),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          routes: {
-            '/': (_) => const Scaffold(body: Center(child: Text('StartupRoot'))),
-            AppBenefitsView.routeName: (_) => const AppBenefitsView(),
-          },
-          initialRoute: AppBenefitsView.routeName,
+          home: const AppBenefitsView(),
         ),
       ),
     );
@@ -39,6 +42,6 @@ void main() {
     await tester.tap(find.byKey(const Key('appBenefitsNextButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('StartupRoot'), findsOneWidget);
+    expect(find.byType(StartupView), findsOneWidget);
   });
 }

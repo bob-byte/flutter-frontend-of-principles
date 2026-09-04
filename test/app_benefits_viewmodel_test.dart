@@ -24,5 +24,15 @@ void main() {
       final action = await vm.navigateToNextViewAction();
       expect(action, AppBenefitsNavigationAction.startupAbsolute);
     });
+
+    test('skips leftover token when there is no back stack', () async {
+      final vm = AppBenefitsViewModel(
+        AuthService(SecureStore()),
+        tokenReader: () async => 'stale-token',
+      );
+
+      final action = await vm.resolveAheadAction(canPop: false);
+      expect(action, AppBenefitsNavigationAction.startupAbsolute);
+    });
   });
 }
