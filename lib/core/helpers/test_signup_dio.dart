@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:encrypt/encrypt.dart';
-import 'dart:convert';
+
+import '../logging/app_log.dart';
 
 void main() async {
+  await AppLog.setup();
+
   const firstKey = 'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
   const secondKey = 'M%m5Vy9R(_k74t^M';
 
@@ -21,16 +24,16 @@ void main() async {
         'password': encrypted.base64,
         'gender': 0,
         'mission': 'Test mission',
-        'mainSlogan': 'Test slogan'
+        'mainSlogan': 'Test slogan',
       },
     );
-    print('Dio Status: ${response.statusCode}');
-    print('Dio Response: ${response.data}');
+    AppLog.info('Dio Status: ${response.statusCode}');
+    AppLog.info('Dio Response: ${response.data}');
   } on DioException catch (e) {
-    print('Dio Error Status: ${e.response?.statusCode}');
-    print('Dio Error Data: ${e.response?.data}');
-    print('Dio Error Message: ${e.message}');
-  } catch (e) {
-    print('General Error: $e');
+    AppLog.error('Dio Error Status: ${e.response?.statusCode}', e);
+    AppLog.error('Dio Error Data: ${e.response?.data}', e);
+    AppLog.error('Dio Error Message: ${e.message}', e);
+  } catch (e, stackTrace) {
+    AppLog.error('General Error: $e', e, stackTrace);
   }
 }

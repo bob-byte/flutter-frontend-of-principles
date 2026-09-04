@@ -7,24 +7,24 @@ import '../config/app_config.dart';
 import '../storage/secure_store.dart';
 
 class ApiClient {
-  ApiClient(this._secureStore)
-      : _dio = Dio(
-          BaseOptions(
-            baseUrl: AppConfig.apiBaseUrl,
-            connectTimeout: const Duration(seconds: 30),
-            receiveTimeout: const Duration(seconds: 30),
-            headers: const {'Accept': 'application/json'},
-          ),
-        ) {
-    if (AppConfig.allowBadCertificates) {
+  ApiClient(this._secureStore, {Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: AppConfig.apiBaseUrl,
+              connectTimeout: const Duration(seconds: 30),
+              receiveTimeout: const Duration(seconds: 30),
+              headers: const {'Accept': 'application/json'},
+            ),
+          ) {
+    if (dio == null && AppConfig.allowBadCertificates) {
+      final allowedHost = Uri.parse(AppConfig.apiBaseUrl).host;
       _dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
-          client.badCertificateCallback = (cert, host, port) {
-            return host == 'localhost' ||
-                host == '127.0.0.1' ||
-                host == '10.0.2.2';
-          };
+          client.badCertificateCallback = (cert, host, port) =>
+              host == allowedHost;
           return client;
         },
       );
@@ -41,6 +41,14 @@ class ApiClient {
           }
           handler.next(options);
         },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401 &&
+              error.requestOptions.extra['authenticate'] != false) {
+            await _secureStore.delete(AppConfig.tokenStorageKey);
+            await _secureStore.delete(AppConfig.productionAuthTokenKey);
+          }
+          handler.next(error);
+        },
       ),
     );
   }
@@ -52,45 +60,62 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     bool authenticate = true,
-  }) =>
-      _dio.get(
-        path,
-        queryParameters: queryParameters,
-        options: Options(extra: {'authenticate': authenticate}),
-      );
+  }) => _dio.get(
+    path,
+    queryParameters: queryParameters,
+    options: Options(extra: {'authenticate': authenticate}),
+  );
 
   Future<Response<dynamic>> post(
     String path, {
     Object? data,
     bool authenticate = true,
-  }) =>
-      _dio.post(
-        path,
-        data: data,
-        options: Options(
-          extra: {'authenticate': authenticate},
-          headers: {'Content-Type': 'application/json'},
-        ),
-      );
+    Duration? receiveTimeout,
+  }) => _dio.post(
+    path,
+    data: data,
+    options: Options(
+      extra: {'authenticate': authenticate},
+      headers: {'Content-Type': 'application/json'},
+      receiveTimeout: receiveTimeout,
+    ),
+  );
+
+  Future<Response<ResponseBody>> postStream(
+    String path, {
+    Object? data,
+    bool authenticate = true,
+    Duration? receiveTimeout,
+    CancelToken? cancelToken,
+  }) => _dio.post<ResponseBody>(
+    path,
+    data: data,
+    cancelToken: cancelToken,
+    options: Options(
+      extra: {'authenticate': authenticate},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      responseType: ResponseType.stream,
+      receiveTimeout: receiveTimeout,
+    ),
+  );
 
   Future<Response<dynamic>> put(
     String path, {
     Object? data,
     bool authenticate = true,
-  }) =>
-      _dio.put(
-        path,
-        data: data,
-        options: Options(
-          extra: {'authenticate': authenticate},
-          headers: {'Content-Type': 'application/json'},
-        ),
-      );
+  }) => _dio.put(
+    path,
+    data: data,
+    options: Options(
+      extra: {'authenticate': authenticate},
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
 
-  Future<Response<dynamic>> delete(
-    String path, {
-    bool authenticate = true,
-  }) =>
+  Future<Response<dynamic>> delete(String path, {bool authenticate = true}) =>
       _dio.delete(
         path,
         options: Options(extra: {'authenticate': authenticate}),
