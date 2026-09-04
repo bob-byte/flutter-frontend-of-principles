@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/locale/locale_controller.dart';
+import '../core/sync/local_data_cleaner.dart';
 import '../models/user.dart';
 import '../services/settings_service.dart';
 import '../services/user_service.dart';
@@ -14,9 +15,11 @@ class SettingsViewModel extends ChangeNotifier {
     required SettingsService settingsService,
     required LocaleController localeController,
     required UserService userService,
+    required LocalDataCleaner localDataCleaner,
   }) : _settingsService = settingsService,
        _localeController = localeController,
-       _userService = userService;
+       _userService = userService,
+       _localDataCleaner = localDataCleaner;
 
   static final Uri _aboutUri = Uri.parse('https://principles.top');
   static final Uri _telegramUri = Uri.parse('https://t.me/principles_app');
@@ -34,6 +37,7 @@ class SettingsViewModel extends ChangeNotifier {
   final SettingsService _settingsService;
   final LocaleController _localeController;
   final UserService _userService;
+  final LocalDataCleaner _localDataCleaner;
 
   User _user = User();
   bool _isLoadingProfile = false;
@@ -48,13 +52,17 @@ class SettingsViewModel extends ChangeNotifier {
   String get email => _user.email ?? '';
   String get mainSlogan => _user.mainSlogan ?? '';
   String get mission => _user.mission ?? '';
+  int get gender => _user.gender ?? 0;
   bool get isLoadingProfile => _isLoadingProfile;
   bool get isSavingProfile => _isSavingProfile;
   bool get isDeletingAccount => _isDeletingAccount;
   String? get profileError => _profileError;
 
-  Future<void> load() async {
-    await Future.wait([loadLocale(), loadProfile()]);
+  Future<void> load({bool silent = false}) async {
+    await Future.wait([
+      loadLocale(),
+      loadProfile(silent: silent),
+    ]);
   }
 
   Future<void> loadLocale() async {
@@ -70,16 +78,20 @@ class SettingsViewModel extends ChangeNotifier {
     _localeController.setLocaleOverride(null);
   }
 
-  Future<void> loadProfile() async {
-    _isLoadingProfile = true;
-    _profileError = null;
-    notifyListeners();
+  Future<void> loadProfile({bool silent = false}) async {
+    if (!silent) {
+      _isLoadingProfile = true;
+      _profileError = null;
+      notifyListeners();
+    }
     try {
       _user = await _userService.getCurrentUser();
     } catch (e) {
       _profileError = e.toString();
     } finally {
-      _isLoadingProfile = false;
+      if (_isLoadingProfile) {
+        _isLoadingProfile = false;
+      }
       notifyListeners();
     }
   }
@@ -115,8 +127,17 @@ class SettingsViewModel extends ChangeNotifier {
     );
   }
 
-  Future<void> clearProfile() async {
-    await _userService.clearLocal();
+  Future<bool> saveGender(int value) {
+    if (value < 0 || value > 2) return Future.value(false);
+    return _saveProfileField(
+      () => _userService.saveGender(value),
+      (user) => user.copyWith(gender: value),
+    );
+  }
+
+  /// Clears all local user data (DB, prefs, tokens) and resets profile state.
+  Future<void> logout() async {
+    await _localDataCleaner.clearLocalData();
     _user = User();
     notifyListeners();
   }

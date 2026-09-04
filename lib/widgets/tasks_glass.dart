@@ -79,6 +79,7 @@ class TasksGlassPanel extends StatelessWidget {
     this.padding,
     this.borderRadius = const BorderRadius.all(Radius.circular(22)),
     this.onTap,
+    this.onLongPress,
     this.blur = 26,
     this.tint,
   });
@@ -88,6 +89,7 @@ class TasksGlassPanel extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final BorderRadius borderRadius;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double blur;
   final Color? tint;
 
@@ -118,12 +120,13 @@ class TasksGlassPanel extends StatelessWidget {
       ),
     );
 
-    if (onTap == null) return panel;
+    if (onTap == null && onLongPress == null) return panel;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: borderRadius,
         splashColor: palette.primary.withValues(alpha: 0.12),
         highlightColor: palette.primary.withValues(alpha: 0.06),

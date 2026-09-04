@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
+import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthService _authService;
+  final SyncService? _syncService;
 
-  LoginViewModel(this._authService);
+  LoginViewModel(this._authService, {SyncService? syncService})
+      : _syncService = syncService;
 
   bool _isBusy = false;
   String? _error;
@@ -75,6 +78,7 @@ class LoginViewModel extends ChangeNotifier {
         }
       } else {
         _failedAttempts = 0; // Reset on success
+        await _syncService?.runSyncSafely();
       }
       return success;
     } catch (e) {

@@ -14,7 +14,7 @@ class ThemeController extends ChangeNotifier {
 
   final SettingsService? _settingsService;
   TasksUiTheme _uiTheme = TasksUiTheme.darkOrange;
-  bool _restoring = false;
+  Future<void>? _restoreFuture;
 
   TasksUiTheme get uiTheme => _uiTheme;
 
@@ -32,9 +32,11 @@ class ThemeController extends ChangeNotifier {
 
   ThemeMode get themeMode => _uiTheme.isDark ? ThemeMode.dark : ThemeMode.light;
 
-  Future<void> restore() async {
-    if (_restoring) return;
-    _restoring = true;
+  Future<void> restore() {
+    return _restoreFuture ??= _restoreImpl();
+  }
+
+  Future<void> _restoreImpl() async {
     try {
       final fromSettings = await _settingsService?.getUiTheme();
       if (fromSettings != null && fromSettings.isNotEmpty) {
@@ -58,11 +60,14 @@ class ThemeController extends ChangeNotifier {
       _setTheme(migrated, persist: true);
     } catch (_) {
       // Keep the default dark-orange palette if storage is unavailable.
-    } finally {
-      _restoring = false;
-      await AppIconController.apply(_uiTheme);
     }
+    // Do not apply the themed app icon here. setAlternateIconName / Dock
+    // icon swaps emit paused→resumed and would dismiss the launch video.
   }
+
+  /// Match the home-screen / Dock icon to [uiTheme]. Call after the splash
+  /// so icon-change lifecycle events cannot skip epic_start.
+  Future<void> applyAppIcon() => AppIconController.apply(_uiTheme);
 
   Future<void> setUiTheme(TasksUiTheme theme) async {
     _setTheme(theme, persist: false);

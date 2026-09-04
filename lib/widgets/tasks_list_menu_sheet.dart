@@ -13,10 +13,8 @@ Future<void> showTasksListMenuSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Theme(
-      data: vm.themeData,
-      child: const TasksListMenuSheet(),
-    ),
+    builder: (sheetContext) =>
+        Theme(data: vm.themeData, child: const TasksListMenuSheet()),
   );
 }
 
@@ -83,6 +81,16 @@ class TasksListMenuSheet extends StatelessWidget {
             ),
             _MenuTile(
               palette: palette,
+              icon: Icons.event_outlined,
+              label: strings.taskMenuTomorrow,
+              selected: vm.listMode == TasksListMode.tomorrow,
+              onTap: () {
+                vm.setListModeTomorrow();
+                Navigator.pop(context);
+              },
+            ),
+            _MenuTile(
+              palette: palette,
               icon: Icons.calendar_month_outlined,
               label: isDayMode
                   ? formatTaskDate(vm.selectedDay)
@@ -95,6 +103,7 @@ class TasksListMenuSheet extends StatelessWidget {
               palette: palette,
               icon: Icons.inbox_outlined,
               label: strings.taskMenuInbox,
+              subtitle: strings.taskMenuInboxHint,
               selected: vm.listMode == TasksListMode.inbox,
               onTap: () {
                 vm.setListModeInbox();
@@ -145,15 +154,17 @@ class _MenuTile extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TasksGlassPanel(
-              palette: palette,
-              borderRadius: BorderRadius.circular(16),
-              blur: selected ? 20 : 24,
-              tint: selected
-                  ? palette.primary.withValues(alpha: palette.isDark ? 0.28 : 0.55)
-                  : palette.glassChipFill,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
+          child: TasksGlassPanel(
+            palette: palette,
+            borderRadius: BorderRadius.circular(16),
+            blur: selected ? 20 : 24,
+            tint: selected
+                ? palette.primary.withValues(
+                    alpha: palette.isDark ? 0.28 : 0.55,
+                  )
+                : palette.glassChipFill,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
               children: [
                 Icon(
                   icon,
@@ -169,8 +180,9 @@ class _MenuTile extends StatelessWidget {
                         label,
                         style: TextStyle(
                           fontSize: 15,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                           color: palette.textPrimary,
                         ),
                       ),

@@ -6,9 +6,14 @@ import '../core/theme/task_theme_palette.dart';
 import '../core/utils/date_helpers.dart';
 import '../l10n/task_strings.dart';
 import '../models/ai_task_draft.dart';
+import '../models/task.dart';
 import '../models/task_priority.dart';
 import '../viewmodels/edit_task_viewmodel.dart';
+import '../viewmodels/schedule_draft.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import '../views/widgets/schedule/schedule_bottom_sheet.dart';
+import '../views/widgets/schedule/schedule_format.dart';
+import 'app_loading_indicator.dart';
 import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
 import 'tasks_glass.dart';
@@ -31,7 +36,10 @@ Future<bool?> showTaskEditSheet(
         editVm.setHasDueDate(false);
       case TasksListMode.day:
         editVm.setHasDueDate(true);
-        editVm.setDueDate(tasksVm.selectedDay);
+        editVm.setDueDate(dateOnly(tasksVm.selectedDay));
+      case TasksListMode.tomorrow:
+        editVm.setHasDueDate(true);
+        editVm.setDueDate(dateOnly(tomorrowDate()));
       case TasksListMode.today:
       case TasksListMode.completed:
         editVm.setHasDueDate(true);
@@ -121,16 +129,14 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   }
 
   Future<void> _pickDate(EditTaskViewModel vm) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: vm.dueDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+    final result = await showScheduleBottomSheet(
+      context,
+      initial: vm.hasDueDate
+          ? vm.toScheduleDraft()
+          : ScheduleDraft.defaults(showDuration: false),
+      showDuration: false,
     );
-    if (picked != null) {
-      vm.setHasDueDate(true);
-      vm.setDueDate(picked);
-    }
+    if (result != null) vm.applySchedule(result);
   }
 
   Future<void> _save(EditTaskViewModel vm) async {
@@ -150,42 +156,19 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     }
   }
 
-  Future<void> _delete(TaskStrings strings) async {
-    final taskId = widget.taskId;
-    if (taskId == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(strings.taskDelete),
-        content: Text(strings.taskDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(strings.taskCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              strings.taskDelete,
-              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    await context.read<TasksViewModel>().deleteTask(taskId);
-    if (mounted) Navigator.of(context).pop(true);
-  }
-
   String _dateLabel(TaskStrings strings, EditTaskViewModel vm) {
-    if (!vm.hasDueDate) return strings.taskNoDueDate;
-    final due = vm.dueDate;
-    if (due == null) return strings.taskPickDate;
-    if (isSameDay(due, dateOnly(DateTime.now()))) return strings.taskMenuToday;
-    return formatTaskDate(due);
+    if (!vm.hasDueDate || vm.dueDate == null) return strings.taskNoDueDate;
+    return formatScheduleChip(
+      Task(
+        id: vm.editingId ?? '0',
+        title: vm.title,
+        createdAt: DateTime.now(),
+        dueDate: vm.dueDate,
+        endDate: vm.endDate,
+        allDay: vm.allDay,
+      ),
+      noDate: strings.taskNoDueDate,
+    );
   }
 
   @override
@@ -203,7 +186,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
               palette: palette,
               child: const SizedBox(
                 height: 180,
-                child: Center(child: CircularProgressIndicator()),
+                child: AppLoadingIndicator(size: 72),
               ),
             ),
           );
@@ -330,27 +313,6 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                             strings: strings,
                           ),
                         ],
-                        if (widget.taskId != null) ...[
-                          const SizedBox(height: 28),
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: vm.isSaving
-                                  ? null
-                                  : () => _delete(strings),
-                              icon: Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              label: Text(
-                                strings.taskDelete,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -375,14 +337,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                               icon: Icons.calendar_today_outlined,
                               label: _dateLabel(strings, vm),
                               active: vm.hasDueDate,
-                              onTap: () async {
-                                if (vm.hasDueDate) {
-                                  await _pickDate(vm);
-                                } else {
-                                  vm.setHasDueDate(true);
-                                  vm.setDueDate(dateOnly(DateTime.now()));
-                                }
-                              },
+                              onTap: () => _pickDate(vm),
                               onLongPress: () {
                                 vm.setHasDueDate(!vm.hasDueDate);
                               },

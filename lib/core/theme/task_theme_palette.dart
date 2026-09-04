@@ -21,6 +21,26 @@ enum TasksUiTheme {
       ? 'assets/lottie/orange_fire_loading.json'
       : 'assets/lottie/blue_fire_loading.json';
 
+  /// App mark used on login and in branded alerts.
+  String get logoAsset => isOrange
+      ? 'assets/images/orange_logo.png'
+      : 'assets/images/blue_logo.png';
+
+  /// H.264 splash clip used on cold start. Video-only: iOS AVPlayer
+  /// rejects the muxed H.264+AAC file with OSStatus -12746.
+  String get splashVideoAsset => isOrange
+      ? 'assets/splash/epic_start_orange.mp4'
+      : 'assets/splash/epic_start_blue.mp4';
+
+  /// Soundtrack played beside [splashVideoAsset] via AVAudioPlayer.
+  /// iOS AVPlayer cannot load the muxed or AAC-only splash files.
+  static const splashAudioAsset = 'assets/splash/epic_start.wav';
+
+  /// Matches the first frame of [splashVideoAsset] so the native/Flutter
+  /// splash does not flash a different color before the video starts.
+  Color get splashBackground =>
+      isOrange ? const Color(0xFF0A0602) : const Color(0xFF00002F);
+
   String get storageKey => name;
 
   static TasksUiTheme fromStorage(String? value) => switch (value) {
@@ -213,6 +233,34 @@ class TasksUiPalette {
           ),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: primary,
+        contentTextStyle: TextStyle(color: onPrimary),
+        actionTextColor: onPrimary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: cardBg,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: primary.withValues(alpha: isDark ? 0.35 : 0.22),
+          ),
+        ),
+        titleTextStyle: TextStyle(
+          color: textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          height: 1.25,
+        ),
+        contentTextStyle: TextStyle(
+          color: textMuted,
+          fontSize: 14,
+          height: 1.4,
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: softBg,
@@ -275,10 +323,15 @@ Color priorityColor(TaskPriority priority, ColorScheme scheme) {
   };
 }
 
+const kTasksProgressAnimDuration = Duration(milliseconds: 420);
+const kTasksProgressAnimCurve = Curves.easeInOutCubic;
+
 Widget tasksGradientProgress({
   required TasksUiPalette palette,
   required double value,
   double height = 8,
+  Duration duration = kTasksProgressAnimDuration,
+  Curve curve = kTasksProgressAnimCurve,
 }) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(999),
@@ -290,20 +343,27 @@ Widget tasksGradientProgress({
           fit: StackFit.expand,
           children: [
             ColoredBox(color: palette.glassChipFill),
-            FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: value.clamp(0.0, 1.0),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: palette.primaryGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: palette.primary.withValues(alpha: 0.35),
-                      blurRadius: 8,
+            TweenAnimationBuilder<double>(
+              duration: duration,
+              curve: curve,
+              tween: Tween<double>(end: value.clamp(0.0, 1.0)),
+              builder: (context, animated, _) {
+                return FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: animated.clamp(0.0, 1.0),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: palette.primaryGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: palette.primary.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ],
         ),

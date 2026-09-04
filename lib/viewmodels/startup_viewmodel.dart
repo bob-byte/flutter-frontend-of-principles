@@ -3,6 +3,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/config/app_config.dart';
 import '../core/sync/sync_service.dart';
+import '../services/app_open_tracker_service.dart';
 import '../services/auth_service.dart';
 import '../services/dialog_service.dart';
 import '../services/reminder_service.dart';
@@ -15,32 +16,45 @@ class StartupViewModel extends ChangeNotifier {
     required SyncService syncService,
     required ReminderService reminderService,
     required DialogService dialogService,
+    required AppOpenTrackerService appOpenTracker,
   }) : _authService = authService,
        _syncService = syncService,
        _reminderService = reminderService,
-       _dialogService = dialogService;
+       _dialogService = dialogService,
+       _appOpenTracker = appOpenTracker;
 
   final AuthService _authService;
   final SyncService _syncService;
   final ReminderService _reminderService;
   final DialogService _dialogService;
+  final AppOpenTrackerService _appOpenTracker;
   bool loading = false;
   String? errorMessage;
   bool _hasShownAppBenefitsToGuest = false;
+  Future<StartupNextRoute>? _initializeFuture;
 
-  Future<StartupNextRoute> initialize() async {
+  Future<StartupNextRoute> initialize() {
+    return _initializeFuture ??= _initializeBody();
+  }
+
+  /// After the benefits carousel, the next start should be login — not a
+  /// replay of the cached `appBenefits` initialize result.
+  void acknowledgeAppBenefitsShown() {
+    _hasShownAppBenefitsToGuest = true;
+    _initializeFuture = Future.value(StartupNextRoute.login);
+  }
+
+  Future<StartupNextRoute> _initializeBody() async {
     loading = true;
     notifyListeners();
     try {
+      await _appOpenTracker.trackAppOpen();
       if (AppConfig.useLocalData) {
         await _authService.ensureGuestSession();
         return StartupNextRoute.helper;
       }
 
-      await _syncService.runSync();
-      final token = await _authService.getToken();
-      final isLoggedIn = token != null && token.isNotEmpty;
-      if (isLoggedIn) {
+      if (await _authService.hasLocalSession()) {
         return StartupNextRoute.helper;
       }
       if (!_hasShownAppBenefitsToGuest) {
@@ -62,11 +76,13 @@ class StartupViewModel extends ChangeNotifier {
     try {
       final success = await _authService.googleAuthorize();
       if (success) {
+        await _syncService.runSyncSafely();
         await _reminderService.tryToRecoverAllUserReminders();
         return true;
       }
       return false;
     } catch (e) {
+      if (AuthService.isExternalAuthCanceled(e)) return false;
       errorMessage = e.toString();
       await _dialogService.showErrorAsync(
         _dialogService.l10n.somethingWentWrongWhenUserAuthsUsingExternalService,
@@ -86,14 +102,17 @@ class StartupViewModel extends ChangeNotifier {
     try {
       final success = await _authService.appleAuthorize();
       if (success) {
+        await _syncService.runSyncSafely();
         await _reminderService.tryToRecoverAllUserReminders();
         return true;
       }
       return false;
     } on SignInWithAppleAuthorizationException catch (e) {
+      if (AuthService.isExternalAuthCanceled(e)) return false;
       await _handleAppleAuthException(e);
       return false;
     } catch (e) {
+      if (AuthService.isExternalAuthCanceled(e)) return false;
       errorMessage = e.toString();
       await _handleAppleAuthException(e);
       return false;

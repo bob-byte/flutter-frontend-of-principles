@@ -7,20 +7,20 @@ import 'task_theme_palette.dart';
 /// Switches the home-screen / window icon to match orange vs blue UI themes.
 ///
 /// Orange (light and dark) uses the primary launcher icon. Blue uses the
-/// `AppIconBlue` / `icon_1` alternate on mobile, and a second Windows icon
-/// resource while the app is running. No-ops on web/macOS and when the
-/// current icon already matches.
+/// `AppIconBlue` / `icon_1` alternate on mobile, and a second desktop icon
+/// while the app is running (Windows taskbar / macOS Dock).
 class AppIconController {
   static const iosBlueIcon = 'AppIconBlue';
   static const androidBlueIcon = 'icon_1';
-  static const _windowsChannel = MethodChannel('com.set.principles/app_icon');
+  static const _desktopChannel = MethodChannel('com.set.principles/app_icon');
 
   static Future<void> apply(TasksUiTheme theme) async {
     if (kIsWeb) return;
 
     try {
-      if (defaultTargetPlatform == TargetPlatform.windows) {
-        await _windowsChannel.invokeMethod<void>(
+      if (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        await _desktopChannel.invokeMethod<void>(
           'setIcon',
           theme.isOrange ? 'orange' : 'blue',
         );

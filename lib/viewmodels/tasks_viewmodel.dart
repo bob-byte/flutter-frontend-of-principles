@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../core/schedule/task_repeat_math.dart';
 import '../core/utils/date_helpers.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
 import '../l10n/task_strings.dart';
+import '../models/habit.dart';
+import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
+import '../services/reminder_service.dart';
 import '../services/task_service.dart';
 
-enum TasksListMode { today, day, inbox, completed }
+enum TasksListMode { today, tomorrow, day, inbox, completed }
 
 enum TaskStatusFilter { all, active, done }
 
@@ -16,12 +20,17 @@ enum TaskStatusFilter { all, active, done }
 const taskNoCategoryFilterKey = '__no_category__';
 
 class TasksViewModel extends ChangeNotifier {
-  TasksViewModel(this._taskService, this._themeController) {
+  TasksViewModel(
+    this._taskService,
+    this._themeController, {
+    ReminderService? reminderService,
+  }) : _reminderService = reminderService {
     _themeController.addListener(_onThemeChanged);
   }
 
   final TaskService _taskService;
   final ThemeController _themeController;
+  final ReminderService? _reminderService;
 
   final List<Task> tasks = [];
   Map<String, int> themeColors = {};
@@ -36,6 +45,8 @@ class TasksViewModel extends ChangeNotifier {
   TasksUiPalette get palette => _themeController.palette;
 
   bool filtersVisible = false;
+  bool tasksSectionExpanded = true;
+  bool habitsSectionExpanded = true;
   bool isLoading = false;
   String? loadError;
 
@@ -131,6 +142,7 @@ class TasksViewModel extends ChangeNotifier {
 
   String listModeTitle(TaskStrings strings) => switch (listMode) {
     TasksListMode.today => strings.taskMenuToday,
+    TasksListMode.tomorrow => strings.taskMenuTomorrow,
     TasksListMode.day => formatTaskDate(selectedDay),
     TasksListMode.inbox => strings.taskMenuInbox,
     TasksListMode.completed => strings.taskMenuCompleted,
@@ -138,6 +150,16 @@ class TasksViewModel extends ChangeNotifier {
 
   void toggleFiltersVisible() {
     filtersVisible = !filtersVisible;
+    notifyListeners();
+  }
+
+  void toggleTasksSectionExpanded() {
+    tasksSectionExpanded = !tasksSectionExpanded;
+    notifyListeners();
+  }
+
+  void toggleHabitsSectionExpanded() {
+    habitsSectionExpanded = !habitsSectionExpanded;
     notifyListeners();
   }
 
@@ -173,6 +195,11 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setListModeTomorrow() {
+    listMode = TasksListMode.tomorrow;
+    notifyListeners();
+  }
+
   void setListModeInbox() {
     listMode = TasksListMode.inbox;
     notifyListeners();
@@ -198,8 +225,13 @@ class TasksViewModel extends ChangeNotifier {
             (!task.isDone &&
                 task.dueDate != null &&
                 task.dueDate!.isBefore(today)),
+      TasksListMode.tomorrow => isSameDay(
+        task.dueDate,
+        tomorrowDate(now: today),
+      ),
       TasksListMode.day => isSameDay(task.dueDate, selectedDay),
-      TasksListMode.inbox => task.dueDate == null,
+      // Усі незавершені, незалежно від дати.
+      TasksListMode.inbox => !task.isDone,
       TasksListMode.completed => task.isDone,
     };
   }
@@ -210,10 +242,13 @@ class TasksViewModel extends ChangeNotifier {
     TaskStatusFilter.done => task.isDone,
   };
 
-  Future<void> load() async {
-    isLoading = true;
-    loadError = null;
-    notifyListeners();
+  Future<void> load({bool silent = false}) async {
+    final showSpinner = !silent && tasks.isEmpty;
+    if (showSpinner) {
+      isLoading = true;
+      loadError = null;
+      notifyListeners();
+    }
     try {
       tasks
         ..clear()
@@ -222,9 +257,22 @@ class TasksViewModel extends ChangeNotifier {
     } catch (e) {
       loadError = e.toString();
     } finally {
-      isLoading = false;
+      if (isLoading) {
+        isLoading = false;
+      }
       notifyListeners();
     }
+  }
+
+  void clear() {
+    tasks.clear();
+    themeColors = {};
+    selectedThemeFilter = null;
+    selectedPriorityFilter = null;
+    statusFilter = TaskStatusFilter.all;
+    loadError = null;
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<void> setUiTheme(TasksUiTheme theme) async {
@@ -246,7 +294,50 @@ class TasksViewModel extends ChangeNotifier {
 
     final done = !task.isDone;
     await _taskService.updateTaskStatus(id, done);
+    final updated = await _taskService.getTask(id) ?? task.copyWith(isDone: done);
+    if (done) {
+      await _reminderService?.cancelTaskNotifications(updated);
+      await _reminderService?.syncTaskNotifications(
+        updated.copyWith(isDone: true),
+      );
+      if (!updated.repeat.isNone && updated.dueDate != null) {
+        await _spawnNextOccurrence(updated);
+      }
+    } else {
+      await _reminderService?.syncTaskNotifications(updated);
+    }
     await load();
+  }
+
+  Future<void> _spawnNextOccurrence(Task completed) async {
+    final nextStart = nextOccurrenceStart(
+      fromStart: completed.dueDate!,
+      repeat: completed.repeat,
+      completedAt: completed.completedAt ?? DateTime.now(),
+    );
+    if (nextStart == null) return;
+    final span = durationBetween(completed.dueDate, completed.endDate);
+    final nextEnd = span == null ? null : nextStart.add(span);
+    var next = Task(
+      id: '0',
+      title: completed.title,
+      description: completed.description,
+      theme: completed.theme,
+      priority: completed.priority,
+      createdAt: DateTime.now(),
+      dueDate: nextStart,
+      endDate: nextEnd,
+      allDay: completed.allDay,
+      reminders: [
+        for (final offset in completed.reminders)
+          ScheduleReminderOffset(offsetMinutes: offset.offsetMinutes),
+      ],
+      constantReminder: completed.constantReminder,
+      repeat: completed.repeat,
+    );
+    next = await _reminderService?.prepareTaskNotifications(next) ?? next;
+    await _taskService.saveTask(next, isNew: true);
+    await _reminderService?.syncTaskNotifications(next);
   }
 
   Future<void> moveTaskToToday(String id) async {
@@ -261,6 +352,10 @@ class TasksViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteTask(String id) async {
+    final existing = _findTask(id);
+    if (existing != null) {
+      await _reminderService?.cancelTaskNotifications(existing);
+    }
     await _taskService.deleteTask(id);
     await load();
   }
@@ -281,3 +376,70 @@ int _priorityRank(TaskPriority? priority) => switch (priority) {
   TaskPriority.low => 1,
   null => 0,
 };
+
+bool showsHabitsOnTasksTab(TasksListMode mode) => true;
+
+DateTime habitsDayForTasksTab(TasksViewModel vm, {DateTime? now}) {
+  final today = dateOnly(now ?? DateTime.now());
+  return switch (vm.listMode) {
+    TasksListMode.day => dateOnly(vm.selectedDay),
+    TasksListMode.tomorrow => tomorrowDate(now: today),
+    _ => today,
+  };
+}
+
+/// Habits listed on the tasks tab, respecting all active filters.
+///
+/// Priority and category filters are task-specific; when either is active
+/// habit items are hidden so the user sees only matching tasks.
+List<Habit> habitsVisibleOnTasksTab({
+  required TasksListMode listMode,
+  required List<Habit> habits,
+  required TaskStatusFilter statusFilter,
+  required TaskPriority? priorityFilter,
+  required String? themeFilter,
+  required bool Function(Habit habit) isCompleted,
+}) {
+  if (!showsHabitsOnTasksTab(listMode)) return const [];
+
+  // Priority / category filters don't apply to habits — hide the items
+  // so only matching tasks are shown. Section headers stay visible.
+  if (priorityFilter != null || themeFilter != null) return const [];
+
+  final effectiveStatus = switch (listMode) {
+    TasksListMode.completed => TaskStatusFilter.done,
+    TasksListMode.inbox when statusFilter == TaskStatusFilter.all =>
+      TaskStatusFilter.active,
+    _ => statusFilter,
+  };
+
+  final result = habits.where((habit) {
+    if (habit.id == null) return false;
+    final done = isCompleted(habit);
+    return switch (effectiveStatus) {
+      TaskStatusFilter.all => true,
+      TaskStatusFilter.active => !done,
+      TaskStatusFilter.done => done,
+    };
+  }).toList();
+
+  result.sort((a, b) {
+    final aDone = isCompleted(a);
+    final bDone = isCompleted(b);
+    if (aDone != bDone) return aDone ? 1 : -1;
+    final aTime = a.reminderTime;
+    final bTime = b.reminderTime;
+    if (aTime != null && bTime != null) {
+      final byTime = aTime.compareTo(bTime);
+      if (byTime != 0) return byTime;
+    } else if (aTime != null) {
+      return -1;
+    } else if (bTime != null) {
+      return 1;
+    }
+    final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    if (byName != 0) return byName;
+    return (a.id ?? 0).compareTo(b.id ?? 0);
+  });
+  return result;
+}

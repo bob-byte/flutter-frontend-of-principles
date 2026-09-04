@@ -1,17 +1,28 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/utils/date_helpers.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../models/ai_task_draft.dart';
+import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
+import '../models/task_repeat_config.dart';
+import '../services/dialog_service.dart';
+import '../services/reminder_service.dart';
 import '../services/task_service.dart';
+import '../viewmodels/schedule_draft.dart';
 import '../widgets/theme_picker_section.dart';
 
 class EditTaskViewModel extends ChangeNotifier {
-  EditTaskViewModel(this._taskService);
+  EditTaskViewModel(this._taskService, {ReminderService? reminderService})
+    : _reminderService = reminderService;
 
   final TaskService _taskService;
+  final ReminderService? _reminderService;
+  final DialogService _dialogService = DialogService();
 
   String? editingId;
   String title = '';
@@ -23,6 +34,12 @@ class EditTaskViewModel extends ChangeNotifier {
   Color themeColor = taskCategoryPalette.first;
   bool hasDueDate = false;
   DateTime? dueDate;
+  DateTime? endDate;
+  bool allDay = false;
+  List<ScheduleReminderOffset> reminders = const [];
+  bool constantReminder = false;
+  TaskRepeatConfig repeat = const TaskRepeatConfig();
+  int? constantNotificationRequestId;
   bool isLoading = false;
   bool isSaving = false;
   Map<String, int> themeColors = {};
@@ -63,6 +80,12 @@ class EditTaskViewModel extends ChangeNotifier {
         themeColor = taskCategoryPalette.first;
         hasDueDate = true;
         dueDate = dateOnly(DateTime.now());
+        endDate = null;
+        allDay = false;
+        reminders = const [];
+        constantReminder = false;
+        repeat = const TaskRepeatConfig();
+        constantNotificationRequestId = null;
         if (aiDraft != null) {
           _applyAiDraft(aiDraft, overwriteDueDateIfMissing: true);
         }
@@ -81,6 +104,12 @@ class EditTaskViewModel extends ChangeNotifier {
       priority = task.priority;
       hasDueDate = task.dueDate != null;
       dueDate = task.dueDate ?? dateOnly(DateTime.now());
+      endDate = task.endDate;
+      allDay = task.allDay;
+      reminders = task.reminders;
+      constantReminder = task.constantReminder;
+      repeat = task.repeat;
+      constantNotificationRequestId = task.constantNotificationRequestId;
 
       if (task.theme != null && task.theme!.isNotEmpty) {
         final themes = await _loadAllThemeNames(task);
@@ -140,7 +169,8 @@ class EditTaskViewModel extends ChangeNotifier {
 
     if (aiDraft.hasDueDate && aiDraft.dueDate != null) {
       hasDueDate = true;
-      dueDate = aiDraft.dueDate;
+      dueDate = dateOnly(aiDraft.dueDate!);
+      reminders = const [];
     } else if (overwriteDueDateIfMissing) {
       hasDueDate = aiDraft.hasDueDate;
       dueDate = aiDraft.dueDate ?? dateOnly(DateTime.now());
@@ -192,12 +222,58 @@ class EditTaskViewModel extends ChangeNotifier {
 
   void setHasDueDate(bool value) {
     hasDueDate = value;
+    if (!value) {
+      dueDate = null;
+      endDate = null;
+      allDay = false;
+      reminders = const [];
+      constantReminder = false;
+      repeat = const TaskRepeatConfig();
+    }
     notifyListeners();
   }
 
   void setDueDate(DateTime value) {
-    dueDate = dateOnly(value);
+    dueDate = value;
+    hasDueDate = true;
     notifyListeners();
+  }
+
+  void applySchedule(ScheduleDraft draft) {
+    if (draft.isEmpty) {
+      hasDueDate = false;
+      dueDate = null;
+      endDate = null;
+      allDay = false;
+      reminders = const [];
+      constantReminder = false;
+      repeat = const TaskRepeatConfig();
+    } else {
+      hasDueDate = true;
+      dueDate = draft.dueDate;
+      endDate = draft.showDuration && draft.tab == ScheduleTab.duration
+          ? draft.endDate
+          : null;
+      allDay = draft.showDuration ? draft.allDay : false;
+      reminders = List.of(draft.reminders);
+      constantReminder = draft.constantReminder;
+      repeat = draft.repeat;
+    }
+    notifyListeners();
+  }
+
+  ScheduleDraft toScheduleDraft() {
+    if (!hasDueDate || dueDate == null) {
+      return ScheduleDraft.defaults(showDuration: false);
+    }
+    return ScheduleDraft(
+      showDuration: false,
+      dueDate: dueDate,
+      reminders: reminders,
+      constantReminder: constantReminder,
+      repeat: repeat,
+      hasTime: dueDate!.hour != 0 || dueDate!.minute != 0 || reminders.isNotEmpty,
+    );
   }
 
   String? resolvedTheme() {
@@ -221,6 +297,16 @@ class EditTaskViewModel extends ChangeNotifier {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return false;
 
+    final wantsNotifications =
+        hasDueDate && (reminders.isNotEmpty || constantReminder);
+    if (wantsNotifications) {
+      final allowed =
+          await _reminderService?.requestAccessToSendNotifications() ?? true;
+      if (!allowed) {
+        await _dialogService.promptOpenNotificationSettings();
+      }
+    }
+
     isSaving = true;
     notifyListeners();
     try {
@@ -228,37 +314,55 @@ class EditTaskViewModel extends ChangeNotifier {
       final themeColorValue = resolvedThemeColor(themeName);
       await _taskService.registerTheme(themeName, themeColorValue?.toARGB32());
 
+      Task saved;
       if (isEditing) {
         final existing = await _taskService.getTask(editingId!);
         if (existing == null) return false;
 
-        await _taskService.saveTask(
-          existing.copyWith(
-            title: trimmedTitle,
-            description: description.trim(),
-            priority: priority,
-            clearPriority: priority == null,
-            theme: themeName,
-            clearTheme: themeName == null,
-            dueDate: hasDueDate ? dueDate : null,
-            clearDueDate: !hasDueDate,
-          ),
-          isNew: false,
+        saved = existing.copyWith(
+          title: trimmedTitle,
+          description: description.trim(),
+          priority: priority,
+          clearPriority: priority == null,
+          theme: themeName,
+          clearTheme: themeName == null,
+          dueDate: hasDueDate ? dueDate : null,
+          clearDueDate: !hasDueDate,
+          endDate: hasDueDate ? endDate : null,
+          clearEndDate: !hasDueDate || endDate == null,
+          allDay: allDay,
+          reminders: hasDueDate ? reminders : const [],
+          constantReminder: hasDueDate && constantReminder,
+          repeat: hasDueDate ? repeat : const TaskRepeatConfig(),
+          constantNotificationRequestId: constantNotificationRequestId,
+          clearConstantNotificationRequestId: !hasDueDate,
         );
+        saved = await _reminderService?.prepareTaskNotifications(saved) ?? saved;
+        await _taskService.saveTask(saved, isNew: false);
       } else {
-        await _taskService.saveTask(
-          Task(
-            id: '0',
-            title: trimmedTitle,
-            description: description.trim(),
-            theme: themeName,
-            priority: priority,
-            createdAt: DateTime.now(),
-            dueDate: hasDueDate && dueDate != null ? dateOnly(dueDate!) : null,
-          ),
-          isNew: true,
+        saved = Task(
+          id: '0',
+          title: trimmedTitle,
+          description: description.trim(),
+          theme: themeName,
+          priority: priority,
+          createdAt: DateTime.now(),
+          dueDate: hasDueDate ? dueDate : null,
+          endDate: hasDueDate ? endDate : null,
+          allDay: allDay,
+          reminders: hasDueDate ? reminders : const [],
+          constantReminder: hasDueDate && constantReminder,
+          repeat: hasDueDate ? repeat : const TaskRepeatConfig(),
         );
+        saved = await _reminderService?.prepareTaskNotifications(saved) ?? saved;
+        await _taskService.saveTask(saved, isNew: true);
       }
+      unawaited(
+        (_reminderService?.syncTaskNotifications(saved) ?? Future.value())
+            .catchError((Object e) {
+              debugPrint('Task notification sync failed: $e');
+            }),
+      );
       return true;
     } finally {
       isSaving = false;

@@ -7,6 +7,7 @@ class User {
     this.mission,
     this.email,
     this.gender,
+    this.hasSeenRoadGuide = false,
     this.lastModified,
   });
 
@@ -17,6 +18,7 @@ class User {
   final String? mission;
   final String? email;
   final int? gender;
+  final bool hasSeenRoadGuide;
   final DateTime? lastModified;
 
   User copyWith({
@@ -27,6 +29,7 @@ class User {
     String? mission,
     String? email,
     int? gender,
+    bool? hasSeenRoadGuide,
     DateTime? lastModified,
   }) {
     return User(
@@ -37,6 +40,7 @@ class User {
       mission: mission ?? this.mission,
       email: email ?? this.email,
       gender: gender ?? this.gender,
+      hasSeenRoadGuide: hasSeenRoadGuide ?? this.hasSeenRoadGuide,
       lastModified: lastModified ?? this.lastModified,
     );
   }
@@ -50,6 +54,9 @@ class User {
       mission: _asString(json['mission'] ?? json['Mission']),
       email: _asString(json['email'] ?? json['Email']),
       gender: _asInt(json['gender'] ?? json['Gender']),
+      hasSeenRoadGuide: _asBool(
+        json['hasSeenRoadGuide'] ?? json['HasSeenRoadGuide'],
+      ),
       lastModified: _asDate(json['lastModified'] ?? json['LastModified']),
     );
   }
@@ -62,6 +69,7 @@ class User {
     'mission': mission,
     'email': email,
     if (gender != null) 'gender': gender,
+    'hasSeenRoadGuide': hasSeenRoadGuide,
     if (lastModified != null)
       'lastModified': lastModified!.toUtc().toIso8601String(),
   };
@@ -74,8 +82,16 @@ class User {
 
   static String? _asString(dynamic value) {
     if (value == null) return null;
-    final text = value.toString();
-    return text;
+    return value.toString();
+  }
+
+  static bool _asBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      return value == '1' || value.toLowerCase() == 'true';
+    }
+    return false;
   }
 
   static DateTime? _asDate(dynamic value) {

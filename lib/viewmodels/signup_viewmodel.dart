@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
+import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 
 class SignupViewModel extends ChangeNotifier {
-  SignupViewModel(this._authService);
+  SignupViewModel(this._authService, {SyncService? syncService})
+      : _syncService = syncService;
   final AuthService _authService;
+  final SyncService? _syncService;
 
   bool _isBusy = false;
   String? _error;
@@ -37,6 +40,8 @@ class SignupViewModel extends ChangeNotifier {
       );
       if (!success) {
         _error = genericError;
+      } else {
+        await _syncService?.runSyncSafely();
       }
       return success;
     } catch (e) {

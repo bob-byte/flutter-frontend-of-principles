@@ -4,6 +4,7 @@ import '../core/utils/date_helpers.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../l10n/task_strings.dart';
 import '../models/task.dart';
+import '../views/widgets/schedule/schedule_format.dart';
 import 'tasks_glass.dart';
 
 class TaskTile extends StatelessWidget {
@@ -16,6 +17,7 @@ class TaskTile extends StatelessWidget {
     required this.onToggle,
     required this.strings,
     this.onMoveToToday,
+    this.onLongPress,
   });
 
   final Task task;
@@ -25,6 +27,7 @@ class TaskTile extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback? onMoveToToday;
   final TaskStrings strings;
+  final ValueChanged<Rect?>? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,16 @@ class TaskTile extends StatelessWidget {
       palette: palette,
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
+      onLongPress: onLongPress == null
+          ? null
+          : () {
+              final box = context.findRenderObject() as RenderBox?;
+              Rect? anchor;
+              if (box != null && box.hasSize) {
+                anchor = box.localToGlobal(Offset.zero) & box.size;
+              }
+              onLongPress!(anchor);
+            },
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +167,10 @@ class TaskTile extends StatelessWidget {
                       Text(
                         isOverdue
                             ? '${strings.taskOverdue} · ${formatTaskDate(task.dueDate!)}'
-                            : formatTaskDate(task.dueDate!),
+                            : formatScheduleChip(
+                                task,
+                                noDate: formatTaskDate(task.dueDate!),
+                              ),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight:

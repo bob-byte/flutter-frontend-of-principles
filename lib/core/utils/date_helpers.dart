@@ -1,5 +1,7 @@
-DateTime dateOnly(DateTime date) =>
-    DateTime(date.year, date.month, date.day);
+DateTime dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+DateTime tomorrowDate({DateTime? now}) =>
+    dateOnly(now ?? DateTime.now()).add(const Duration(days: 1));
 
 bool isSameDay(DateTime? a, DateTime? b) {
   if (a == null || b == null) return false;

@@ -3,15 +3,24 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
+import '../core/road_guide/road_guide_controller.dart';
+import '../core/road_guide/road_guide_steps.dart';
 import '../l10n/task_strings.dart';
 import '../app/task_navigation.dart';
 import '../core/utils/date_helpers.dart';
+import '../models/habit_record.dart';
 import '../models/task_priority.dart';
+import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import '../widgets/app_loading_indicator.dart';
+import '../widgets/habit_context_menu.dart';
+import '../widgets/habit_task_tile.dart';
+import '../widgets/task_context_menu.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/tasks_glass.dart';
-import '../widgets/themed_lottie.dart';
-import '../widgets/ui_theme_switcher.dart';
+
+const _kSectionAnimDuration = Duration(milliseconds: 280);
+const _kSectionAnimCurve = Curves.easeInOutCubic;
 
 class TasksView extends StatefulWidget {
   const TasksView({super.key, this.embedded = false});
@@ -28,8 +37,10 @@ class _TasksViewState extends State<TasksView> {
   @override
   void initState() {
     super.initState();
+    if (widget.embedded) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TasksViewModel>().load();
+      context.read<HabitProgressViewModel>().load(silent: true);
     });
   }
 
@@ -59,14 +70,19 @@ class _TasksViewState extends State<TasksView> {
                     color: palette.textPrimary,
                   ),
                 ),
-                actions: const [AppThemeSwitcher(), SizedBox(width: 8)],
               ),
               body: vm.isLoading && vm.tasks.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : _TasksBody(strings: strings, palette: palette),
+                  ? const AppLoadingIndicator()
+                  : _TasksBody(
+                      strings: strings,
+                      palette: palette,
+                      embedded: widget.embedded,
+                    ),
               bottomNavigationBar: SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: widget.embedded ? 35 : 0),
+                  padding: EdgeInsets.only(
+                    bottom: widget.embedded ? _kEmbeddedTabBarClearance : 0,
+                  ),
                   child: TasksGlassBottomBar(
                     palette: palette,
                     child: Row(
@@ -80,12 +96,18 @@ class _TasksViewState extends State<TasksView> {
                         ),
                         const Spacer(),
                         TasksGlassCircleButton(
+                          key: context
+                              .read<RoadGuideController>()
+                              .keys
+                              .tasksAdd,
                           palette: palette,
                           icon: Icons.add,
                           tooltip: strings.taskAdd,
                           isPrimary: true,
                           size: 56,
                           onPressed: () async {
+                            final guide = context.read<RoadGuideController>();
+                            if (guide.isActive) return;
                             final changed =
                                 await TasksNavigation.openCreateTask(context);
                             if (!context.mounted) return;
@@ -108,22 +130,59 @@ class _TasksViewState extends State<TasksView> {
 }
 
 class _TasksBody extends StatelessWidget {
-  const _TasksBody({required this.strings, required this.palette});
+  const _TasksBody({
+    required this.strings,
+    required this.palette,
+    required this.embedded,
+  });
 
   final TaskStrings strings;
   final TasksUiPalette palette;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TasksViewModel>(
-      builder: (context, vm, _) {
-        final filtered = vm.filteredTasks;
-        final todayTotal = vm.todayTasks.length;
-        final todayCompleted = vm.todayCompletedCount;
-        final todayProgress = vm.todayProgressPercent;
+    return Consumer3<
+      TasksViewModel,
+      HabitProgressViewModel,
+      RoadGuideController
+    >(
+      builder: (context, vm, habitVm, guide, _) {
+        final l10n = AppLocalizations.of(context)!;
+        final filtered = [
+          if (guide.showDemoData) roadGuideDemoTask(l10n),
+          ...vm.filteredTasks,
+        ];
+        final habitsDay = habitsDayForTasksTab(vm);
+        final today = dateOnly(DateTime.now());
+        final habits = [
+          if (guide.showDemoData) roadGuideDemoHabit(l10n),
+          ...habitVm.habits,
+        ];
+        final visibleHabits = habitsVisibleOnTasksTab(
+          listMode: vm.listMode,
+          habits: habits,
+          statusFilter: vm.statusFilter,
+          priorityFilter: vm.selectedPriorityFilter,
+          themeFilter: vm.selectedThemeFilter,
+          isCompleted: (habit) =>
+              habitVm.getStatusForHabitAndDate(habit.id ?? 0, habitsDay) ==
+              HabitStatus.completed,
+        );
+        final todayHabitsTotal = habits.length;
+        final todayHabitsCompleted = habitVm.completedHabitsOn(today);
+        final todayTotal = vm.todayTasks.length + todayHabitsTotal;
+        final todayCompleted = vm.todayCompletedCount + todayHabitsCompleted;
+        final todayProgress = todayTotal == 0
+            ? 0.0
+            : (todayCompleted / todayTotal) * 100;
+        final listBottomPadding = _tasksListBottomPadding(
+          context,
+          embedded: embedded,
+        );
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 124),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
           children: [
             TasksGlassPanel(
               palette: palette,
@@ -153,12 +212,19 @@ class _TasksBody extends StatelessWidget {
                         ),
                       ),
                       if (todayTotal > 0)
-                        Text(
-                          '${todayProgress.toStringAsFixed(0)}%',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: palette.primary,
-                          ),
+                        TweenAnimationBuilder<double>(
+                          duration: kTasksProgressAnimDuration,
+                          curve: kTasksProgressAnimCurve,
+                          tween: Tween<double>(end: todayProgress),
+                          builder: (context, animated, _) {
+                            return Text(
+                              '${animated.round()}%',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: palette.primary,
+                              ),
+                            );
+                          },
                         ),
                     ],
                   ),
@@ -168,9 +234,15 @@ class _TasksBody extends StatelessWidget {
                     value: todayTotal == 0 ? 0 : todayCompleted / todayTotal,
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    strings.taskProgressCount(todayCompleted, todayTotal),
-                    style: TextStyle(fontSize: 13, color: palette.textMuted),
+                  AnimatedSwitcher(
+                    duration: kTasksProgressAnimDuration,
+                    switchInCurve: kTasksProgressAnimCurve,
+                    switchOutCurve: kTasksProgressAnimCurve,
+                    child: Text(
+                      strings.taskProgressCount(todayCompleted, todayTotal),
+                      key: ValueKey('$todayCompleted-$todayTotal'),
+                      style: TextStyle(fontSize: 13, color: palette.textMuted),
+                    ),
                   ),
                 ],
               ),
@@ -178,66 +250,166 @@ class _TasksBody extends StatelessWidget {
             const SizedBox(height: 12),
             _TasksFiltersPanel(strings: strings, palette: palette),
             const SizedBox(height: 16),
-            if (filtered.isEmpty)
+            if (vm.loadError != null)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: ThemedLottie(
-                        assetPath: _emptyLottie(vm.listMode),
-                        width: 140,
-                        height: 140,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _emptyTitle(strings, vm),
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: palette.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      vm.loadError != null
-                          ? AppLocalizations.of(context)!.genericErrorOccurred
-                          : _emptyHint(strings, vm),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: palette.textMuted),
-                    ),
-                  ],
-                ),
-              )
-            else
-              ...filtered.map(
-                (task) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: TaskTile(
-                    task: task,
-                    palette: palette,
-                    themeColor: task.theme != null
-                        ? vm.colorForTheme(task.theme!)
-                        : palette.textMuted,
-                    onTap: () async {
-                      final changed = await TasksNavigation.openEditTask(
-                        context,
-                        taskId: task.id,
-                      );
-                      if (!context.mounted) return;
-                      if (changed == true) {
-                        await context.read<TasksViewModel>().load();
-                      }
-                    },
-                    onToggle: () => vm.toggleTask(task.id),
-                    onMoveToToday: () => vm.moveTaskToToday(task.id),
-                    strings: strings,
-                  ),
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  AppLocalizations.of(context)!.genericErrorOccurred,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: palette.textMuted),
                 ),
               ),
+            _TasksSectionHeader(
+              palette: palette,
+              icon: Icons.checklist_outlined,
+              label: strings.tasksTitle,
+              expanded: guide.isActive || vm.tasksSectionExpanded,
+              onTap: vm.toggleTasksSectionExpanded,
+            ),
+            _CollapsibleSection(
+              expanded: guide.isActive || vm.tasksSectionExpanded,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final task in filtered)
+                    Padding(
+                      key: task.id == RoadGuideDemoIds.taskId
+                          ? guide.keys.tasksDemo
+                          : null,
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: TaskTile(
+                        key: Key('taskTile-${task.id}'),
+                        task: task,
+                        palette: palette,
+                        themeColor: task.theme != null
+                            ? vm.colorForTheme(task.theme!)
+                            : palette.textMuted,
+                        onTap: () async {
+                          if (guide.isActive ||
+                              task.id == RoadGuideDemoIds.taskId) {
+                            return;
+                          }
+                          final changed = await TasksNavigation.openEditTask(
+                            context,
+                            taskId: task.id,
+                          );
+                          if (!context.mounted) return;
+                          if (changed == true) {
+                            await context.read<TasksViewModel>().load();
+                          }
+                        },
+                        onToggle: () {
+                          if (guide.isActive ||
+                              task.id == RoadGuideDemoIds.taskId) {
+                            return;
+                          }
+                          vm.toggleTask(task.id);
+                        },
+                        onMoveToToday: () {
+                          if (guide.isActive ||
+                              task.id == RoadGuideDemoIds.taskId) {
+                            return;
+                          }
+                          vm.moveTaskToToday(task.id);
+                        },
+                        onLongPress: (anchor) {
+                          if (guide.isActive ||
+                              task.id == RoadGuideDemoIds.taskId) {
+                            return;
+                          }
+                          showTaskContextMenu(
+                            context: context,
+                            task: task,
+                            vm: vm,
+                            palette: palette,
+                            anchor: anchor,
+                          );
+                        },
+                        strings: strings,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            _TasksSectionHeader(
+              palette: palette,
+              icon: Icons.insights_outlined,
+              label: strings.taskHabitsSection,
+              expanded: guide.isActive || vm.habitsSectionExpanded,
+              onTap: vm.toggleHabitsSectionExpanded,
+            ),
+            _CollapsibleSection(
+              expanded: guide.isActive || vm.habitsSectionExpanded,
+              child: Column(
+                key: guide.keys.tasksHabits,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final habit in visibleHabits)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: HabitTaskTile(
+                        key: Key('habitTaskTile-${habit.id}'),
+                        habit: habit,
+                        palette: palette,
+                        isCompleted: habit.id == RoadGuideDemoIds.habitId
+                            ? false
+                            : habitVm.getStatusForHabitAndDate(
+                                    habit.id ?? 0,
+                                    habitsDay,
+                                  ) ==
+                                  HabitStatus.completed,
+                        strings: strings,
+                        onTap: () async {
+                          if (guide.isActive ||
+                              habit.id == RoadGuideDemoIds.habitId) {
+                            return;
+                          }
+                          await Navigator.pushNamed(
+                            context,
+                            '/habit-detail',
+                            arguments: habit.id,
+                          );
+                          if (!context.mounted) return;
+                          await context.read<HabitProgressViewModel>().load(
+                            silent: true,
+                          );
+                        },
+                        onLongPress: (anchor) {
+                          if (guide.isActive ||
+                              habit.id == RoadGuideDemoIds.habitId) {
+                            return;
+                          }
+                          showHabitContextMenu(
+                            context: context,
+                            habit: habit,
+                            vm: habitVm,
+                            palette: palette,
+                            anchor: anchor,
+                          );
+                        },
+                        onToggle: () async {
+                          final ok = await habitVm.toggleHabitCompleted(
+                            habit.id!,
+                            habitsDay,
+                          );
+                          if (ok || !context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!.cannotCompleteHabitInTheFuture,
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         );
       },
@@ -245,30 +417,108 @@ class _TasksBody extends StatelessWidget {
   }
 }
 
-String _emptyLottie(TasksListMode mode) => switch (mode) {
-  TasksListMode.inbox => 'assets/lottie/archive.json',
-  TasksListMode.day => 'assets/lottie/reminders.json',
-  TasksListMode.today => 'assets/lottie/checks.json',
-  TasksListMode.completed => 'assets/lottie/checks.json',
-};
+const _kTasksGlassBarHeight = 88.0;
+const _kEmbeddedTabBarClearance = 35.0;
+const _kMainShellTabBarHeight = 98.0;
+const _kTasksListClearanceGap = 24.0;
 
-String _emptyTitle(TaskStrings strings, TasksViewModel vm) =>
-    switch (vm.listMode) {
-      TasksListMode.inbox => strings.taskNoTasksInbox,
-      TasksListMode.day => strings.taskNoTasksForDayLabel(
-        formatTaskDate(vm.selectedDay),
+double _tasksListBottomPadding(BuildContext context, {required bool embedded}) {
+  final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
+  final overlay =
+      _kTasksGlassBarHeight +
+      _kTasksListClearanceGap +
+      (embedded ? _kMainShellTabBarHeight : 0) +
+      systemBottom;
+  final scaffoldInset = MediaQuery.paddingOf(context).bottom;
+  return overlay > scaffoldInset
+      ? overlay
+      : scaffoldInset + _kTasksListClearanceGap;
+}
+
+class _CollapsibleSection extends StatelessWidget {
+  const _CollapsibleSection({required this.expanded, required this.child});
+
+  final bool expanded;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: _kSectionAnimDuration,
+      curve: _kSectionAnimCurve,
+      tween: Tween<double>(end: expanded ? 1 : 0),
+      builder: (context, value, child) {
+        final t = value.clamp(0.0, 1.0);
+        return ClipRect(
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: t,
+            child: Opacity(
+              opacity: t,
+              child: IgnorePointer(ignoring: t == 0, child: child),
+            ),
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _TasksSectionHeader extends StatelessWidget {
+  const _TasksSectionHeader({
+    required this.palette,
+    required this.icon,
+    required this.label,
+    required this.expanded,
+    required this.onTap,
+  });
+
+  final TasksUiPalette palette;
+  final IconData icon;
+  final String label;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: palette.accentMuted),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: palette.textPrimary,
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  turns: expanded ? 0.5 : 0,
+                  duration: _kSectionAnimDuration,
+                  curve: _kSectionAnimCurve,
+                  child: Icon(Icons.expand_more, color: palette.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      TasksListMode.today => strings.taskNoTasks,
-      TasksListMode.completed => strings.taskNoTasksCompleted,
-    };
-
-String _emptyHint(TaskStrings strings, TasksViewModel vm) =>
-    switch (vm.listMode) {
-      TasksListMode.inbox => strings.taskNoTasksInboxHint,
-      TasksListMode.day => strings.taskNoTasksHint,
-      TasksListMode.today => strings.taskNoTasksHint,
-      TasksListMode.completed => strings.taskNoTasksCompletedHint,
-    };
+    );
+  }
+}
 
 class _TasksFiltersPanel extends StatelessWidget {
   const _TasksFiltersPanel({required this.strings, required this.palette});

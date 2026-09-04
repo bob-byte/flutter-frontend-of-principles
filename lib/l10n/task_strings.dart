@@ -43,8 +43,10 @@ class TaskStrings {
     required this.taskNoTasks,
     required this.taskNoTasksHint,
     required this.taskMenuToday,
+    required this.taskMenuTomorrow,
     required this.taskMenuCalendar,
     required this.taskMenuInbox,
+    required this.taskMenuInboxHint,
     required this.taskMenuCompleted,
     required this.taskMenuCompletedHint,
     required this.taskListMenuTitle,
@@ -73,6 +75,8 @@ class TaskStrings {
     required this.taskCalendarSelectDay,
     required this.taskOverdue,
     required this.taskMoveToToday,
+    required this.taskHabitsSection,
+    required this.taskHabitLabel,
   });
 
   final String tasksTitle;
@@ -116,8 +120,10 @@ class TaskStrings {
   final String taskNoTasks;
   final String taskNoTasksHint;
   final String taskMenuToday;
+  final String taskMenuTomorrow;
   final String taskMenuCalendar;
   final String taskMenuInbox;
+  final String taskMenuInboxHint;
   final String taskMenuCompleted;
   final String taskMenuCompletedHint;
   final String taskListMenuTitle;
@@ -146,6 +152,8 @@ class TaskStrings {
   final String taskCalendarSelectDay;
   final String taskOverdue;
   final String taskMoveToToday;
+  final String taskHabitsSection;
+  final String taskHabitLabel;
 
   String taskProgressCount(int completed, int total) {
     if (identical(this, uk)) {
@@ -208,15 +216,17 @@ class TaskStrings {
     taskNoTasks: 'No tasks yet',
     taskNoTasksHint: 'Tap + to add your first task',
     taskMenuToday: 'Today',
+    taskMenuTomorrow: 'Tomorrow',
     taskMenuCalendar: 'Calendar',
     taskMenuInbox: 'Inbox',
+    taskMenuInboxHint: 'All unfinished tasks',
     taskMenuCompleted: 'Completed',
     taskMenuCompletedHint: 'All finished tasks',
     taskListMenuTitle: 'Show tasks',
     taskWhatNeedsToBeDone: 'What needs to be done?',
     taskNoDueDate: 'No date',
     taskNoTasksInbox: 'Inbox is empty',
-    taskNoTasksInboxHint: 'Tasks without a due date appear here',
+    taskNoTasksInboxHint: 'Unfinished tasks appear here',
     taskNoTasksCompleted: 'No completed tasks',
     taskNoTasksCompletedHint: 'Completed tasks appear here',
     saveButton: 'Save',
@@ -239,6 +249,8 @@ class TaskStrings {
     taskCalendarSelectDay: 'Show this day',
     taskOverdue: 'Overdue',
     taskMoveToToday: 'Move to today',
+    taskHabitsSection: 'Habits',
+    taskHabitLabel: 'Habit',
   );
 
   static final uk = TaskStrings._(
@@ -283,15 +295,17 @@ class TaskStrings {
     taskNoTasks: 'Завдань поки немає',
     taskNoTasksHint: 'Натисніть +, щоб додати перше завдання',
     taskMenuToday: 'Сьогодні',
+    taskMenuTomorrow: 'Завтра',
     taskMenuCalendar: 'Календар',
     taskMenuInbox: 'Вхідні',
+    taskMenuInboxHint: 'Усі невиконані завдання',
     taskMenuCompleted: 'Виконані',
     taskMenuCompletedHint: 'Усі виконані завдання',
     taskListMenuTitle: 'Показати завдання',
     taskWhatNeedsToBeDone: 'Що потрібно зробити?',
     taskNoDueDate: 'Без дати',
     taskNoTasksInbox: 'Вхідні порожні',
-    taskNoTasksInboxHint: 'Тут з\'являться завдання без терміну',
+    taskNoTasksInboxHint: 'Тут з\'являться невиконані завдання',
     taskNoTasksCompleted: 'Немає виконаних завдань',
     taskNoTasksCompletedHint: 'Тут з\'являться виконані завдання',
     saveButton: 'Зберегти',
@@ -314,5 +328,7 @@ class TaskStrings {
     taskCalendarSelectDay: 'Показати цей день',
     taskOverdue: 'Протерміновано',
     taskMoveToToday: 'Перенести на сьогодні',
+    taskHabitsSection: 'Звички',
+    taskHabitLabel: 'Звичка',
   );
 }

@@ -19,8 +19,10 @@ class AppBenefitsSlideContent {
 }
 
 class AppBenefitsViewModel extends ChangeNotifier {
-  AppBenefitsViewModel(this._authService, {Future<String?> Function()? tokenReader})
-    : _tokenReader = tokenReader;
+  AppBenefitsViewModel(
+    this._authService, {
+    Future<String?> Function()? tokenReader,
+  }) : _tokenReader = tokenReader;
 
   final AuthService _authService;
   final Future<String?> Function()? _tokenReader;
@@ -87,6 +89,15 @@ class AppBenefitsViewModel extends ChangeNotifier {
         : AppBenefitsNavigationAction.startupAbsolute;
   }
 
+  /// First-run onboarding replaces `/`, so there is nothing to pop.
+  /// Skip the token read in that case; a leftover session must not no-op.
+  Future<AppBenefitsNavigationAction> resolveAheadAction({
+    required bool canPop,
+  }) async {
+    if (!canPop) return AppBenefitsNavigationAction.startupAbsolute;
+    return navigateToNextViewAction();
+  }
+
   String _resolveLocalizedKey(AppLocalizations l10n, String key) {
     return switch (key) {
       'TransformAreasOfLifeTitle' => l10n.transformAreasOfLifeTitle,
@@ -96,9 +107,11 @@ class AppBenefitsViewModel extends ChangeNotifier {
       'GroupHabitsByGoalsTitle' => l10n.groupHabitsByGoalsTitle,
       'GroupHabitsByGoalsDescription' => l10n.groupHabitsByGoalsDescription,
       'GetRecommendationsByAITitle' => l10n.getRecommendationsByAITitle,
-      'GetRecommendationsByAIDescription' => l10n.getRecommendationsByAIDescription,
+      'GetRecommendationsByAIDescription' =>
+        l10n.getRecommendationsByAIDescription,
       'BecomeTruePersonalityTitle' => l10n.becomeTruePersonalityTitle,
-      'BecomeTruePersonalityDescription' => l10n.becomeTruePersonalityDescription,
+      'BecomeTruePersonalityDescription' =>
+        l10n.becomeTruePersonalityDescription,
       _ => key,
     };
   }
