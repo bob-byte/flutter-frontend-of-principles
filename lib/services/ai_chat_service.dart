@@ -1,27 +1,21 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import '../core/config/app_config.dart';
+import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../models/ai_task_draft.dart';
 
-/// AI через бекенд-проксі (серверний ключ, без CORS у браузері).
-class AiChatService {
-  AiChatService({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: AppConfig.aiKeyApiBaseUrl,
-                connectTimeout: const Duration(seconds: 30),
-                receiveTimeout: const Duration(seconds: 120),
-                headers: const {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json',
-                },
-              ),
-            );
+const _sseDone = Object();
 
-  final Dio _dio;
+/// AI via the app backend. The OpenAI key stays on the server.
+class AiChatService {
+  AiChatService(this._apiClient);
+
+  static const _aiTimeout = Duration(seconds: 120);
+
+  final ApiClient _apiClient;
   final List<Map<String, String>> _messages = [];
 
   Stream<String> streamAnswer(
@@ -32,37 +26,44 @@ class AiChatService {
     final trimmed = prompt.trim();
     if (trimmed.isEmpty) return;
 
-    if (_messages.isEmpty) {
-      _messages.add({
-        'role': 'system',
-        'content': _helperSystemPrompt,
-      });
-    }
-
     _messages.add({'role': 'user', 'content': trimmed});
 
+    final cancelToken = CancelToken();
+    final assembled = StringBuffer();
     try {
-      final response = await _postWithLocalFallback(
+      final response = await _apiClient.postStream(
         ApiEndpoints.aiChat,
-        data: {'messages': _messages},
+        data: {'messages': List<Map<String, String>>.from(_messages)},
+        receiveTimeout: _aiTimeout,
+        cancelToken: cancelToken,
       );
-      final map = response.data is Map
-          ? Map<String, dynamic>.from(response.data as Map)
-          : <String, dynamic>{};
-      final content =
-          (map['content'] ?? map['Content'])?.toString().trim() ?? '';
-      if (content.isEmpty) {
+
+      await for (final chunk in chunksFromResponse(response.data)) {
+        if (chunk.isEmpty) continue;
+        assembled.write(chunk);
+        yield chunk;
+      }
+
+      final content = assembled.toString();
+      if (content.trim().isEmpty) {
         yield fallbackResponse;
         _messages.add({'role': 'assistant', 'content': fallbackResponse});
       } else {
-        yield content;
         _messages.add({'role': 'assistant', 'content': content});
       }
     } catch (e) {
-      if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
-        _messages.removeLast();
+      if (assembled.isEmpty) {
+        if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
+          _messages.removeLast();
+        }
+        yield await _errorText(e, errorMessage);
+      } else {
+        _messages.add({'role': 'assistant', 'content': assembled.toString()});
       }
-      yield _userFacingError(e, errorMessage);
+    } finally {
+      if (!cancelToken.isCancelled) {
+        cancelToken.cancel('stream closed');
+      }
     }
   }
 
@@ -84,9 +85,10 @@ class AiChatService {
     }
 
     try {
-      final response = await _postWithLocalFallback(
+      final response = await _apiClient.post(
         ApiEndpoints.aiParseTask,
         data: {'prompt': trimmed},
+        receiveTimeout: _aiTimeout,
       );
 
       final data = response.data;
@@ -104,37 +106,32 @@ class AiChatService {
     }
   }
 
-  /// Прод → якщо недоступний у debug, локальний бекенд.
-  Future<Response<dynamic>> _postWithLocalFallback(
-    String path, {
-    required Object data,
-  }) async {
-    try {
-      return await _dio.post<dynamic>(path, data: data);
-    } on DioException catch (e) {
-      final canFallback = kDebugMode &&
-          AppConfig.aiKeyApiBaseUrl != 'https://localhost:6001/api';
-      final status = e.response?.statusCode;
-      final networkMiss = e.type == DioExceptionType.connectionError ||
-          e.type == DioExceptionType.connectionTimeout ||
-          status == 404;
-
-      if (!canFallback || !networkMiss) rethrow;
-
-      debugPrint('AI prod failed ($status), fallback to local backend');
-      final local = Dio(
-        BaseOptions(
-          baseUrl: 'https://localhost:6001/api',
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 120),
-          headers: const {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
-      return local.post<dynamic>(path, data: data);
+  Future<String> _errorText(Object e, String fallback) async {
+    if (e is DioException) {
+      final data = e.response?.data;
+      if (data is ResponseBody) {
+        try {
+          final text = await utf8.decoder.bind(data.stream).join();
+          return _userFacingError(
+            DioException(
+              requestOptions: e.requestOptions,
+              response: Response(
+                requestOptions: e.requestOptions,
+                statusCode: e.response?.statusCode,
+                data: _tryDecodeJson(text) ?? text,
+              ),
+              type: e.type,
+              message: e.message,
+              error: e.error,
+            ),
+            fallback,
+          );
+        } catch (_) {
+          // Fall through to status-code mapping.
+        }
+      }
     }
+    return _userFacingError(e, fallback);
   }
 
   String _userFacingError(Object e, String fallback) {
@@ -145,25 +142,140 @@ class AiChatService {
         if (err != null && err.toString().trim().isNotEmpty) {
           return err.toString().trim();
         }
+      } else if (data is String && data.trim().isNotEmpty) {
+        return data.trim();
+      }
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        return 'Увійдіть в акаунт, щоб користуватися AI.';
       }
       if (e.response?.statusCode == 429) {
         return 'Закінчилась квота OpenAI на сервері. Поповніть баланс.';
+      }
+      if (e.response?.statusCode == 503) {
+        return 'AI ще не налаштований на сервері.';
       }
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout) {
         return 'Немає з\'єднання з AI-сервером. Запустіть бекенд або перевірте інтернет.';
       }
     }
-    final text = e.toString().replaceFirst(RegExp(r'^Bad state:\s*'), '').trim();
+    final text = e
+        .toString()
+        .replaceFirst(RegExp(r'^Bad state:\s*'), '')
+        .trim();
     return text.isEmpty ? fallback : text;
   }
+}
 
-  static const _helperSystemPrompt =
-      'You are a self-development helper, but you can answer any question. '
-      'If the user asks something unrelated to self-development, respond normally '
-      'without forcing that topic. Support the user in building better habits and '
-      'growing, but do not lecture unsolicited. Do not accept weak conclusions as true: '
-      'be an intellectual opponent when useful. '
-      'Answer in the user\'s language (Ukrainian when the user writes Ukrainian). '
-      'If you generate code, do not wrap it in ``` fences; put the language name on a line before the code.';
+@visibleForTesting
+Stream<String> chunksFromResponse(Object? data) async* {
+  if (data is Map) {
+    final content = _contentFromMap(data);
+    if (content != null && content.isNotEmpty) {
+      yield content;
+    }
+    return;
+  }
+
+  if (data is String) {
+    yield* _readSseChunks(Stream<List<int>>.value(utf8.encode(data)));
+    return;
+  }
+
+  if (data is ResponseBody) {
+    yield* _readSseChunks(data.stream);
+    return;
+  }
+
+  if (data is Stream) {
+    yield* _readSseChunks(data.cast<List<int>>());
+  }
+}
+
+Stream<String> _readSseChunks(Stream<List<int>> byteStream) async* {
+  var leftover = '';
+  await for (final piece in utf8.decoder.bind(byteStream)) {
+    leftover += piece.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    while (true) {
+      final separator = leftover.indexOf('\n\n');
+      if (separator < 0) {
+        break;
+      }
+      final rawEvent = leftover.substring(0, separator);
+      leftover = leftover.substring(separator + 2);
+      final parsed = _parseSseEvent(rawEvent);
+      if (identical(parsed, _sseDone)) {
+        return;
+      }
+      if (parsed is String && parsed.isNotEmpty) {
+        yield parsed;
+      }
+    }
+  }
+
+  final tail = leftover.trim();
+  if (tail.isEmpty) {
+    return;
+  }
+  final parsed = _parseSseEvent(tail);
+  if (identical(parsed, _sseDone)) {
+    return;
+  }
+  if (parsed is String && parsed.isNotEmpty) {
+    yield parsed;
+  }
+}
+
+Object? _parseSseEvent(String event) {
+  final data = event
+      .split('\n')
+      .where((line) => line.startsWith('data:'))
+      .map((line) => line.substring(5).trim())
+      .join('\n');
+
+  if (data.isEmpty) {
+    return _contentFromJson(event);
+  }
+  if (data == '[DONE]') {
+    return _sseDone;
+  }
+  return _contentFromJson(data);
+}
+
+String? _contentFromJson(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final decoded = _tryDecodeJson(trimmed);
+  if (decoded is! Map) {
+    return null;
+  }
+  return _contentFromMap(decoded);
+}
+
+String? _contentFromMap(Map<dynamic, dynamic> decoded) {
+  final err = decoded['error'] ?? decoded['Error'];
+  if (err != null) {
+    final message = err is Map
+        ? (err['message'] ?? err['Message'] ?? err).toString()
+        : err.toString();
+    if (message.trim().isNotEmpty) {
+      throw StateError(message.trim());
+    }
+  }
+
+  final content = decoded['content'] ?? decoded['Content'];
+  if (content is String) {
+    return content;
+  }
+  return content?.toString();
+}
+
+Object? _tryDecodeJson(String text) {
+  try {
+    return jsonDecode(text);
+  } on FormatException {
+    return null;
+  }
 }

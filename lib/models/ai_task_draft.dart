@@ -19,7 +19,7 @@ class AiTaskDraft {
   final DateTime? dueDate;
 
   factory AiTaskDraft.fromJson(Map<String, dynamic> json) {
-    final dueRaw = json['dueDate'] ?? json['due_date'];
+    final dueRaw = json['dueDate'] ?? json['due_date'] ?? json['DueDate'];
     DateTime? dueDate;
     if (dueRaw is String && dueRaw.trim().isNotEmpty) {
       dueDate = DateTime.tryParse(dueRaw.trim());
@@ -29,10 +29,14 @@ class AiTaskDraft {
     }
 
     return AiTaskDraft(
-      title: (json['title'] ?? '').toString().trim(),
-      description: (json['description'] ?? '').toString().trim(),
-      priority: _priorityFrom(json['priority']),
-      theme: _nullableString(json['theme'] ?? json['category']),
+            title: (json['title'] ?? json['Title'] ?? '').toString().trim(),
+            description: (json['description'] ?? json['Description'] ?? '')
+                .toString()
+                .trim(),
+            priority: _priorityFrom(json['priority'] ?? json['Priority']),
+            theme: _nullableString(
+              json['theme'] ?? json['Theme'] ?? json['category'],
+            ),
       hasDueDate: dueDate != null,
       dueDate: dueDate,
     );

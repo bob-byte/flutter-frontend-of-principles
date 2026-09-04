@@ -74,8 +74,7 @@ flutter run -d ios
 flutter run -d android
 ```
 
-AI key is loaded from the production server (`/account/apikey`), same as MAUI.
-No local key and no `--dart-define=OPENAI_API_KEY` needed for normal runs.
+AI chat and task assist go through the backend (`POST /api/ai/chat`, `POST /api/ai/parse-task`). Set `AI_API_KEY` (or `AiApiKey`) on the server. No OpenAI key is needed in the Flutter app.
 
 ## Testing
 
