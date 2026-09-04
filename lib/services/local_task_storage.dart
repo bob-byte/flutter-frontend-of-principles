@@ -4,21 +4,28 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../core/storage/local_db.dart';
 import '../core/storage/task_db.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../models/task.dart';
 
 /// Локальне сховище завдань (SQLite / SharedPreferences на web).
 class LocalTaskStorage {
-  LocalTaskStorage(this._db);
+  LocalTaskStorage(this._db, {this.localDb});
 
   final TaskDb? _db;
+  final LocalDb? localDb;
 
   static const _tasksPrefsKey = 'tasks_module_tasks_v1';
   static const _themesPrefsKey = 'tasks_module_themes_v1';
   static const _uiThemePrefsKey = 'tasks_module_ui_theme_v1';
 
-  bool get _useWebStorage => kIsWeb || _db == null;
+  bool get _useWebStorage => kIsWeb || (_db == null && localDb == null);
+
+  Future<Database> get _database async {
+    if (localDb != null) return localDb!.database;
+    return _db!.database;
+  }
 
   Future<List<Task>> getTasks() async {
     if (_useWebStorage) {
@@ -32,8 +39,12 @@ class LocalTaskStorage {
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
-    final database = await _db!.database;
-    final rows = await database.query('tasks', orderBy: 'createdAt DESC');
+    final database = await _database;
+    final rows = await database.query(
+      'tasks',
+      where: localDb != null ? 'isDeleted = 0 OR isDeleted IS NULL' : null,
+      orderBy: 'createdAt DESC',
+    );
     return rows.map(Task.fromMap).toList();
   }
 
@@ -43,6 +54,23 @@ class LocalTaskStorage {
       if (task.id == id) return task;
     }
     return null;
+  }
+
+  Future<Task?> getTaskByLocalId(int localId) async {
+    final tasks = await getTasks();
+    for (final task in tasks) {
+      if (task.localId == localId) return task;
+    }
+    if (_useWebStorage) return null;
+    final database = await _database;
+    final rows = await database.query(
+      'tasks',
+      where: 'localId = ?',
+      whereArgs: [localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return Task.fromMap(rows.first);
   }
 
   Future<void> saveTask(Task task, {required bool isNew}) async {
@@ -58,12 +86,40 @@ class LocalTaskStorage {
       return;
     }
 
-    final database = await _db!.database;
+    final database = await _database;
     await database.insert(
       'tasks',
-      task.toMap(),
+      _row(task),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<void> replaceTaskId(String oldId, Task task) async {
+    if (_useWebStorage) {
+      final tasks = await getTasks();
+      tasks.removeWhere((t) => t.id == oldId);
+      tasks.add(task);
+      await _persistWebTasks(tasks);
+      return;
+    }
+    final database = await _database;
+    await database.delete('tasks', where: 'id = ?', whereArgs: [oldId]);
+    await database.insert(
+      'tasks',
+      _row(task),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Map<String, Object?> _row(Task task) {
+    final map = Map<String, Object?>.from(task.toMap());
+    if (localDb == null) {
+      map.remove('localId');
+      map.remove('serverId');
+      map.remove('lastModified');
+      map.remove('isDeleted');
+    }
+    return map;
   }
 
   Future<void> updateTaskStatus(String id, bool isDone) async {
@@ -87,7 +143,7 @@ class LocalTaskStorage {
       return;
     }
 
-    final database = await _db!.database;
+    final database = await _database;
     await database.delete('tasks', where: 'id = ?', whereArgs: [id]);
   }
 
@@ -100,7 +156,7 @@ class LocalTaskStorage {
       return map.map((k, v) => MapEntry(k, v as int));
     }
 
-    final database = await _db!.database;
+    final database = await _database;
     final rows = await database.query('task_themes');
     return {
       for (final row in rows)
@@ -116,7 +172,7 @@ class LocalTaskStorage {
       return;
     }
 
-    final database = await _db!.database;
+    final database = await _database;
     await database.insert(
       'task_themes',
       {'name': name, 'colorArgb': colorArgb},
