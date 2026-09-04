@@ -48,3 +48,6 @@ app.*.map.json
 /maui/
 
 /backend/
+
+# Local multi-root IDE workspace
+Principles.code-workspace
