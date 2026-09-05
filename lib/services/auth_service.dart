@@ -316,6 +316,20 @@ class AuthService {
   static bool get isAppleGoogleOAuthPlatform =>
       !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
+  /// Ephemeral only on the iOS Simulator: sharing Safari cookies there can
+  /// crash GIS/FedCM. On a real device, a non-ephemeral session lets Google
+  /// remember the previous account between sign-ins.
+  @visibleForTesting
+  static bool preferEphemeralGoogleAuth({
+    bool? isApplePlatform,
+    Map<String, String>? environment,
+  }) {
+    final apple = isApplePlatform ?? isAppleGoogleOAuthPlatform;
+    if (!apple) return false;
+    final env = environment ?? Platform.environment;
+    return env.containsKey('SIMULATOR_DEVICE_NAME');
+  }
+
   @visibleForTesting
   static String googleCallbackScheme({required bool isApplePlatform}) =>
       isApplePlatform ? googleIosCallbackScheme : googleAndroidCallbackScheme;
@@ -403,10 +417,9 @@ class AuthService {
         url: authUrl.toString(),
         callbackUrlScheme: callbackScheme,
         options: FlutterWebAuth2Options(
-          // GIS/FedCM account listing crashes in the iOS Simulator when it
-          // tries to reuse Safari cookies. An ephemeral session skips that
-          // picker and shows the classic sign-in form instead.
-          preferEphemeral: isApplePlatform,
+          preferEphemeral: preferEphemeralGoogleAuth(
+            isApplePlatform: isApplePlatform,
+          ),
         ),
       );
 

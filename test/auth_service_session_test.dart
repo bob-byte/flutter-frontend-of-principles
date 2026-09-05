@@ -101,6 +101,30 @@ void main() {
     expect(await authService.getToken(), isNull);
   });
 
+  test('uses ephemeral Google auth only on the iOS Simulator', () {
+    expect(
+      AuthService.preferEphemeralGoogleAuth(
+        isApplePlatform: true,
+        environment: const {'SIMULATOR_DEVICE_NAME': 'iPhone 16'},
+      ),
+      isTrue,
+    );
+    expect(
+      AuthService.preferEphemeralGoogleAuth(
+        isApplePlatform: true,
+        environment: const {},
+      ),
+      isFalse,
+    );
+    expect(
+      AuthService.preferEphemeralGoogleAuth(
+        isApplePlatform: false,
+        environment: const {'SIMULATOR_DEVICE_NAME': 'iPhone 16'},
+      ),
+      isFalse,
+    );
+  });
+
   test('uses the Android package-scheme redirect for Google OAuth', () {
     expect(
       AuthService.googleCallbackScheme(isApplePlatform: false),
@@ -155,9 +179,7 @@ void main() {
 
   test('treats Google and Apple user cancels as non-errors', () {
     expect(
-      AuthService.isExternalAuthCanceled(
-        PlatformException(code: 'CANCELED'),
-      ),
+      AuthService.isExternalAuthCanceled(PlatformException(code: 'CANCELED')),
       isTrue,
     );
     expect(
