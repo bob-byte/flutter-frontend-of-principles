@@ -5,6 +5,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/core/locale/locale_controller.dart';
+import 'package:principles_app/core/road_guide/main_shell_controller.dart';
+import 'package:principles_app/core/road_guide/road_guide_controller.dart';
 import 'package:principles_app/core/storage/local_db.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/sync/local_data_cleaner.dart';
@@ -32,8 +34,15 @@ Widget _buildWidget() {
         Provider(create: (_) => AuthService(SecureStore())),
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => LocaleController()),
+        ChangeNotifierProvider(create: (_) => MainShellController()),
         Provider(create: (_) => SettingsService(SecureStore())),
         Provider(create: (_) => UserService(forceLocalOnly: true)),
+        ChangeNotifierProvider(
+          create: (ctx) => RoadGuideController(
+            userService: ctx.read<UserService>(),
+            shell: ctx.read<MainShellController>(),
+          ),
+        ),
         Provider(
           create: (ctx) => LocalDataCleaner(
             localDb: LocalDb(),
@@ -45,17 +54,12 @@ Widget _buildWidget() {
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) {
-            final vm = SettingsViewModel(
-              settingsService: ctx.read<SettingsService>(),
-              localeController: ctx.read<LocaleController>(),
-              userService: ctx.read<UserService>(),
-              localDataCleaner: ctx.read<LocalDataCleaner>(),
-            );
-            // Embedded SettingsView skips auto-load; hydrate for widget tests.
-            vm.load();
-            return vm;
-          },
+          create: (ctx) => SettingsViewModel(
+            settingsService: ctx.read<SettingsService>(),
+            localeController: ctx.read<LocaleController>(),
+            userService: ctx.read<UserService>(),
+            localDataCleaner: ctx.read<LocalDataCleaner>(),
+          ),
         ),
       ],
       child: const MaterialApp(
@@ -162,6 +166,28 @@ void main() {
 
     expect(find.text('This field is not editable.'), findsOneWidget);
     expect(find.byKey(const Key('settingsProfileFieldInput')), findsNothing);
+  });
+
+  testWidgets('slogan info icon reveals explanation text', (tester) async {
+    await tester.pumpWidget(_buildWidget());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('settingsProfileSloganTile')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('settingsProfileFieldInfo')), findsOneWidget);
+    expect(
+      find.textContaining('A main slogan is the most important idea'),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const Key('settingsProfileFieldInfo')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('A main slogan is the most important idea'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('logout opens startup without showing benefits', (tester) async {

@@ -502,11 +502,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get missionExplanation =>
-      'It will be used to create more appropriate recommended habits for you. A mission is a life goal that keeps you motivated and helps you make the best choices in a variety of situations. For example, a mission might be to become the best and most moral entrepreneur in the world.';
+      'A mission is a life goal that keeps your motivation high and helps you make the best choices in a variety of situations. For example, a mission might be: “I create IT applications to make the world a better place.” It will be used to generate habit suggestions that are more relevant to you.';
 
   @override
   String get mainSloganExplanation =>
-      'The main slogan will be used to form better recommended habits. It helps you determine how to act when you don\'t want to do something or when you are faced with a challenge or temptation. An example of the main slogan: a relationship with God and a strong character determine the quality of life.';
+      'A main slogan is the most important idea that guides you through life. It helps you decide how to act when you don’t feel like doing something, or when you face certain challenges or temptations. An example of a core motto: a relationship with God and a strong character determine the quality of life. A motto is used to cultivate the best recommended habits.';
 
   @override
   String get nameSavedSuccess => 'Your name successfully saved';

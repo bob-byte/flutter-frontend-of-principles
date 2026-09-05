@@ -36,9 +36,11 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   void initState() {
     super.initState();
-    if (widget.embedded) return;
+    // Embedded shell used to skip load(); after Google/Apple login the splash
+    // LaunchDataLoader often finished pre-auth and never hydrated profile.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SettingsViewModel>().load();
+      if (!mounted) return;
+      context.read<SettingsViewModel>().load(silent: widget.embedded);
     });
   }
 
@@ -666,6 +668,7 @@ class _ProfileEditDialog extends StatefulWidget {
 
 class _ProfileEditDialogState extends State<_ProfileEditDialog> {
   late final TextEditingController _controller;
+  final GlobalKey _explanationKey = GlobalKey();
   bool _showExplanation = false;
   String? _error;
 
@@ -681,6 +684,23 @@ class _ProfileEditDialogState extends State<_ProfileEditDialog> {
     super.dispose();
   }
 
+  void _toggleExplanation() {
+    final showing = !_showExplanation;
+    setState(() => _showExplanation = showing);
+    if (!showing) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final explanationContext = _explanationKey.currentContext;
+      if (explanationContext == null) return;
+      Scrollable.ensureVisible(
+        explanationContext,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
   void _submit() {
     final value = _controller.text;
     if (widget.requiredField && value.trim().isEmpty) {
@@ -692,42 +712,54 @@ class _ProfileEditDialogState extends State<_ProfileEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // Keep the field+explanation scrollable above the keyboard / actions.
+    final contentMaxHeight =
+        (media.size.height -
+                media.viewInsets.bottom -
+                media.padding.vertical -
+                220)
+            .clamp(140.0, 360.0);
+
     return AppAlertDialog(
       title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              key: const Key('settingsProfileFieldInput'),
-              controller: _controller,
-              autofocus: true,
-              maxLines: widget.maxLines,
-              textInputAction: widget.maxLines == 1
-                  ? TextInputAction.done
-                  : TextInputAction.newline,
-              onSubmitted: widget.maxLines == 1 ? (_) => _submit() : null,
-              decoration: InputDecoration(
-                errorText: _error,
-                suffixIcon: widget.explanation == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.info_outline),
-                        onPressed: () {
-                          setState(() => _showExplanation = !_showExplanation);
-                        },
-                      ),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: contentMaxHeight),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                key: const Key('settingsProfileFieldInput'),
+                controller: _controller,
+                autofocus: true,
+                maxLines: widget.maxLines,
+                textInputAction: widget.maxLines == 1
+                    ? TextInputAction.done
+                    : TextInputAction.newline,
+                onSubmitted: widget.maxLines == 1 ? (_) => _submit() : null,
+                decoration: InputDecoration(
+                  errorText: _error,
+                  suffixIcon: widget.explanation == null
+                      ? null
+                      : IconButton(
+                          key: const Key('settingsProfileFieldInfo'),
+                          icon: const Icon(Icons.info_outline),
+                          onPressed: _toggleExplanation,
+                        ),
+                ),
               ),
-            ),
-            if (_showExplanation && widget.explanation != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                widget.explanation!,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              if (_showExplanation && widget.explanation != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  key: _explanationKey,
+                  widget.explanation!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       actions: [
