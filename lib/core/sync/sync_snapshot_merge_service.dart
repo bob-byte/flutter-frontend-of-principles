@@ -1,6 +1,7 @@
 import '../../models/frequency_config.dart';
 import '../../models/habit.dart';
 import '../../models/progress_value.dart';
+import '../../models/user.dart';
 import '../../services/database_service.dart';
 import '../../services/habit_service.dart';
 import '../../services/reminder_service.dart';
@@ -36,15 +37,42 @@ class SyncSnapshotMergeService {
   Future<void> _mergeUser(SyncBootstrapSnapshot snapshot) async {
     final remote = snapshot.user;
     if (remote == null) return;
-    if (await queue.hasBlocking(handlerType: SyncHandlerType.user)) return;
 
     final local = await userService.loadLocalUser();
-    if (local?.lastModified != null &&
+    final hasBlocking = await queue.hasBlocking(
+      handlerType: SyncHandlerType.user,
+    );
+    final localIsNewer =
+        local?.lastModified != null &&
         remote.lastModified != null &&
-        local!.lastModified!.isAfter(remote.lastModified!)) {
+        local!.lastModified!.isAfter(remote.lastModified!);
+
+    // Pending local profile writes (or a newer local stamp) must not wipe
+    // server-owned fields like email. Always fill blanks from remote.
+    if (hasBlocking || localIsNewer) {
+      if (local != null) {
+        await userService.saveLocalUser(
+          UserService.fillMissingFromRemote(local, remote),
+        );
+      }
       return;
     }
-    await userService.saveLocalUser(remote);
+
+    await userService.saveLocalUser(
+      User(
+        localId: local?.localId,
+        id: remote.id,
+        name: remote.name,
+        mainSlogan: remote.mainSlogan,
+        mission: remote.mission,
+        email: remote.email,
+        gender: remote.gender,
+        // Bootstrap DTO may omit HasSeenRoadGuide — keep a local true flag.
+        hasSeenRoadGuide:
+            (local?.hasSeenRoadGuide ?? false) || remote.hasSeenRoadGuide,
+        lastModified: remote.lastModified,
+      ),
+    );
   }
 
   Future<void> _mergeGoals(SyncBootstrapSnapshot snapshot) async {
@@ -75,7 +103,8 @@ class SyncSnapshotMergeService {
 
       final habitName = item['name'] ?? item['Name'] ?? 'Habit';
       final description = item['description'] ?? item['Description'];
-      final complexity = readJsonInt(item['complexity'] ?? item['Complexity']) ?? 5;
+      final complexity =
+          readJsonInt(item['complexity'] ?? item['Complexity']) ?? 5;
       final habitType = readJsonInt(item['type'] ?? item['Type']);
       final goalId = readJsonInt(
         item['goalId'] ??
@@ -117,10 +146,16 @@ class SyncSnapshotMergeService {
         )) {
           continue;
         }
-        final parsedDate = progressDateFromApi(progMap['date'] ?? progMap['Date']);
+        final parsedDate = progressDateFromApi(
+          progMap['date'] ?? progMap['Date'],
+        );
         final pVal = readJsonInt(progMap['value'] ?? progMap['Value']);
         if (parsedDate != null && pVal != null && pVal != kProgressUnknown) {
-          await databaseService.setHabitRecordValue(backendId, parsedDate, pVal);
+          await databaseService.setHabitRecordValue(
+            backendId,
+            parsedDate,
+            pVal,
+          );
         }
       }
     }

@@ -35,20 +35,59 @@ class UserService {
 
   bool get _useSqlite => !kIsWeb && _localDb != null && !forceLocalOnly;
 
+  /// True when [user] has no usable email (null/blank).
+  @visibleForTesting
+  static bool hasBlankEmail(User? user) {
+    final email = user?.email?.trim();
+    return email == null || email.isEmpty;
+  }
+
+  /// Fills blank local fields from [remote] without wiping local edits.
+  ///
+  /// Used after auth/sync when a local row was created without server fields
+  /// (e.g. road-guide `hasSeenRoadGuide` save) so Settings still gets email.
+  @visibleForTesting
+  static User fillMissingFromRemote(User local, User remote) {
+    String? preferLocal(String? localValue, String? remoteValue) {
+      final trimmed = localValue?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) return localValue;
+      return remoteValue;
+    }
+
+    return User(
+      localId: local.localId,
+      id: local.id ?? remote.id,
+      name: preferLocal(local.name, remote.name),
+      mainSlogan: preferLocal(local.mainSlogan, remote.mainSlogan),
+      mission: preferLocal(local.mission, remote.mission),
+      email: preferLocal(local.email, remote.email),
+      gender: local.gender ?? remote.gender,
+      hasSeenRoadGuide: local.hasSeenRoadGuide || remote.hasSeenRoadGuide,
+      lastModified: local.lastModified ?? remote.lastModified,
+    );
+  }
+
   Future<User> getCurrentUser() async {
     final local = await loadLocalUser();
-    if (local != null) return local;
-    if (!_useRemote) return User();
+    if (!_useRemote) return local ?? User();
+
+    // Email is server-owned and never edited in-app. If the local cache was
+    // created without it (common after Google/Apple auth + road guide), fetch
+    // `/profile` instead of returning the incomplete row forever.
+    if (!hasBlankEmail(local)) return local!;
 
     try {
       final response = await _apiClient!.get(ApiEndpoints.profile);
       final remote = _userFromResponse(response.data);
-      if (remote == null) return User();
-      await saveLocalUser(remote);
-      return remote;
+      if (remote == null) return local ?? User();
+      final merged = local == null
+          ? remote
+          : fillMissingFromRemote(local, remote);
+      await saveLocalUser(merged);
+      return merged;
     } catch (e) {
       debugPrint('Get current user failed: $e');
-      return User();
+      return local ?? User();
     }
   }
 
@@ -66,7 +105,8 @@ class UserService {
             mission: rows.first['mission'] as String?,
             email: rows.first['email'] as String?,
             gender: rows.first['gender'] as int?,
-            hasSeenRoadGuide: (rows.first['hasSeenRoadGuide'] as int? ?? 0) == 1,
+            hasSeenRoadGuide:
+                (rows.first['hasSeenRoadGuide'] as int? ?? 0) == 1,
             lastModified: rows.first['lastModified'] != null
                 ? DateTime.tryParse(rows.first['lastModified'] as String)
                 : null,

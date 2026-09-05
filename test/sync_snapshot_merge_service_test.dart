@@ -71,41 +71,110 @@ void main() {
     expect(local?.email, 'ada@example.com');
   });
 
-  test('keeps newer local user over older remote', () async {
-    await users.saveLocalUser(
-      User(name: 'Local', lastModified: DateTime.utc(2026, 2, 1)),
-    );
+  test(
+    'keeps newer local user over older remote but fills blank email',
+    () async {
+      await users.saveLocalUser(
+        User(
+          name: 'Local',
+          hasSeenRoadGuide: true,
+          lastModified: DateTime.utc(2026, 2, 1),
+        ),
+      );
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          user: User(
+            id: 5,
+            name: 'Remote',
+            email: 'ada@example.com',
+            gender: 1,
+            lastModified: DateTime.utc(2026, 1, 1),
+          ),
+        ),
+      );
+
+      final local = await users.loadLocalUser();
+      expect(local?.name, 'Local');
+      expect(local?.email, 'ada@example.com');
+      expect(local?.id, 5);
+      expect(local?.gender, 1);
+      expect(local?.hasSeenRoadGuide, isTrue);
+    },
+  );
+
+  test(
+    'fills blank email from remote even when user queue is blocking',
+    () async {
+      await users.saveLocalUser(
+        User(hasSeenRoadGuide: true, lastModified: DateTime.utc(2026, 3, 2)),
+      );
+      await queue.addToQueue(
+        handlerType: SyncHandlerType.user,
+        operation: OperationKind.saveHasSeenRoadGuide,
+        payload: {'HasSeenRoadGuide': true},
+      );
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          user: User(
+            id: 9,
+            name: 'Ada',
+            email: 'ada@example.com',
+            lastModified: DateTime.utc(2026, 3, 1),
+          ),
+        ),
+      );
+
+      final local = await users.loadLocalUser();
+      expect(local?.email, 'ada@example.com');
+      expect(local?.id, 9);
+      expect(local?.name, 'Ada');
+      expect(local?.hasSeenRoadGuide, isTrue);
+    },
+  );
+
+  test(
+    'skips creating a user when queue is blocking and local is empty',
+    () async {
+      await queue.addToQueue(
+        handlerType: SyncHandlerType.user,
+        operation: OperationKind.saveUserName,
+        payload: {'UserName': 'Pending'},
+      );
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          user: User(name: 'Remote', lastModified: DateTime.utc(2026, 3, 1)),
+        ),
+      );
+
+      expect(await users.loadLocalUser(), isNull);
+    },
+  );
+
+  test('preserves local hasSeenRoadGuide when applying remote user', () async {
+    await users.saveLocalUser(User(hasSeenRoadGuide: true));
 
     await merge.merge(
       SyncBootstrapSnapshot(
-        user: User(name: 'Remote', lastModified: DateTime.utc(2026, 1, 1)),
+        user: User(
+          name: 'Ada',
+          email: 'ada@example.com',
+          lastModified: DateTime.utc(2026, 1, 2),
+        ),
       ),
     );
 
-    expect((await users.loadLocalUser())?.name, 'Local');
-  });
-
-  test('skips user merge when user queue has blocking items', () async {
-    await queue.addToQueue(
-      handlerType: SyncHandlerType.user,
-      operation: OperationKind.saveUserName,
-      payload: {'UserName': 'Pending'},
-    );
-
-    await merge.merge(
-      SyncBootstrapSnapshot(
-        user: User(name: 'Remote', lastModified: DateTime.utc(2026, 3, 1)),
-      ),
-    );
-
-    expect(await users.loadLocalUser(), isNull);
+    final local = await users.loadLocalUser();
+    expect(local?.name, 'Ada');
+    expect(local?.email, 'ada@example.com');
+    expect(local?.hasSeenRoadGuide, isTrue);
   });
 
   test('merges remote goals when queue is clear', () async {
     await merge.merge(
-      SyncBootstrapSnapshot(
-        goals: [UserGoal(id: 11, name: 'Fitness')],
-      ),
+      SyncBootstrapSnapshot(goals: [UserGoal(id: 11, name: 'Fitness')]),
     );
 
     final rows = await localDb.database.then(
@@ -125,9 +194,7 @@ void main() {
     );
 
     await merge.merge(
-      SyncBootstrapSnapshot(
-        goals: [UserGoal(id: 11, name: 'Remote')],
-      ),
+      SyncBootstrapSnapshot(goals: [UserGoal(id: 11, name: 'Remote')]),
     );
 
     final rows = await localDb.database.then(
@@ -162,9 +229,7 @@ void main() {
   test('merges archived habits from bootstrap', () async {
     await merge.merge(
       const SyncBootstrapSnapshot(
-        archivedHabits: [
-          SyncBootstrapArchivedHabit(id: 9, name: 'Old habit'),
-        ],
+        archivedHabits: [SyncBootstrapArchivedHabit(id: 9, name: 'Old habit')],
       ),
     );
 
