@@ -1,0 +1,12 @@
+---
+description: Flutter, Provider, l10n, .NET backend, and Dart MCP tools
+alwaysApply: true
+---
+
+# Stack
+
+- Flutter / Dart SDK `^3.10.8`, Provider, Dio, sqflite, liquid_glass_widgets
+- l10n: edit `lib/l10n/app_en.arb` and `lib/l10n/app_uk.arb`, then `flutter gen-l10n`
+- Backend: .NET (`SET.WebAPI`), EF Core migrations in `SET.DAL/Migrations`
+- AI chat/task assist: backend `POST /api/ai/chat` and `POST /api/ai/parse-task` (`AI_API_KEY` on the server only)
+- Prefer MCP `user-dart` tools (analyze, format, tests, hot reload) over shell `dart`/`flutter` when available

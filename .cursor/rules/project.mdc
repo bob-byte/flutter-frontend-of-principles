@@ -1,0 +1,26 @@
+---
+description: Principles product — goals, habits, tasks, and AI Helper
+alwaysApply: true
+---
+
+# Principles
+
+Flutter rewrite of the Principles habit/goal app (install: https://principles.top). Backend is .NET in `backend/`.
+
+## Core loop
+
+1. Define a **goal**
+2. Attach **habits** that automate progress (optionally via AI recommendations)
+3. Complete habits; inspect detail (progress, streaks, stability)
+4. Use **Tasks** for one-off work and to keep today's habits visible
+5. Use **AI Helper** for support — not the primary recommendation entry point
+6. Settings (profile, slogan, mission) feed AI habit recommendations
+
+## Shell UX
+
+- Tab order: Chat · Goals · **Tasks** (center, default) · Habits · Settings
+- Goals lists habits grouped under each goal
+- Edit Habit is a normal page (not a fullscreen sheet), like Habit Detail
+- Pre-login: App Benefits carousel
+- Post-login: spotlight road guide once per device; replay from Settings → About
+- After login/signup, navigate to `HelperView` / `MainShell` so the road guide can run

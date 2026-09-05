@@ -6,6 +6,9 @@ alwaysApply: false
 
 # Road guide
 
+- `RoadGuideController` + `RoadGuideKeys` + `RoadGuideOverlay` as `OverlayEntry`
+- Demo entities: negative goal/habit ids, string task id
+- Persistence: SharedPreferences device flag + `User.HasSeenRoadGuide` on the backend
 - Do **not** wrap `GlassScaffold` in `Stack` or `OverlayPortal`.
 - Do **not** put `GlobalKey`s on `GlassTabBar` / tab icons; tab holes use `RoadGuideKeys.tabHole`.
 - Spotlight targets need full-width keys (`SizedBox(width: double.infinity)` or the real button).

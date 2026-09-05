@@ -1,0 +1,21 @@
+---
+description: Flutter MVVM layout, shell, sync, and goal–habit matching
+alwaysApply: true
+---
+
+# Architecture
+
+## Layout
+
+- `lib/views/` screens · `lib/viewmodels/` `ChangeNotifier` · `lib/services/` · `lib/models/` · `lib/core/` infra · `lib/app/` wiring
+- Entry: `lib/main.dart` → `lib/app/app.dart` (`MultiProvider`)
+- Shell: `MainShell` + `MainShellController` / `MainShellTab` (chat=0, goals=1, tasks=2, habits=3, settings=4)
+
+## Data
+
+- Local SQLite (`sqflite`) + sync queue to .NET WebAPI
+- Goals ↔ habits: match by `targetGoalId` or case-insensitive `targetGoal` name (`habitsForGoal` / `habitsUnassignedToGoals` in `habit_progress_viewmodel.dart`)
+
+## Road guide
+
+File-specific constraints and overlay patterns: `.cursor/rules/road-guide.mdc`
