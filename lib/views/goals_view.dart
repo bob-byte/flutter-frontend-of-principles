@@ -34,9 +34,9 @@ class _GoalsViewState extends State<GoalsView> {
   @override
   void initState() {
     super.initState();
-    if (widget.embedded) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GoalsViewModel>().load();
+      if (!mounted) return;
+      context.read<GoalsViewModel>().load(silent: widget.embedded);
       context.read<HabitProgressViewModel>().load(silent: true);
     });
   }

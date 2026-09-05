@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
+import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/app_alert_dialog.dart';
 import 'helper_view.dart';
 
@@ -149,6 +151,12 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
           ],
         ),
       );
+      try {
+        context.read<StartupViewModel>().markSignedIn();
+      } catch (_) {}
+      try {
+        context.read<LaunchDataLoader>().reset();
+      } catch (_) {}
       navigator.pushReplacementNamed(HelperView.routeName);
     }
   }

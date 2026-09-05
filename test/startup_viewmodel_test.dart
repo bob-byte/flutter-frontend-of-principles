@@ -66,6 +66,18 @@ void main() {
     vm.acknowledgeAppBenefitsShown();
     expect(await vm.initialize(), StartupNextRoute.login);
   });
+
+  test('markSignedIn overrides a cached login route', () async {
+    auth.hasSession = false;
+    await vm.initialize();
+    vm.acknowledgeAppBenefitsShown();
+    expect(await vm.initialize(), StartupNextRoute.login);
+
+    auth.hasSession = true;
+    vm.markSignedIn();
+    expect(await vm.initialize(), StartupNextRoute.helper);
+    expect(await vm.hasAuthenticatedSession(), isTrue);
+  });
 }
 
 class _FakeAuth extends AuthService {

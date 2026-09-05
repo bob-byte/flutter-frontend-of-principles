@@ -37,9 +37,9 @@ class _TasksViewState extends State<TasksView> {
   @override
   void initState() {
     super.initState();
-    if (widget.embedded) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TasksViewModel>().load();
+      if (!mounted) return;
+      context.read<TasksViewModel>().load(silent: widget.embedded);
       context.read<HabitProgressViewModel>().load(silent: true);
     });
   }

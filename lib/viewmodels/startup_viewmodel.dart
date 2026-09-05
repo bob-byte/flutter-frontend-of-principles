@@ -44,6 +44,14 @@ class StartupViewModel extends ChangeNotifier {
     _initializeFuture = Future.value(StartupNextRoute.login);
   }
 
+  /// Clears the cached pre-auth initialize result after a successful sign-in
+  /// so [LaunchDataLoader] hydrates goals/tasks/habits instead of bailing out.
+  void markSignedIn() {
+    _initializeFuture = Future.value(StartupNextRoute.helper);
+  }
+
+  Future<bool> hasAuthenticatedSession() => _authService.hasLocalSession();
+
   Future<StartupNextRoute> _initializeBody() async {
     loading = true;
     notifyListeners();
@@ -76,6 +84,7 @@ class StartupViewModel extends ChangeNotifier {
     try {
       final success = await _authService.googleAuthorize();
       if (success) {
+        markSignedIn();
         await _syncService.runSyncSafely();
         await _reminderService.tryToRecoverAllUserReminders();
         return true;
@@ -102,6 +111,7 @@ class StartupViewModel extends ChangeNotifier {
     try {
       final success = await _authService.appleAuthorize();
       if (success) {
+        markSignedIn();
         await _syncService.runSyncSafely();
         await _reminderService.tryToRecoverAllUserReminders();
         return true;

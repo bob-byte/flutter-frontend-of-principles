@@ -3,8 +3,10 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/helpers/linked_text.dart';
+import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/signup_viewmodel.dart';
+import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/ui_theme_switcher.dart';
 import '../widgets/themed_lottie.dart';
 import 'helper_view.dart';
@@ -73,6 +75,12 @@ class _SignupViewState extends State<SignupView> {
 
     if (!mounted) return;
     if (success) {
+      try {
+        context.read<StartupViewModel>().markSignedIn();
+      } catch (_) {}
+      try {
+        context.read<LaunchDataLoader>().reset();
+      } catch (_) {}
       navigator.pushReplacementNamed(HelperView.routeName);
     }
   }

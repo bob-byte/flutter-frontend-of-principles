@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/app_loading_indicator.dart';
@@ -70,12 +71,26 @@ class _StartupViewState extends State<StartupView> {
     });
   }
 
+  void _resetLaunchDataForPostAuth() {
+    try {
+      context.read<StartupViewModel>().markSignedIn();
+    } on ProviderNotFoundException {
+      // Widget tests may mount StartupView without the full graph.
+    }
+    try {
+      context.read<LaunchDataLoader>().reset();
+    } on ProviderNotFoundException {
+      // Widget tests may mount StartupView without LaunchDataLoader.
+    }
+  }
+
   Future<void> _handleGoogleAuth() async {
     final vm = context.read<StartupViewModel>();
     final success = await vm.continueWithGoogleAsync();
     if (!mounted) return;
 
     if (success) {
+      _resetLaunchDataForPostAuth();
       Navigator.of(context).pushReplacementNamed(HelperView.routeName);
     }
   }
@@ -86,6 +101,7 @@ class _StartupViewState extends State<StartupView> {
     if (!mounted) return;
 
     if (success) {
+      _resetLaunchDataForPostAuth();
       Navigator.of(context).pushReplacementNamed(HelperView.routeName);
     }
   }
@@ -273,10 +289,7 @@ class _AuthButton extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: textColor,
                 padding: padding,
-                side: BorderSide(
-                  color: borderColor,
-                  width: 2,
-                ),
+                side: BorderSide(color: borderColor, width: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
                 ),

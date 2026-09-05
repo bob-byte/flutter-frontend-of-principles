@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/helpers/linked_text.dart';
+import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/login_viewmodel.dart';
+import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/ui_theme_switcher.dart';
 import 'forget_password_view.dart';
 import 'helper_view.dart';
@@ -60,6 +62,12 @@ class _LoginViewState extends State<LoginView> {
 
     if (!mounted) return;
     if (success) {
+      try {
+        context.read<StartupViewModel>().markSignedIn();
+      } catch (_) {}
+      try {
+        context.read<LaunchDataLoader>().reset();
+      } catch (_) {}
       navigator.pushReplacementNamed(HelperView.routeName);
     }
   }

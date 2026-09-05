@@ -53,9 +53,7 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!widget.embedded) {
-        context.read<HabitProgressViewModel>().load();
-      }
+      context.read<HabitProgressViewModel>().load(silent: widget.embedded);
       if (widget.isActive) {
         _scrollToCurrentDate();
       }

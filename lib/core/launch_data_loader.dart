@@ -33,20 +33,56 @@ class LaunchDataLoader {
 
   Future<void>? _inFlight;
 
-  Future<void> ensureLoaded() => _inFlight ??= _load();
+  /// True only after a full post-auth hydrate (profile, goals, tasks, habits).
+  /// Pre-login splash runs that only load locale leave this false so MainShell
+  /// can hydrate again after Google/Apple/email sign-in.
+  bool _sessionHydrated = false;
+
+  /// Whether a full authenticated hydrate has completed.
+  bool get isSessionHydrated => _sessionHydrated;
+
+  Future<void> ensureLoaded() async {
+    if (_sessionHydrated) return;
+
+    final inFlight = _inFlight;
+    if (inFlight != null) {
+      await inFlight;
+      if (_sessionHydrated) return;
+    }
+
+    final run = _load();
+    _inFlight = run;
+    try {
+      await run;
+    } finally {
+      if (identical(_inFlight, run)) {
+        _inFlight = null;
+      }
+    }
+  }
 
   /// Allows a fresh hydrate after logout / account switch.
   void reset() {
     _inFlight = null;
+    _sessionHydrated = false;
   }
 
   Future<void> _load() async {
-    final route = await _startup.initialize();
+    var route = await _startup.initialize();
     if (route != StartupNextRoute.helper && !AppConfig.useLocalData) {
-      try {
-        await _settings.loadLocale();
-      } catch (_) {}
-      return;
+      // `initialize()` caches the pre-login route. After Google/Apple/email
+      // sign-in that cache is stale until markSignedIn(); recover via token.
+      if (await _startup.hasAuthenticatedSession()) {
+        _startup.markSignedIn();
+        route = StartupNextRoute.helper;
+      } else {
+        try {
+          await _settings.loadLocale();
+        } catch (_) {}
+        // Not authenticated yet — MainShell after login will call ensureLoaded
+        // again and run the full hydrate below.
+        return;
+      }
     }
 
     // Paint cached SQLite/prefs data first so tabs are not blank while sync runs.
@@ -58,6 +94,7 @@ class LaunchDataLoader {
 
     // Refresh after bootstrap merge — silent so existing UI is not blanked.
     await _hydrateFromLocal();
+    _sessionHydrated = true;
   }
 
   Future<void> _hydrateFromLocal() {
