@@ -546,9 +546,17 @@ class AppLocalizationsUk extends AppLocalizations {
   String get rateUsLabel => 'Оцінити додаток';
 
   @override
+  String get appUpdateAvailable => 'Доступне оновлення';
+
   @override
+  String get appUpdateCloseButton => 'Закрити';
+
   @override
+  String get dontShowUpdateCheckBoxText => 'Не нагадувати більше про це';
+
   @override
+  String get updateButton => 'Оновити';
+
   @override
   String get shareAppLabel => 'Поділитися додатком';
 

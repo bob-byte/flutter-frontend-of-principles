@@ -72,6 +72,7 @@ import '../views/startup_view.dart';
 import '../views/tasks_view.dart';
 import '../views/main_shell.dart';
 import '../views/video_splash_view.dart';
+import '../widgets/app_update_alert.dart';
 import 'router.dart';
 
 /// Survives [MaterialApp] rebuilds when [ThemeController] finishes restore.
@@ -328,7 +329,10 @@ class PrinciplesApp extends StatelessWidget {
               builder: (context, child) => AndroidHardwareTextInput(
                 child: VideoSplashOverlay(
                   key: _videoSplashKey,
-                  child: child ?? const SizedBox.shrink(),
+                  child: AppUpdateAlert(
+                    navigatorKey: context.read<DialogService>().navigatorKey,
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
               onGenerateTitle: (context) =>

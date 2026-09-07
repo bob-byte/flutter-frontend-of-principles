@@ -542,9 +542,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateUsLabel => 'Rate us';
 
   @override
+  String get appUpdateAvailable => 'Update Available';
+
   @override
+  String get appUpdateCloseButton => 'Close';
+
   @override
+  String get dontShowUpdateCheckBoxText => 'Don\'t remind me of it again';
+
   @override
+  String get updateButton => 'Update';
+
   @override
   String get shareAppLabel => 'Share app';
 

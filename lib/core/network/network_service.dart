@@ -26,8 +26,7 @@ class NetworkService extends ChangeNotifier {
            (connectivity ?? Connectivity()).onConnectivityChanged,
        isConnected = initialConnected ?? true,
        _wasConnected = initialConnected ?? true,
-       _offlineConfirmDelay =
-           offlineConfirmDelay ?? const Duration(seconds: 2);
+       _offlineConfirmDelay = offlineConfirmDelay ?? const Duration(seconds: 2);
 
   final Future<List<ConnectivityResult>> Function() _checkConnectivity;
   final Stream<List<ConnectivityResult>> _connectivityChanges;
@@ -46,6 +45,9 @@ class NetworkService extends ChangeNotifier {
   bool _splashFinished = false;
   Timer? _offlineDebounce;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
+
+  /// True after [onSplashFinished] — update prompts and offline toasts may show.
+  bool get isSplashFinished => _splashFinished;
 
   Future<void> start() async {
     if (_started) return;
@@ -69,6 +71,7 @@ class NetworkService extends ChangeNotifier {
     _splashFinished = true;
     _offlineDebounce?.cancel();
     _offlineDebounce = null;
+    notifyListeners();
     if (!isConnected) {
       _showOfflineToast();
     }

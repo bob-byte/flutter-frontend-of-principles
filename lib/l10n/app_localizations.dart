@@ -1063,6 +1063,31 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate us'**
   String get rateUsLabel;
+
+  /// Title of the in-app update dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get appUpdateAvailable;
+
+  /// Dismiss button on the in-app update dialog (remind later)
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get appUpdateCloseButton;
+
+  /// Ignore this store version on the in-app update dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t remind me of it again'**
+  String get dontShowUpdateCheckBoxText;
+
+  /// Primary button that opens the store listing for an update
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateButton;
+
   /// Settings row that opens the system share sheet
   ///
   /// In en, this message translates to:

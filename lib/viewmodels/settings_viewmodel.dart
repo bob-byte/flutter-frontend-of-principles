@@ -4,6 +4,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/config/app_store.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/sync/local_data_cleaner.dart';
 import '../models/user.dart';
@@ -21,7 +22,7 @@ class SettingsViewModel extends ChangeNotifier {
        _userService = userService,
        _localDataCleaner = localDataCleaner;
 
-  static final Uri _aboutUri = Uri.parse('https://principles.top');
+  static final Uri _aboutUri = Uri.parse(AppStoreIds.aboutSite);
   static final Uri _telegramUri = Uri.parse('https://t.me/principles_app');
   static final Uri _privacyPolicyUri = Uri.parse(
     'https://principles.top/privacypolicy',
@@ -31,8 +32,8 @@ class SettingsViewModel extends ChangeNotifier {
   );
   static const contactEmailAddress = 'batsbohdan@gmail.com';
   static final Uri _contactEmailUri = Uri.parse('mailto:$contactEmailAddress');
-  static const _androidPackageName = 'com.set.principles';
-  static const _appStoreId = '6503646940';
+  static const _androidPackageName = AppStoreIds.androidPackageName;
+  static const _appStoreId = AppStoreIds.appStoreId;
 
   final SettingsService _settingsService;
   final LocaleController _localeController;
@@ -59,10 +60,7 @@ class SettingsViewModel extends ChangeNotifier {
   String? get profileError => _profileError;
 
   Future<void> load({bool silent = false}) async {
-    await Future.wait([
-      loadLocale(),
-      loadProfile(silent: silent),
-    ]);
+    await Future.wait([loadLocale(), loadProfile(silent: silent)]);
   }
 
   Future<void> loadLocale() async {
