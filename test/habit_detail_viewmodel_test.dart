@@ -95,6 +95,41 @@ void main() {
     expect(label, '17:10 Ср-Чт, Сб');
   });
 
+  test('formatReminderChips lists every reminder slot', () {
+    final habit = Habit(
+      name: 'Train',
+      reminders: [
+        HabitReminder(
+          title: 'Morning',
+          description: '',
+          time: const TimeOfDay(hour: 7, minute: 0),
+          isEnabled: true,
+          daysOfWeek: [
+            WeekDay(type: DateTime.monday, userNotificationRequestId: 1),
+            WeekDay(type: DateTime.wednesday, userNotificationRequestId: 2),
+            WeekDay(type: DateTime.friday, userNotificationRequestId: 3),
+          ],
+        ),
+        HabitReminder(
+          title: 'Weekend',
+          description: '',
+          time: const TimeOfDay(hour: 10, minute: 0),
+          isEnabled: true,
+          daysOfWeek: [
+            WeekDay(type: DateTime.saturday, userNotificationRequestId: 4),
+            WeekDay(type: DateTime.sunday, userNotificationRequestId: 5),
+          ],
+        ),
+      ],
+    );
+
+    const labels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+    expect(formatReminderChips(habit, labels), [
+      '07:00 Пн, Ср, Пт',
+      '10:00 Сб-Нд',
+    ]);
+  });
+
   test('nice chart max leaves room matching MAUI integer axes', () {
     expect(niceChartMax(4), 4);
     expect(niceChartMax(72), 80);

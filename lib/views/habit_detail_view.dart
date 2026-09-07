@@ -9,6 +9,7 @@ import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_steps.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
+import '../models/habit.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../widgets/app_alert_dialog.dart';
 import '../widgets/app_liquid_background.dart';
@@ -175,7 +176,7 @@ class _HabitDetailViewState extends State<HabitDetailView> {
                 ),
               ),
         title: Text(
-          vm.habit?.name ?? l10n.habitDetailsFallbackTitle,
+          l10n.habitDetailsFallbackTitle,
           style: TextStyle(
             color: palette.onPrimary,
             fontWeight: FontWeight.bold,
@@ -264,7 +265,7 @@ class _HabitDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).toString();
-    final reminderLabel = formatReminderChip(vm.habit!, weekdayLabels);
+    final reminderLabels = formatReminderChips(vm.habit!, weekdayLabels);
     final frequencyLabel = formatFrequencyLabel(vm.habit!.frequency, l10n);
 
     return SingleChildScrollView(
@@ -282,19 +283,18 @@ class _HabitDetailBody extends StatelessWidget {
                 icon: Icons.calendar_month,
                 label: frequencyLabel,
               ),
-              if (reminderLabel != null)
+              for (final label in reminderLabels)
                 _InfoChip(
                   palette: palette,
                   icon: Icons.access_time,
-                  label: reminderLabel,
+                  label: label,
                 ),
             ],
           ),
+          const SizedBox(height: 20),
+          _HabitMetaCard(habit: vm.habit!, palette: palette, l10n: l10n),
           const SizedBox(height: 24),
-          _SectionTitle(
-            text: l10n.overallProgress,
-            color: palette.textPrimary,
-          ),
+          _SectionTitle(text: l10n.overallProgress, color: palette.textPrimary),
           const SizedBox(height: 8),
           _OverallProgressCard(vm: vm, palette: palette, l10n: l10n),
           const SizedBox(height: 28),
@@ -371,6 +371,146 @@ class _HabitDetailBody extends StatelessWidget {
   }
 }
 
+class _HabitMetaCard extends StatelessWidget {
+  const _HabitMetaCard({
+    required this.habit,
+    required this.palette,
+    required this.l10n,
+  });
+
+  final Habit habit;
+  final TasksUiPalette palette;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final notes = habit.notes.trim();
+    final goal = habit.targetGoal.trim();
+    final typeLabel = habit.isFlexible
+        ? l10n.habitFlexible
+        : l10n.habitNoExceptions;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: palette.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.cardBorder.withValues(alpha: 0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: palette.glassShadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            habit.name,
+            key: const Key('habitDetailFullName'),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              height: 1.25,
+              color: palette.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _HabitMetaRow(
+            icon: Icons.flag_outlined,
+            label: l10n.habitGoalLabel,
+            value: goal.isEmpty ? l10n.habitGoalEmpty : goal,
+            muted: goal.isEmpty,
+            palette: palette,
+            valueKey: const Key('habitDetailGoal'),
+          ),
+          const SizedBox(height: 12),
+          _HabitMetaRow(
+            icon: habit.isFlexible ? Icons.alt_route : Icons.gavel,
+            label: l10n.habitTypeLabel,
+            value: typeLabel,
+            palette: palette,
+            valueKey: const Key('habitDetailType'),
+          ),
+          const SizedBox(height: 12),
+          _HabitMetaRow(
+            icon: Icons.notes_outlined,
+            label: l10n.habitNotes,
+            value: notes.isEmpty ? l10n.habitNotesEmpty : notes,
+            muted: notes.isEmpty,
+            palette: palette,
+            valueKey: const Key('habitDetailNotes'),
+          ),
+          const SizedBox(height: 12),
+          _HabitMetaRow(
+            icon: Icons.bar_chart,
+            label: l10n.habitComplexityLabel,
+            value: '${habit.difficulty}',
+            palette: palette,
+            valueKey: const Key('habitDetailComplexity'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HabitMetaRow extends StatelessWidget {
+  const _HabitMetaRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.palette,
+    this.muted = false,
+    this.valueKey,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final TasksUiPalette palette;
+  final bool muted;
+  final Key? valueKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: palette.textMuted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textMuted,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                key: valueKey,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.35,
+                  fontWeight: FontWeight.w600,
+                  color: muted ? palette.textMuted : palette.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({
     required this.text,
@@ -441,7 +581,7 @@ class _InfoChip extends StatelessWidget {
             ),
             child: Text(
               label,
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
               style: TextStyle(
                 color: palette.onPrimary,
                 fontWeight: FontWeight.bold,

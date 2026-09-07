@@ -125,6 +125,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get habitDetailsFallbackTitle => 'Деталі звички';
 
   @override
+  String get habitComplexityLabel => 'Складність';
+
+  @override
+  String get habitNotesEmpty => 'Немає нотаток';
+
+  @override
+  String get habitTypeLabel => 'Тип';
+
+  @override
+  String get habitGoalEmpty => 'Ціль не вказана';
+
+  @override
   String get unarchiveTooltip => 'Розархівувати';
 
   @override
@@ -533,6 +545,10 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get rateUsLabel => 'Оцінити додаток';
 
+  @override
+  @override
+  @override
+  @override
   @override
   String get shareAppLabel => 'Поділитися додатком';
 

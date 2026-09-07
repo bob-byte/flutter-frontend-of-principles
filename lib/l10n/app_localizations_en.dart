@@ -125,6 +125,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitDetailsFallbackTitle => 'Habit details';
 
   @override
+  String get habitComplexityLabel => 'Complexity';
+
+  @override
+  String get habitNotesEmpty => 'No notes';
+
+  @override
+  String get habitTypeLabel => 'Type';
+
+  @override
+  String get habitGoalEmpty => 'No goal';
+
+  @override
   String get unarchiveTooltip => 'Unarchive';
 
   @override
@@ -529,6 +541,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get rateUsLabel => 'Rate us';
 
+  @override
+  @override
+  @override
+  @override
   @override
   String get shareAppLabel => 'Share app';
 

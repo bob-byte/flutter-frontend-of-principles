@@ -314,6 +314,30 @@ abstract class AppLocalizations {
   /// **'Habit details'**
   String get habitDetailsFallbackTitle;
 
+  /// Complexity value label on the habit details screen
+  ///
+  /// In en, this message translates to:
+  /// **'Complexity'**
+  String get habitComplexityLabel;
+
+  /// Placeholder on habit details when the habit has no notes
+  ///
+  /// In en, this message translates to:
+  /// **'No notes'**
+  String get habitNotesEmpty;
+
+  /// Habit type label on the habit details screen
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get habitTypeLabel;
+
+  /// Placeholder on habit details when the habit has no goal
+  ///
+  /// In en, this message translates to:
+  /// **'No goal'**
+  String get habitGoalEmpty;
+
   /// No description provided for @unarchiveTooltip.
   ///
   /// In en, this message translates to:
@@ -1039,7 +1063,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rate us'**
   String get rateUsLabel;
-
   /// Settings row that opens the system share sheet
   ///
   /// In en, this message translates to:

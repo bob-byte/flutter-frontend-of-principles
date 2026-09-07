@@ -413,35 +413,48 @@ String formatFrequencyLabel(FrequencyConfig frequency, AppLocalizations l10n) {
   }
 }
 
+List<String> formatReminderChips(Habit habit, List<String> weekdayLabels) {
+  final labels = <String>[];
+  for (final reminder in habit.reminders) {
+    final label = _formatReminderTimeAndDays(
+      reminder.time,
+      reminder.daysOfWeek,
+      weekdayLabels,
+    );
+    if (label != null) labels.add(label);
+  }
+  if (labels.isEmpty && habit.reminderTime != null) {
+    labels.add(_formatClock(TimeOfDay.fromDateTime(habit.reminderTime!)));
+  }
+  return labels;
+}
+
 String? formatReminderChip(Habit habit, List<String> weekdayLabels) {
-  HabitReminder? reminder;
-  for (final item in habit.reminders) {
-    if (item.isEnabled) {
-      reminder = item;
-      break;
-    }
-  }
-  reminder ??= habit.reminders.isEmpty ? null : habit.reminders.first;
+  final labels = formatReminderChips(habit, weekdayLabels);
+  if (labels.isEmpty) return null;
+  return labels.join(' · ');
+}
 
-  TimeOfDay? time;
-  var mondayFirstDays = <int>[];
-  if (reminder != null) {
-    time = reminder.time;
-    mondayFirstDays =
-        reminder.daysOfWeek
-            .map((day) => (toDotNetDayOfWeek(day.type) + 6) % 7)
-            .toSet()
-            .toList()
-          ..sort();
-  } else if (habit.reminderTime != null) {
-    time = TimeOfDay.fromDateTime(habit.reminderTime!);
-  }
-  if (time == null) return null;
-
+String _formatClock(TimeOfDay time) {
   final hh = time.hour.toString().padLeft(2, '0');
   final mm = time.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
+}
+
+String? _formatReminderTimeAndDays(
+  TimeOfDay time,
+  List<WeekDay> daysOfWeek,
+  List<String> weekdayLabels,
+) {
+  final mondayFirstDays =
+      daysOfWeek
+          .map((day) => (toDotNetDayOfWeek(day.type) + 6) % 7)
+          .toSet()
+          .toList()
+        ..sort();
+  final clock = _formatClock(time);
   if (mondayFirstDays.isEmpty || weekdayLabels.length < 7) {
-    return '$hh:$mm';
+    return clock;
   }
 
   final groups = <String>[];
@@ -463,7 +476,7 @@ String? formatReminderChip(Habit habit, List<String> weekdayLabels) {
       rangeEnd = current;
     }
   }
-  return '$hh:$mm ${groups.join(', ')}';
+  return '$clock ${groups.join(', ')}';
 }
 
 String formatStreakRange(StreakStat streak, String locale) {
