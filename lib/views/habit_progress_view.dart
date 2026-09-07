@@ -112,8 +112,7 @@ class _HabitProgressViewState extends State<HabitProgressView> {
                 const SizedBox(height: 16),
                 _buildDateCarousel(context, vm, palette),
                 const SizedBox(height: 16),
-                _buildSummaryBanner(context, vm, palette),
-                const SizedBox(height: 16),
+                // Summary banner ("Completed this day") hidden for now.
                 Expanded(child: _buildHabitsList(context, vm, palette, guide)),
               ],
             ),
@@ -426,6 +425,8 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     );
   }
 
+  // Kept for a quick restore — temporarily unused while the banner is hidden.
+  // ignore: unused_element
   Widget _buildSummaryBanner(
     BuildContext context,
     HabitProgressViewModel vm,
@@ -620,9 +621,12 @@ class _HabitProgressViewState extends State<HabitProgressView> {
                       children: [
                         Text(
                           displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            height: 1.25,
                             color: isCompleted
                                 ? palette.textMuted
                                 : palette.textPrimary,
@@ -630,7 +634,6 @@ class _HabitProgressViewState extends State<HabitProgressView> {
                                 ? TextDecoration.lineThrough
                                 : null,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                         if (habit.reminderTime != null) ...[
                           const SizedBox(height: 4),
