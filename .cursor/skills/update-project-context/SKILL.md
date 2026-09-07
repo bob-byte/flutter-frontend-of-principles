@@ -18,8 +18,11 @@ Update files when a decision should still be true in a future session (UX conven
 | Always-on product/architecture/stack | `.cursor/rules/*.mdc` with `alwaysApply: true` |
 | File-specific constraints | `.cursor/rules/*.mdc` with `globs` |
 | Multi-step workflow | `.cursor/skills/<name>/SKILL.md` |
+| Backend (.NET) conventions | `backend/.cursor/rules/*.mdc` (separate git root) |
 
-Existing always-on rules: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `road-guide.mdc`.
+Flutter always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `road-guide.mdc`.
+
+Backend always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `api-controllers.mdc`, `ef-data.mdc`.
 
 ## How
 
