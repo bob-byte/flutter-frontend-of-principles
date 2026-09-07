@@ -33,11 +33,7 @@ void main() {
 
   test('saveTask persists locally even when remote fails', () async {
     await service.saveTask(
-      Task(
-        id: '0',
-        title: 'Buy milk',
-        createdAt: DateTime.utc(2026, 1, 1),
-      ),
+      Task(id: '0', title: 'Buy milk', createdAt: DateTime.utc(2026, 1, 1)),
       isNew: true,
     );
 
@@ -47,13 +43,32 @@ void main() {
     expect(tasks.single.id, startsWith('L'));
   });
 
-  test('updateTaskStatus flips local completion', () async {
+  test('assignServerId keeps local id and sets serverId', () async {
     await service.saveTask(
       Task(
-        id: 't1',
-        title: 'Ship',
+        id: '0',
+        title: 'Keep id',
+        description: 'long notes ok',
         createdAt: DateTime.utc(2026, 1, 1),
       ),
+      isNew: true,
+    );
+    final local = (await service.getTasks()).single;
+    expect(local.id, startsWith('L'));
+
+    await service.assignServerId(local, 42);
+
+    final updated = await service.getTask(local.id);
+    expect(updated, isNotNull);
+    expect(updated!.id, local.id);
+    expect(updated.serverId, 42);
+    expect(await service.getTask('42'), isNotNull);
+    expect((await service.getTask('42'))!.title, 'Keep id');
+  });
+
+  test('updateTaskStatus flips local completion', () async {
+    await service.saveTask(
+      Task(id: 't1', title: 'Ship', createdAt: DateTime.utc(2026, 1, 1)),
       isNew: false,
     );
     await service.updateTaskStatus('t1', true);

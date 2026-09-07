@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/ai_task_draft.dart';
+import '../models/task.dart';
 import '../widgets/task_edit_sheet.dart';
 import '../widgets/tasks_list_menu_sheet.dart';
 
@@ -8,7 +9,7 @@ import '../widgets/tasks_list_menu_sheet.dart';
 class TasksNavigation {
   TasksNavigation._();
 
-  static Future<bool?> openEditTask(
+  static Future<Task?> openEditTask(
     BuildContext context, {
     String? taskId,
     AiTaskDraft? aiDraft,
@@ -17,7 +18,7 @@ class TasksNavigation {
   }
 
   /// Кнопка «+»: одразу форма створення. ШІ доступний уже в ній.
-  static Future<bool?> openCreateTask(BuildContext context) {
+  static Future<Task?> openCreateTask(BuildContext context) {
     return openEditTask(context);
   }
 

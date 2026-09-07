@@ -6,6 +6,7 @@ import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/models/schedule_reminder_offset.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/models/task_item_dto.dart';
+import 'package:principles_app/models/task_priority.dart';
 import 'package:principles_app/models/task_repeat_config.dart';
 import 'package:principles_app/services/reminder_service.dart';
 import 'package:principles_app/services/task_service.dart';
@@ -70,37 +71,43 @@ void main() {
       expect(prepared.reminders.last.notificationRequestId, 9);
     });
 
-    test('allocates constant notification id when constant reminder is on', () async {
-      final prepared = await reminders.prepareTaskNotifications(
-        Task(
-          id: '2',
-          title: 'Focus',
-          createdAt: DateTime(2026, 9, 4),
-          dueDate: DateTime(2026, 9, 10, 9),
-          reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
-          constantReminder: true,
-        ),
-      );
+    test(
+      'allocates constant notification id when constant reminder is on',
+      () async {
+        final prepared = await reminders.prepareTaskNotifications(
+          Task(
+            id: '2',
+            title: 'Focus',
+            createdAt: DateTime(2026, 9, 4),
+            dueDate: DateTime(2026, 9, 10, 9),
+            reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+            constantReminder: true,
+          ),
+        );
 
-      expect(prepared.constantReminder, isTrue);
-      expect(prepared.constantNotificationRequestId, isNotNull);
-    });
+        expect(prepared.constantReminder, isTrue);
+        expect(prepared.constantNotificationRequestId, isNotNull);
+      },
+    );
 
-    test('clears constant notification id when constant reminder is off', () async {
-      final prepared = await reminders.prepareTaskNotifications(
-        Task(
-          id: '3',
-          title: 'Focus',
-          createdAt: DateTime(2026, 9, 4),
-          dueDate: DateTime(2026, 9, 10, 9),
-          reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
-          constantReminder: false,
-          constantNotificationRequestId: 55,
-        ),
-      );
+    test(
+      'clears constant notification id when constant reminder is off',
+      () async {
+        final prepared = await reminders.prepareTaskNotifications(
+          Task(
+            id: '3',
+            title: 'Focus',
+            createdAt: DateTime(2026, 9, 4),
+            dueDate: DateTime(2026, 9, 10, 9),
+            reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+            constantReminder: false,
+            constantNotificationRequestId: 55,
+          ),
+        );
 
-      expect(prepared.constantNotificationRequestId, isNull);
-    });
+        expect(prepared.constantNotificationRequestId, isNull);
+      },
+    );
 
     test('syncTaskNotifications is a no-op when forceLocalOnly', () async {
       await reminders.syncTaskNotifications(
@@ -223,6 +230,25 @@ void main() {
       expect(draft.reminders.map((e) => e.offsetMinutes), [5, 60]);
       expect(draft.constantReminder, isTrue);
     });
+    test('load uses seed when storage lookup misses', () async {
+      await vm.load(
+        taskId: 'missing-local-id',
+        seed: Task(
+          id: 'missing-local-id',
+          title: 'From list',
+          description: 'Seeded body',
+          priority: TaskPriority.high,
+          createdAt: DateTime(2026, 1, 1),
+          dueDate: DateTime(2026, 9, 5),
+        ),
+      );
+
+      expect(vm.editingId, 'missing-local-id');
+      expect(vm.title, 'From list');
+      expect(vm.description, 'Seeded body');
+      expect(vm.priority, TaskPriority.high);
+      expect(vm.hasDueDate, isTrue);
+    });
   });
 
   group('TaskItemDto reminder encoding', () {
@@ -251,7 +277,10 @@ void main() {
           dueDate: DateTime(2026, 9, 20, 16, 0),
           reminders: const [
             ScheduleReminderOffset(offsetMinutes: 0),
-            ScheduleReminderOffset(offsetMinutes: 1440, notificationRequestId: 3),
+            ScheduleReminderOffset(
+              offsetMinutes: 1440,
+              notificationRequestId: 3,
+            ),
           ],
           constantReminder: true,
           constantNotificationRequestId: 88,

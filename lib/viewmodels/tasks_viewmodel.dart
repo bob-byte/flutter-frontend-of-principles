@@ -9,6 +9,7 @@ import '../models/habit.dart';
 import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
+import '../models/task_subtask.dart';
 import '../services/reminder_service.dart';
 import '../services/task_service.dart';
 
@@ -36,7 +37,9 @@ class TasksViewModel extends ChangeNotifier {
   Map<String, int> themeColors = {};
   String? selectedThemeFilter;
   TaskPriority? selectedPriorityFilter;
-  TaskStatusFilter statusFilter = TaskStatusFilter.all;
+
+  /// Default: only incomplete tasks/habits (matches filter chip «Active»).
+  TaskStatusFilter statusFilter = TaskStatusFilter.active;
   TasksListMode listMode = TasksListMode.today;
   DateTime selectedDay = dateOnly(DateTime.now());
 
@@ -79,7 +82,7 @@ class TasksViewModel extends ChangeNotifier {
           .where((t) => t.priority == selectedPriorityFilter)
           .toList();
     }
-    result = result.where(_matchesStatusFilter).toList();
+    result = result.where(_matchesEffectiveStatusFilter).toList();
     final today = dateOnly(DateTime.now());
     result.sort((a, b) {
       if (listMode == TasksListMode.completed) {
@@ -181,14 +184,14 @@ class TasksViewModel extends ChangeNotifier {
   void clearFilters() {
     selectedThemeFilter = null;
     selectedPriorityFilter = null;
-    statusFilter = TaskStatusFilter.all;
+    statusFilter = TaskStatusFilter.active;
     notifyListeners();
   }
 
   bool get hasActiveFilters =>
       selectedThemeFilter != null ||
       selectedPriorityFilter != null ||
-      statusFilter != TaskStatusFilter.all;
+      statusFilter != TaskStatusFilter.active;
 
   void setListModeToday() {
     listMode = TasksListMode.today;
@@ -236,11 +239,33 @@ class TasksViewModel extends ChangeNotifier {
     };
   }
 
-  bool _matchesStatusFilter(Task task) => switch (statusFilter) {
-    TaskStatusFilter.all => true,
-    TaskStatusFilter.active => !task.isDone,
-    TaskStatusFilter.done => task.isDone,
+  /// Completed list mode always shows done items even if the status chip is
+  /// left on the default «Active».
+  TaskStatusFilter get _effectiveStatusFilter => switch (listMode) {
+    TasksListMode.completed => TaskStatusFilter.done,
+    _ => statusFilter,
   };
+
+  bool _matchesEffectiveStatusFilter(Task task) =>
+      switch (_effectiveStatusFilter) {
+        TaskStatusFilter.all => true,
+        TaskStatusFilter.active => !task.isDone,
+        TaskStatusFilter.done => task.isDone,
+      };
+
+  Future<void> upsertTask(Task task) async {
+    final index = tasks.indexWhere(
+      (t) =>
+          t.id == task.id ||
+          (task.serverId != null && t.serverId == task.serverId),
+    );
+    if (index >= 0) {
+      tasks[index] = task;
+    } else {
+      tasks.insert(0, task);
+    }
+    notifyListeners();
+  }
 
   Future<void> load({bool silent = false}) async {
     final showSpinner = !silent && tasks.isEmpty;
@@ -269,7 +294,7 @@ class TasksViewModel extends ChangeNotifier {
     themeColors = {};
     selectedThemeFilter = null;
     selectedPriorityFilter = null;
-    statusFilter = TaskStatusFilter.all;
+    statusFilter = TaskStatusFilter.active;
     loadError = null;
     isLoading = false;
     notifyListeners();
@@ -294,7 +319,8 @@ class TasksViewModel extends ChangeNotifier {
 
     final done = !task.isDone;
     await _taskService.updateTaskStatus(id, done);
-    final updated = await _taskService.getTask(id) ?? task.copyWith(isDone: done);
+    final updated =
+        await _taskService.getTask(id) ?? task.copyWith(isDone: done);
     if (done) {
       await _reminderService?.cancelTaskNotifications(updated);
       await _reminderService?.syncTaskNotifications(
@@ -334,21 +360,39 @@ class TasksViewModel extends ChangeNotifier {
       ],
       constantReminder: completed.constantReminder,
       repeat: completed.repeat,
+      subtasks: TaskSubtask.templateForNextOccurrence(completed.subtasks),
     );
     next = await _reminderService?.prepareTaskNotifications(next) ?? next;
-    await _taskService.saveTask(next, isNew: true);
+    next = await _taskService.saveTask(next, isNew: true);
     await _reminderService?.syncTaskNotifications(next);
+    await upsertTask(next);
   }
 
   Future<void> moveTaskToToday(String id) async {
     final task = _findTask(id);
     if (task == null) return;
 
-    await _taskService.saveTask(
+    final updated = await _taskService.saveTask(
       task.copyWith(dueDate: dateOnly(DateTime.now())),
       isNew: false,
     );
-    await load();
+    await upsertTask(updated);
+  }
+
+  Future<void> toggleSubtask(String taskId, String subtaskId) async {
+    final task = _findTask(taskId);
+    if (task == null) return;
+
+    final index = task.subtasks.indexWhere((item) => item.id == subtaskId);
+    if (index < 0) return;
+
+    final next = [...task.subtasks];
+    next[index] = next[index].copyWith(isDone: !next[index].isDone);
+    final saved = await _taskService.saveTask(
+      task.copyWith(subtasks: next),
+      isNew: false,
+    );
+    await upsertTask(saved);
   }
 
   Future<void> deleteTask(String id) async {

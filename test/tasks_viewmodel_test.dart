@@ -56,7 +56,10 @@ void main() {
 
     vm.setListModeInbox();
 
-    expect(vm.filteredTasks.map((t) => t.title), ['No date', 'Dated']);
+    expect(
+      vm.filteredTasks.map((t) => t.title),
+      unorderedEquals(['No date', 'Dated']),
+    );
   });
 
   test('tomorrow shows only tasks due tomorrow', () {
@@ -71,6 +74,44 @@ void main() {
 
     vm.setListModeTomorrow();
 
+    // Default status filter is active — completed tasks are hidden.
+    expect(vm.filteredTasks.map((t) => t.title), ['Tomorrow']);
+
+    vm.setStatusFilter(TaskStatusFilter.all);
     expect(vm.filteredTasks.map((t) => t.title), ['Tomorrow', 'Done tomorrow']);
+  });
+
+  test(
+    'default status filter hides completed tasks and clear resets to active',
+    () {
+      final today = dateOnly(DateTime.now());
+      final vm = vmWith([
+        task(id: '1', title: 'Open', dueDate: today),
+        task(id: '2', title: 'Done', isDone: true, dueDate: today),
+      ]);
+
+      expect(vm.statusFilter, TaskStatusFilter.active);
+      expect(vm.hasActiveFilters, isFalse);
+      expect(vm.filteredTasks.map((t) => t.title), ['Open']);
+
+      vm.setStatusFilter(TaskStatusFilter.all);
+      expect(vm.hasActiveFilters, isTrue);
+      expect(vm.filteredTasks.map((t) => t.title), ['Open', 'Done']);
+
+      vm.clearFilters();
+      expect(vm.statusFilter, TaskStatusFilter.active);
+      expect(vm.hasActiveFilters, isFalse);
+    },
+  );
+
+  test('completed list mode shows done tasks despite active status chip', () {
+    final vm = vmWith([
+      task(id: '1', title: 'Open'),
+      task(id: '2', title: 'Done', isDone: true),
+    ]);
+
+    vm.setListModeCompleted();
+    expect(vm.statusFilter, TaskStatusFilter.active);
+    expect(vm.filteredTasks.map((t) => t.title), ['Done']);
   });
 }

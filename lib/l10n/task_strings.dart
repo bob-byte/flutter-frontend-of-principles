@@ -77,6 +77,10 @@ class TaskStrings {
     required this.taskMoveToToday,
     required this.taskHabitsSection,
     required this.taskHabitLabel,
+    required this.taskSubtasksLabel,
+    required this.taskAddSubtask,
+    required this.taskSubtaskHint,
+    required this.taskRemoveSubtask,
   });
 
   final String tasksTitle;
@@ -154,12 +158,25 @@ class TaskStrings {
   final String taskMoveToToday;
   final String taskHabitsSection;
   final String taskHabitLabel;
+  final String taskSubtasksLabel;
+  final String taskAddSubtask;
+  final String taskSubtaskHint;
+  final String taskRemoveSubtask;
 
   String taskProgressCount(int completed, int total) {
     if (identical(this, uk)) {
       return '$completed з $total виконано';
     }
     return '$completed of $total completed';
+  }
+
+  String taskSubtasksProgress(int completed, int total) => '$completed/$total';
+
+  String taskSubtasksMore(int count) {
+    if (identical(this, uk)) {
+      return '+ще $count';
+    }
+    return '+$count more';
   }
 
   String taskNoTasksForDayLabel(String date) {
@@ -251,6 +268,10 @@ class TaskStrings {
     taskMoveToToday: 'Move to today',
     taskHabitsSection: 'Habits',
     taskHabitLabel: 'Habit',
+    taskSubtasksLabel: 'Sub-tasks',
+    taskAddSubtask: 'Add sub-task',
+    taskSubtaskHint: 'Sub-task',
+    taskRemoveSubtask: 'Remove',
   );
 
   static final uk = TaskStrings._(
@@ -330,5 +351,9 @@ class TaskStrings {
     taskMoveToToday: 'Перенести на сьогодні',
     taskHabitsSection: 'Звички',
     taskHabitLabel: 'Звичка',
+    taskSubtasksLabel: 'Підзавдання',
+    taskAddSubtask: 'Додати підзавдання',
+    taskSubtaskHint: 'Підзавдання',
+    taskRemoveSubtask: 'Прибрати',
   );
 }

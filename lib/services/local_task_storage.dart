@@ -8,6 +8,7 @@ import '../core/storage/local_db.dart';
 import '../core/storage/task_db.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../models/task.dart';
+import '../models/task_subtask.dart';
 
 /// Локальне сховище завдань (SQLite / SharedPreferences на web).
 class LocalTaskStorage {
@@ -45,23 +46,56 @@ class LocalTaskStorage {
       where: localDb != null ? 'isDeleted = 0 OR isDeleted IS NULL' : null,
       orderBy: 'createdAt DESC',
     );
-    return rows.map(Task.fromMap).toList();
+    final grouped = await _loadSubtasksGrouped(database);
+    return [
+      for (final row in rows)
+        _taskFromRow(row, grouped[row['id'] as String] ?? const []),
+    ];
   }
 
   Future<Task?> getTask(String id) async {
-    final tasks = await getTasks();
-    for (final task in tasks) {
-      if (task.id == id) return task;
+    if (_useWebStorage) {
+      final tasks = await getTasks();
+      for (final task in tasks) {
+        if (task.id == id) return task;
+      }
+      for (final task in tasks) {
+        if (task.serverId != null && task.serverId.toString() == id) {
+          return task;
+        }
+      }
+      return null;
     }
-    return null;
+
+    final database = await _database;
+    final byId = await database.query(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (byId.isNotEmpty) return _taskFromRowWithChildren(database, byId.first);
+
+    final serverId = int.tryParse(id);
+    if (serverId == null) return null;
+    final byServer = await database.query(
+      'tasks',
+      where: 'serverId = ?',
+      whereArgs: [serverId],
+      limit: 1,
+    );
+    if (byServer.isEmpty) return null;
+    return _taskFromRowWithChildren(database, byServer.first);
   }
 
   Future<Task?> getTaskByLocalId(int localId) async {
-    final tasks = await getTasks();
-    for (final task in tasks) {
-      if (task.localId == localId) return task;
+    if (_useWebStorage) {
+      final tasks = await getTasks();
+      for (final task in tasks) {
+        if (task.localId == localId) return task;
+      }
+      return null;
     }
-    if (_useWebStorage) return null;
     final database = await _database;
     final rows = await database.query(
       'tasks',
@@ -70,7 +104,7 @@ class LocalTaskStorage {
       limit: 1,
     );
     if (rows.isEmpty) return null;
-    return Task.fromMap(rows.first);
+    return _taskFromRowWithChildren(database, rows.first);
   }
 
   Future<void> saveTask(Task task, {required bool isNew}) async {
@@ -87,11 +121,14 @@ class LocalTaskStorage {
     }
 
     final database = await _database;
-    await database.insert(
-      'tasks',
-      _row(task),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await database.transaction((txn) async {
+      await txn.insert(
+        'tasks',
+        _row(task),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await _replaceSubtasks(txn, task.id, task.subtasks);
+    });
   }
 
   Future<void> replaceTaskId(String oldId, Task task) async {
@@ -103,16 +140,25 @@ class LocalTaskStorage {
       return;
     }
     final database = await _database;
-    await database.delete('tasks', where: 'id = ?', whereArgs: [oldId]);
-    await database.insert(
-      'tasks',
-      _row(task),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await database.transaction((txn) async {
+      await txn.delete(
+        'task_subtasks',
+        where: 'taskId = ?',
+        whereArgs: [oldId],
+      );
+      await txn.delete('tasks', where: 'id = ?', whereArgs: [oldId]);
+      await txn.insert(
+        'tasks',
+        _row(task),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await _replaceSubtasks(txn, task.id, task.subtasks);
+    });
   }
 
   Map<String, Object?> _row(Task task) {
     final map = Map<String, Object?>.from(task.toMap());
+    map.remove('subtasksJson');
     if (localDb == null) {
       map.remove('localId');
       map.remove('serverId');
@@ -120,6 +166,67 @@ class LocalTaskStorage {
       map.remove('isDeleted');
     }
     return map;
+  }
+
+  Future<Task> _taskFromRowWithChildren(
+    DatabaseExecutor database,
+    Map<String, Object?> row,
+  ) async {
+    final taskId = row['id'] as String;
+    final grouped = await _loadSubtasksGrouped(database, taskId: taskId);
+    return _taskFromRow(row, grouped[taskId] ?? const []);
+  }
+
+  Task _taskFromRow(Map<String, Object?> row, List<TaskSubtask> subtasks) {
+    return Task.fromMap(row).copyWith(subtasks: subtasks);
+  }
+
+  Future<Map<String, List<TaskSubtask>>> _loadSubtasksGrouped(
+    DatabaseExecutor database, {
+    String? taskId,
+  }) async {
+    final rows = await database.query(
+      'task_subtasks',
+      where: taskId == null ? null : 'taskId = ?',
+      whereArgs: taskId == null ? null : [taskId],
+      orderBy: 'sortOrder ASC',
+    );
+    final grouped = <String, List<TaskSubtask>>{};
+    for (final row in rows) {
+      final parentId = row['taskId'] as String;
+      grouped
+          .putIfAbsent(parentId, () => [])
+          .add(
+            TaskSubtask(
+              id: row['id'] as String,
+              title: row['title'] as String? ?? '',
+              isDone: (row['isDone'] as int? ?? 0) == 1,
+              sortOrder: row['sortOrder'] as int? ?? 0,
+            ),
+          );
+    }
+    return grouped;
+  }
+
+  Future<void> _replaceSubtasks(
+    DatabaseExecutor database,
+    String taskId,
+    List<TaskSubtask> items,
+  ) async {
+    await database.delete(
+      'task_subtasks',
+      where: 'taskId = ?',
+      whereArgs: [taskId],
+    );
+    for (final item in TaskSubtask.sanitize(items)) {
+      await database.insert('task_subtasks', {
+        'id': item.id,
+        'taskId': taskId,
+        'title': item.title,
+        'isDone': item.isDone ? 1 : 0,
+        'sortOrder': item.sortOrder,
+      });
+    }
   }
 
   Future<void> updateTaskStatus(String id, bool isDone) async {
@@ -138,13 +245,17 @@ class LocalTaskStorage {
 
   Future<void> deleteTask(String id) async {
     if (_useWebStorage) {
-      final tasks = await getTasks()..removeWhere((t) => t.id == id);
+      final tasks = await getTasks()
+        ..removeWhere((t) => t.id == id);
       await _persistWebTasks(tasks);
       return;
     }
 
     final database = await _database;
-    await database.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    await database.transaction((txn) async {
+      await txn.delete('task_subtasks', where: 'taskId = ?', whereArgs: [id]);
+      await txn.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    });
   }
 
   Future<Map<String, int>> getThemeColors() async {
@@ -159,25 +270,24 @@ class LocalTaskStorage {
     final database = await _database;
     final rows = await database.query('task_themes');
     return {
-      for (final row in rows)
-        row['name'] as String: row['colorArgb'] as int,
+      for (final row in rows) row['name'] as String: row['colorArgb'] as int,
     };
   }
 
   Future<void> saveThemeColor(String name, int colorArgb) async {
     if (_useWebStorage) {
-      final colors = await getThemeColors()..[name] = colorArgb;
+      final colors = await getThemeColors()
+        ..[name] = colorArgb;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_themesPrefsKey, jsonEncode(colors));
       return;
     }
 
     final database = await _database;
-    await database.insert(
-      'task_themes',
-      {'name': name, 'colorArgb': colorArgb},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await database.insert('task_themes', {
+      'name': name,
+      'colorArgb': colorArgb,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> registerTheme(String? theme, int? colorArgb) async {

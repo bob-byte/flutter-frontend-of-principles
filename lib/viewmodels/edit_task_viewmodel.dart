@@ -10,6 +10,7 @@ import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
 import '../models/task_priority.dart';
 import '../models/task_repeat_config.dart';
+import '../models/task_subtask.dart';
 import '../services/dialog_service.dart';
 import '../services/reminder_service.dart';
 import '../services/task_service.dart';
@@ -40,6 +41,7 @@ class EditTaskViewModel extends ChangeNotifier {
   bool constantReminder = false;
   TaskRepeatConfig repeat = const TaskRepeatConfig();
   int? constantNotificationRequestId;
+  List<TaskSubtask> subtasks = const [];
   bool isLoading = false;
   bool isSaving = false;
   Map<String, int> themeColors = {};
@@ -63,73 +65,123 @@ class EditTaskViewModel extends ChangeNotifier {
     return fallbackThemeColor(theme);
   }
 
-  Future<void> load({String? taskId, AiTaskDraft? aiDraft}) async {
+  Future<void> load({String? taskId, AiTaskDraft? aiDraft, Task? seed}) async {
+    if (taskId == null) {
+      prepareCreate(aiDraft: aiDraft);
+      unawaited(ensureThemesLoaded());
+      return;
+    }
+
     isLoading = true;
     notifyListeners();
     try {
-      themeColors = await _taskService.getThemeColors();
-
-      if (taskId == null) {
-        editingId = null;
-        title = '';
-        description = '';
-        priority = null;
-        themeMode = ThemePickerMode.none;
-        selectedTheme = null;
-        newThemeName = '';
-        themeColor = taskCategoryPalette.first;
-        hasDueDate = true;
-        dueDate = dateOnly(DateTime.now());
-        endDate = null;
-        allDay = false;
-        reminders = const [];
-        constantReminder = false;
-        repeat = const TaskRepeatConfig();
-        constantNotificationRequestId = null;
-        if (aiDraft != null) {
-          _applyAiDraft(aiDraft, overwriteDueDateIfMissing: true);
-        }
+      // Prefer in-memory seed so edit opens immediately; refresh from DB after.
+      if (seed != null) {
+        themeColors = Map<String, int>.from(themeColors);
+        _applyTask(seed);
+        isLoading = false;
+        notifyListeners();
+        unawaited(_refreshEditFromStorage(taskId, seed));
         return;
       }
 
-      final task = await _taskService.getTask(taskId);
+      await ensureThemesLoaded();
+      var task = await _taskService.getTask(taskId);
       if (task == null) {
+        _clearForm();
         editingId = null;
         return;
       }
-
-      editingId = task.id;
-      title = task.title;
-      description = task.description;
-      priority = task.priority;
-      hasDueDate = task.dueDate != null;
-      dueDate = task.dueDate ?? dateOnly(DateTime.now());
-      endDate = task.endDate;
-      allDay = task.allDay;
-      reminders = task.reminders;
-      constantReminder = task.constantReminder;
-      repeat = task.repeat;
-      constantNotificationRequestId = task.constantNotificationRequestId;
-
-      if (task.theme != null && task.theme!.isNotEmpty) {
-        final themes = await _loadAllThemeNames(task);
-        if (themes.contains(task.theme)) {
-          themeMode = ThemePickerMode.existing;
-          selectedTheme = task.theme;
-          themeColor = colorForTheme(task.theme!);
-        } else {
-          themeMode = ThemePickerMode.newTheme;
-          newThemeName = task.theme!;
-          themeColor = colorForTheme(task.theme!);
-        }
-      } else {
-        themeMode = ThemePickerMode.none;
-        selectedTheme = null;
-        newThemeName = '';
-      }
+      _applyTask(task);
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Sync create form so the sheet can open without awaiting DB/themes.
+  void prepareCreate({AiTaskDraft? aiDraft}) {
+    _clearForm();
+    editingId = null;
+    hasDueDate = true;
+    dueDate = dateOnly(DateTime.now());
+    if (aiDraft != null) {
+      _applyAiDraft(aiDraft, overwriteDueDateIfMissing: true);
+    }
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> ensureThemesLoaded() async {
+    if (themeColors.isNotEmpty) return;
+    themeColors = await _taskService.getThemeColors();
+    notifyListeners();
+  }
+
+  Future<void> _refreshEditFromStorage(String taskId, Task seed) async {
+    try {
+      await ensureThemesLoaded();
+      var task = await _taskService.getTask(taskId);
+      if (task == null && seed.serverId != null) {
+        task = await _taskService.getTask(seed.serverId.toString());
+      }
+      if (task == null || !hasListeners) return;
+      // Keep user edits if they already typed over the seed.
+      if (title != seed.title ||
+          description != seed.description ||
+          !_sameSubtasks(subtasks, seed.subtasks)) {
+        return;
+      }
+      _applyTask(task);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Task edit refresh failed: $e');
+    }
+  }
+
+  void _clearForm() {
+    title = '';
+    description = '';
+    priority = null;
+    themeMode = ThemePickerMode.none;
+    selectedTheme = null;
+    newThemeName = '';
+    themeColor = taskCategoryPalette.first;
+    hasDueDate = false;
+    dueDate = null;
+    endDate = null;
+    allDay = false;
+    reminders = const [];
+    constantReminder = false;
+    repeat = const TaskRepeatConfig();
+    constantNotificationRequestId = null;
+    subtasks = const [];
+  }
+
+  void _applyTask(Task task) {
+    editingId = task.id;
+    title = task.title;
+    description = task.description;
+    priority = task.priority;
+    hasDueDate = task.dueDate != null;
+    dueDate = task.dueDate ?? dateOnly(DateTime.now());
+    endDate = task.endDate;
+    allDay = task.allDay;
+    reminders = task.reminders;
+    constantReminder = task.constantReminder;
+    repeat = task.repeat;
+    constantNotificationRequestId = task.constantNotificationRequestId;
+    subtasks = List<TaskSubtask>.from(task.subtasks);
+
+    if (task.theme != null && task.theme!.isNotEmpty) {
+      themeMode = ThemePickerMode.existing;
+      selectedTheme = task.theme;
+      newThemeName = '';
+      themeColor = colorForTheme(task.theme!);
+    } else {
+      themeMode = ThemePickerMode.none;
+      selectedTheme = null;
+      newThemeName = '';
     }
   }
 
@@ -177,21 +229,59 @@ class EditTaskViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Set<String>> _loadAllThemeNames(Task task) async {
-    final themes = themeColors.keys.toSet();
-    final value = task.theme?.trim();
-    if (value != null && value.isNotEmpty) themes.add(value);
-    return themes;
-  }
-
+  /// Text fields keep their own controllers — avoid sheet rebuilds while typing.
   void setTitle(String value) {
     title = value;
-    notifyListeners();
   }
 
   void setDescription(String value) {
     description = value;
+  }
+
+  String addSubtask() {
+    final item = TaskSubtask(
+      id: TaskSubtask.allocateId(),
+      title: '',
+      sortOrder: subtasks.length,
+    );
+    subtasks = [...subtasks, item];
     notifyListeners();
+    return item.id;
+  }
+
+  void removeSubtask(String id) {
+    final next = [
+      for (final item in subtasks)
+        if (item.id != id) item,
+    ];
+    if (next.length == subtasks.length) return;
+    subtasks = next;
+    notifyListeners();
+  }
+
+  void setSubtaskTitle(String id, String title) {
+    subtasks = [
+      for (final item in subtasks)
+        if (item.id == id) item.copyWith(title: title) else item,
+    ];
+  }
+
+  void toggleSubtaskDone(String id) {
+    subtasks = [
+      for (final item in subtasks)
+        if (item.id == id) item.copyWith(isDone: !item.isDone) else item,
+    ];
+    notifyListeners();
+  }
+
+  List<TaskSubtask> _preparedSubtasks() => TaskSubtask.sanitize(subtasks);
+
+  bool _sameSubtasks(List<TaskSubtask> a, List<TaskSubtask> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   void setPriority(TaskPriority? value) {
@@ -212,7 +302,6 @@ class EditTaskViewModel extends ChangeNotifier {
 
   void setNewThemeName(String value) {
     newThemeName = value;
-    notifyListeners();
   }
 
   void setThemeColor(Color value) {
@@ -272,7 +361,8 @@ class EditTaskViewModel extends ChangeNotifier {
       reminders: reminders,
       constantReminder: constantReminder,
       repeat: repeat,
-      hasTime: dueDate!.hour != 0 || dueDate!.minute != 0 || reminders.isNotEmpty,
+      hasTime:
+          dueDate!.hour != 0 || dueDate!.minute != 0 || reminders.isNotEmpty,
     );
   }
 
@@ -293,9 +383,9 @@ class EditTaskViewModel extends ChangeNotifier {
         : themeColor;
   }
 
-  Future<bool> save() async {
+  Future<Task?> save() async {
     final trimmedTitle = title.trim();
-    if (trimmedTitle.isEmpty) return false;
+    if (trimmedTitle.isEmpty) return null;
 
     final wantsNotifications =
         hasDueDate && (reminders.isNotEmpty || constantReminder);
@@ -317,7 +407,7 @@ class EditTaskViewModel extends ChangeNotifier {
       Task saved;
       if (isEditing) {
         final existing = await _taskService.getTask(editingId!);
-        if (existing == null) return false;
+        if (existing == null) return null;
 
         saved = existing.copyWith(
           title: trimmedTitle,
@@ -336,9 +426,11 @@ class EditTaskViewModel extends ChangeNotifier {
           repeat: hasDueDate ? repeat : const TaskRepeatConfig(),
           constantNotificationRequestId: constantNotificationRequestId,
           clearConstantNotificationRequestId: !hasDueDate,
+          subtasks: _preparedSubtasks(),
         );
-        saved = await _reminderService?.prepareTaskNotifications(saved) ?? saved;
-        await _taskService.saveTask(saved, isNew: false);
+        saved =
+            await _reminderService?.prepareTaskNotifications(saved) ?? saved;
+        saved = await _taskService.saveTask(saved, isNew: false);
       } else {
         saved = Task(
           id: '0',
@@ -353,9 +445,11 @@ class EditTaskViewModel extends ChangeNotifier {
           reminders: hasDueDate ? reminders : const [],
           constantReminder: hasDueDate && constantReminder,
           repeat: hasDueDate ? repeat : const TaskRepeatConfig(),
+          subtasks: _preparedSubtasks(),
         );
-        saved = await _reminderService?.prepareTaskNotifications(saved) ?? saved;
-        await _taskService.saveTask(saved, isNew: true);
+        saved =
+            await _reminderService?.prepareTaskNotifications(saved) ?? saved;
+        saved = await _taskService.saveTask(saved, isNew: true);
       }
       unawaited(
         (_reminderService?.syncTaskNotifications(saved) ?? Future.value())
@@ -363,7 +457,7 @@ class EditTaskViewModel extends ChangeNotifier {
               debugPrint('Task notification sync failed: $e');
             }),
       );
-      return true;
+      return saved;
     } finally {
       isSaving = false;
       notifyListeners();

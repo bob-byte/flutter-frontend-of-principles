@@ -11,7 +11,7 @@ class LocalDb {
   static final LocalDb instance = LocalDb();
 
   static const fileName = 'principles.db';
-  static const schemaVersion = 5;
+  static const schemaVersion = 7;
   static const _legacyMigratedKey = 'local_db_legacy_migrated_v2';
 
   final String? pathOverride;
@@ -74,14 +74,27 @@ class LocalDb {
             'INTEGER NOT NULL DEFAULT 0',
           );
         }
+        if (oldVersion < 7) {
+          await _createTaskSubtasksTable(db);
+        }
       },
     );
   }
 
   Future<void> _upgradeScheduleColumns(DatabaseExecutor db) async {
     await _addColumnIfMissing(db, 'tasks', 'endDate', 'TEXT NULL');
-    await _addColumnIfMissing(db, 'tasks', 'allDay', 'INTEGER NOT NULL DEFAULT 0');
-    await _addColumnIfMissing(db, 'tasks', 'remindersJson', "TEXT NOT NULL DEFAULT '[]'");
+    await _addColumnIfMissing(
+      db,
+      'tasks',
+      'allDay',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
+    await _addColumnIfMissing(
+      db,
+      'tasks',
+      'remindersJson',
+      "TEXT NOT NULL DEFAULT '[]'",
+    );
     await _addColumnIfMissing(
       db,
       'tasks',
@@ -101,7 +114,12 @@ class LocalDb {
       'INTEGER NULL',
     );
     await _addColumnIfMissing(db, 'habits', 'endDate', 'TEXT NULL');
-    await _addColumnIfMissing(db, 'habits', 'allDay', 'INTEGER NOT NULL DEFAULT 0');
+    await _addColumnIfMissing(
+      db,
+      'habits',
+      'allDay',
+      'INTEGER NOT NULL DEFAULT 0',
+    );
     await _addColumnIfMissing(
       db,
       'habits',
@@ -242,6 +260,22 @@ class LocalDb {
         colorArgb INTEGER NOT NULL
       )
     ''');
+    await _createTaskSubtasksTable(db);
+  }
+
+  Future<void> _createTaskSubtasksTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_subtasks (
+        id TEXT PRIMARY KEY,
+        taskId TEXT NOT NULL,
+        title TEXT NOT NULL DEFAULT '',
+        isDone INTEGER NOT NULL DEFAULT 0,
+        sortOrder INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_subtasks_taskId ON task_subtasks (taskId)',
+    );
   }
 
   Future<void> _addColumnIfMissing(

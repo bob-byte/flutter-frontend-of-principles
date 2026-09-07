@@ -11,18 +11,23 @@ import '../viewmodels/tasks_viewmodel.dart';
 import 'tasks_glass.dart';
 
 Future<AiTaskDraft?> showTaskAiAssistSheet(BuildContext context) {
-  final vm = context.read<TasksViewModel>();
+  final palette = context.read<TasksViewModel>().palette;
+  final themeData = context.read<TasksViewModel>().themeData;
   return showModalBottomSheet<AiTaskDraft>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (sheetContext) =>
-        Theme(data: vm.themeData, child: const TaskAiAssistSheet()),
+    builder: (sheetContext) => Theme(
+      data: themeData,
+      child: TaskAiAssistSheet(palette: palette),
+    ),
   );
 }
 
 class TaskAiAssistSheet extends StatefulWidget {
-  const TaskAiAssistSheet({super.key});
+  const TaskAiAssistSheet({super.key, required this.palette});
+
+  final TasksUiPalette palette;
 
   @override
   State<TaskAiAssistSheet> createState() => _TaskAiAssistSheetState();
@@ -35,33 +40,18 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
 
   bool _isListening = false;
   bool _isProcessing = false;
-  bool _speechAvailable = false;
+  bool? _speechAvailable;
   String? _error;
+
+  TasksUiPalette get palette => widget.palette;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _speechAvailable = await _speech.initialize(
-        onError: (_) {
-          if (!mounted) return;
-          setState(() {
-            _isListening = false;
-            _error = TaskStrings.of(context).taskAiMicUnavailable;
-          });
-        },
-        onStatus: (status) {
-          if (!mounted) return;
-          if (status == 'done' || status == 'notListening') {
-            setState(() => _isListening = false);
-          }
-        },
-      );
-      if (mounted) {
-        setState(() {});
-        _focus.requestFocus();
-        SystemChannels.textInput.invokeMethod('TextInput.show');
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focus.requestFocus();
+      SystemChannels.textInput.invokeMethod('TextInput.show');
     });
   }
 
@@ -71,6 +61,26 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
     _controller.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  Future<bool> _ensureSpeechReady() async {
+    if (_speechAvailable != null) return _speechAvailable!;
+    _speechAvailable = await _speech.initialize(
+      onError: (_) {
+        if (!mounted) return;
+        setState(() {
+          _isListening = false;
+          _error = TaskStrings.of(context).taskAiMicUnavailable;
+        });
+      },
+      onStatus: (status) {
+        if (!mounted) return;
+        if (status == 'done' || status == 'notListening') {
+          setState(() => _isListening = false);
+        }
+      },
+    );
+    return _speechAvailable!;
   }
 
   Future<void> _toggleMic() async {
@@ -83,7 +93,9 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
       return;
     }
 
-    if (!_speechAvailable) {
+    final available = await _ensureSpeechReady();
+    if (!mounted) return;
+    if (!available) {
       setState(() => _error = strings.taskAiMicUnavailable);
       return;
     }
@@ -103,12 +115,12 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
       ),
       onResult: (result) {
         if (!mounted) return;
-        setState(() {
-          _controller.text = result.recognizedWords;
-          _controller.selection = TextSelection.collapsed(
-            offset: _controller.text.length,
-          );
-        });
+        // Update text without rebuilding the glass sheet on every partial.
+        final words = result.recognizedWords;
+        _controller.value = TextEditingValue(
+          text: words,
+          selection: TextSelection.collapsed(offset: words.length),
+        );
       },
     );
   }
@@ -180,13 +192,13 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
   @override
   Widget build(BuildContext context) {
     final strings = TaskStrings.of(context);
-    final palette = context.watch<TasksViewModel>().palette;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
       child: TasksGlassSheet(
         palette: palette,
+        blur: 14,
         child: SafeArea(
           top: false,
           child: Padding(
@@ -230,6 +242,7 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
                 const SizedBox(height: 16),
                 TasksGlassPanel(
                   palette: palette,
+                  blur: 0,
                   borderRadius: BorderRadius.circular(18),
                   padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
                   child: Row(
@@ -357,7 +370,7 @@ class _RoundAction extends StatelessWidget {
         child: TasksGlassPanel(
           palette: palette,
           borderRadius: BorderRadius.circular(22),
-          blur: 14,
+          blur: 0,
           tint: primary
               ? palette.primary.withValues(alpha: palette.isDark ? 0.88 : 0.92)
               : active

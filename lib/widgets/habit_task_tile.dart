@@ -33,6 +33,7 @@ class HabitTaskTile extends StatelessWidget {
     return TasksGlassPanel(
       palette: palette,
       borderRadius: BorderRadius.circular(20),
+      blur: 0,
       onTap: onTap,
       onLongPress: onLongPress == null
           ? null

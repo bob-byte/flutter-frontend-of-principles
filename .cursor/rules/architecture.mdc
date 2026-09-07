@@ -15,6 +15,7 @@ alwaysApply: true
 
 - Local SQLite (`sqflite`) + sync queue to .NET WebAPI
 - Goals ↔ habits: match by `targetGoalId` or case-insensitive `targetGoal` name (`habitsForGoal` / `habitsUnassignedToGoals` in `habit_progress_viewmodel.dart`)
+- Task checklists live in `task_subtasks` (owned by parent `taskId`). The parent still carries `Task.subtasks` in memory; sync sends a nested `subtasks` array on `TaskItemDto`. Backend stores them in `tsk.TaskSubtasks` (cascade delete). Completing items does not complete the parent. Repeat copies the list unchecked. Merge keeps local rows when the DTO omits `subtasks`.
 
 ## Road guide
 

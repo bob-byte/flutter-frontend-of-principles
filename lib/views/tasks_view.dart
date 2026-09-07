@@ -108,12 +108,13 @@ class _TasksViewState extends State<TasksView> {
                           onPressed: () async {
                             final guide = context.read<RoadGuideController>();
                             if (guide.isActive) return;
-                            final changed =
-                                await TasksNavigation.openCreateTask(context);
-                            if (!context.mounted) return;
-                            if (changed == true) {
-                              await context.read<TasksViewModel>().load();
-                            }
+                            final saved = await TasksNavigation.openCreateTask(
+                              context,
+                            );
+                            if (!context.mounted || saved == null) return;
+                            await context.read<TasksViewModel>().upsertTask(
+                              saved,
+                            );
                           },
                         ),
                       ],
@@ -186,6 +187,7 @@ class _TasksBody extends StatelessWidget {
           children: [
             TasksGlassPanel(
               palette: palette,
+              blur: 0,
               padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,14 +291,14 @@ class _TasksBody extends StatelessWidget {
                               task.id == RoadGuideDemoIds.taskId) {
                             return;
                           }
-                          final changed = await TasksNavigation.openEditTask(
+                          final saved = await TasksNavigation.openEditTask(
                             context,
                             taskId: task.id,
                           );
-                          if (!context.mounted) return;
-                          if (changed == true) {
-                            await context.read<TasksViewModel>().load();
-                          }
+                          if (!context.mounted || saved == null) return;
+                          await context.read<TasksViewModel>().upsertTask(
+                            saved,
+                          );
                         },
                         onToggle: () {
                           if (guide.isActive ||
@@ -324,6 +326,13 @@ class _TasksBody extends StatelessWidget {
                             palette: palette,
                             anchor: anchor,
                           );
+                        },
+                        onToggleSubtask: (subtaskId) {
+                          if (guide.isActive ||
+                              task.id == RoadGuideDemoIds.taskId) {
+                            return;
+                          }
+                          vm.toggleSubtask(task.id, subtaskId);
                         },
                         strings: strings,
                       ),

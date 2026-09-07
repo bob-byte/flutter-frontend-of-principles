@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'schedule_reminder_offset.dart';
 import 'task_priority.dart';
 import 'task_repeat_config.dart';
+import 'task_subtask.dart';
 
 class Task {
   const Task({
@@ -21,6 +22,7 @@ class Task {
     this.repeat = const TaskRepeatConfig(),
     this.constantNotificationRequestId,
     this.completedAt,
+    this.subtasks = const [],
     this.localId,
     this.serverId,
     this.lastModified,
@@ -46,6 +48,7 @@ class Task {
   final TaskRepeatConfig repeat;
   final int? constantNotificationRequestId;
   final DateTime? completedAt;
+  final List<TaskSubtask> subtasks;
   final int? localId;
   final int? serverId;
   final DateTime? lastModified;
@@ -53,6 +56,8 @@ class Task {
 
   bool get hasSchedule => dueDate != null;
   bool get hasDuration => endDate != null;
+  bool get hasSubtasks => subtasks.isNotEmpty;
+  int get completedSubtaskCount => subtasks.where((item) => item.isDone).length;
 
   Task copyWith({
     String? id,
@@ -76,6 +81,7 @@ class Task {
     bool clearConstantNotificationRequestId = false,
     DateTime? completedAt,
     bool clearCompletedAt = false,
+    List<TaskSubtask>? subtasks,
     int? localId,
     int? serverId,
     DateTime? lastModified,
@@ -97,8 +103,10 @@ class Task {
       repeat: repeat ?? this.repeat,
       constantNotificationRequestId: clearConstantNotificationRequestId
           ? null
-          : (constantNotificationRequestId ?? this.constantNotificationRequestId),
+          : (constantNotificationRequestId ??
+                this.constantNotificationRequestId),
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      subtasks: subtasks ?? this.subtasks,
       localId: localId ?? this.localId,
       serverId: serverId ?? this.serverId,
       lastModified: lastModified ?? this.lastModified,
@@ -120,27 +128,28 @@ class Task {
   }
 
   Map<String, Object?> toMap() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'isDone': isDone ? 1 : 0,
-        'theme': theme,
-        'priority': priority?.toStorage() ?? 'none',
-        'createdAt': createdAt.toIso8601String(),
-        'dueDate': dueDate?.toIso8601String(),
-        'endDate': endDate?.toIso8601String(),
-        'allDay': allDay ? 1 : 0,
-        'remindersJson': jsonEncode(reminders.map((e) => e.toJson()).toList()),
-        'constantReminder': constantReminder ? 1 : 0,
-        'repeatJson': jsonEncode(repeat.toJson()),
-        'constantNotificationRequestId': constantNotificationRequestId,
-        'completedAt': completedAt?.toIso8601String(),
-        if (localId != null) 'localId': localId,
-        if (serverId != null) 'serverId': serverId,
-        if (lastModified != null)
-          'lastModified': lastModified!.toUtc().toIso8601String(),
-        'isDeleted': isDeleted ? 1 : 0,
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'isDone': isDone ? 1 : 0,
+    'theme': theme,
+    'priority': priority?.toStorage() ?? 'none',
+    'createdAt': createdAt.toIso8601String(),
+    'dueDate': dueDate?.toIso8601String(),
+    'endDate': endDate?.toIso8601String(),
+    'allDay': allDay ? 1 : 0,
+    'remindersJson': jsonEncode(reminders.map((e) => e.toJson()).toList()),
+    'constantReminder': constantReminder ? 1 : 0,
+    'repeatJson': jsonEncode(repeat.toJson()),
+    'constantNotificationRequestId': constantNotificationRequestId,
+    'completedAt': completedAt?.toIso8601String(),
+    'subtasksJson': jsonEncode(subtasks.map((e) => e.toJson()).toList()),
+    if (localId != null) 'localId': localId,
+    if (serverId != null) 'serverId': serverId,
+    if (lastModified != null)
+      'lastModified': lastModified!.toUtc().toIso8601String(),
+    'isDeleted': isDeleted ? 1 : 0,
+  };
 
   factory Task.fromMap(Map<String, Object?> map) {
     return Task(
@@ -166,6 +175,7 @@ class Task {
       completedAt: map['completedAt'] != null
           ? DateTime.parse(map['completedAt'] as String)
           : null,
+      subtasks: TaskSubtask.listFromJson(map['subtasksJson']),
       localId: map['localId'] as int?,
       serverId: map['serverId'] as int?,
       lastModified: map['lastModified'] != null
@@ -183,9 +193,8 @@ class Task {
       return decoded
           .whereType<Map>()
           .map(
-            (e) => ScheduleReminderOffset.fromJson(
-              Map<String, dynamic>.from(e),
-            ),
+            (e) =>
+                ScheduleReminderOffset.fromJson(Map<String, dynamic>.from(e)),
           )
           .toList();
     } catch (_) {

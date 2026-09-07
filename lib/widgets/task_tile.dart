@@ -18,6 +18,7 @@ class TaskTile extends StatelessWidget {
     required this.strings,
     this.onMoveToToday,
     this.onLongPress,
+    this.onToggleSubtask,
   });
 
   final Task task;
@@ -28,19 +29,20 @@ class TaskTile extends StatelessWidget {
   final VoidCallback? onMoveToToday;
   final TaskStrings strings;
   final ValueChanged<Rect?>? onLongPress;
+  final ValueChanged<String>? onToggleSubtask;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final today = dateOnly(DateTime.now());
-    final isOverdue = !task.isDone &&
-        task.dueDate != null &&
-        task.dueDate!.isBefore(today);
+    final isOverdue =
+        !task.isDone && task.dueDate != null && task.dueDate!.isBefore(today);
     final markColor = isOverdue ? scheme.error : themeColor;
 
     return TasksGlassPanel(
       palette: palette,
       borderRadius: BorderRadius.circular(20),
+      blur: 0,
       onTap: onTap,
       onLongPress: onLongPress == null
           ? null
@@ -85,7 +87,11 @@ class TaskTile extends StatelessWidget {
                     : null,
               ),
               child: task.isDone
-                  ? Icon(Icons.check_rounded, size: 16, color: palette.onPrimary)
+                  ? Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: palette.onPrimary,
+                    )
                   : null,
             ),
           ),
@@ -134,8 +140,9 @@ class TaskTile extends StatelessWidget {
                           color: task.isDone
                               ? palette.textMuted
                               : palette.textPrimary,
-                          decoration:
-                              task.isDone ? TextDecoration.lineThrough : null,
+                          decoration: task.isDone
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
                       ),
                     ),
@@ -152,6 +159,15 @@ class TaskTile extends StatelessWidget {
                           : palette.textMuted,
                     ),
                   ),
+                if (task.hasSubtasks) ...[
+                  const SizedBox(height: 8),
+                  _TaskSubtasksPreview(
+                    task: task,
+                    palette: palette,
+                    strings: strings,
+                    onToggleSubtask: onToggleSubtask,
+                  ),
+                ],
                 if (task.dueDate != null) ...[
                   const SizedBox(height: 4),
                   Row(
@@ -173,8 +189,9 @@ class TaskTile extends StatelessWidget {
                               ),
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight:
-                              isOverdue ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isOverdue
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           color: isOverdue ? scheme.error : palette.textMuted,
                         ),
                       ),
@@ -217,6 +234,105 @@ String _taskMetaLine(Task task, TaskStrings strings) {
   final parts = <String>[
     if (task.priority != null) task.priority!.label(strings),
     if (task.theme != null) task.theme!,
+    if (task.hasSubtasks)
+      strings.taskSubtasksProgress(
+        task.completedSubtaskCount,
+        task.subtasks.length,
+      ),
   ];
   return parts.join(' · ');
+}
+
+const _kVisibleSubtasks = 3;
+
+class _TaskSubtasksPreview extends StatelessWidget {
+  const _TaskSubtasksPreview({
+    required this.task,
+    required this.palette,
+    required this.strings,
+    this.onToggleSubtask,
+  });
+
+  final Task task;
+  final TasksUiPalette palette;
+  final TaskStrings strings;
+  final ValueChanged<String>? onToggleSubtask;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = task.subtasks.take(_kVisibleSubtasks).toList();
+    final hidden = task.subtasks.length - visible.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final item in visible)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: GestureDetector(
+              key: Key('taskSubtaskToggle-${item.id}'),
+              onTap: onToggleSubtask == null
+                  ? null
+                  : () => onToggleSubtask!(item.id),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  _TileSubtaskCheck(palette: palette, isDone: item.isDone),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: item.isDone
+                            ? palette.textMuted
+                            : palette.textPrimary,
+                        decoration: item.isDone
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (hidden > 0)
+          Padding(
+            padding: const EdgeInsets.only(left: 28, top: 2),
+            child: Text(
+              strings.taskSubtasksMore(hidden),
+              style: TextStyle(fontSize: 12, color: palette.textMuted),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TileSubtaskCheck extends StatelessWidget {
+  const _TileSubtaskCheck({required this.palette, required this.isDone});
+
+  final TasksUiPalette palette;
+  final bool isDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: isDone ? palette.primaryGradient : null,
+        color: isDone ? null : palette.glassChipFill,
+        border: isDone
+            ? null
+            : Border.all(color: palette.glassBorder, width: 1.2),
+      ),
+      child: isDone
+          ? Icon(Icons.check_rounded, size: 11, color: palette.onPrimary)
+          : null,
+    );
+  }
 }

@@ -32,9 +32,10 @@ class TaskService {
 
   Future<Task?> getTask(String id) => _local.getTask(id);
 
-  Future<Task?> getTaskByLocalId(int localId) => _local.getTaskByLocalId(localId);
+  Future<Task?> getTaskByLocalId(int localId) =>
+      _local.getTaskByLocalId(localId);
 
-  Future<void> saveTask(Task task, {required bool isNew}) async {
+  Future<Task> saveTask(Task task, {required bool isNew}) async {
     var stored = task;
     if (isNew && (task.id == '0' || task.id.isEmpty)) {
       stored = task.copyWith(
@@ -46,7 +47,7 @@ class TaskService {
     }
 
     await _local.saveTask(stored, isNew: isNew);
-    if (!_useRemote) return;
+    if (!_useRemote) return stored;
 
     final persisted = await _local.getTask(stored.id) ?? stored;
     Future<Task> remote() async {
@@ -60,11 +61,10 @@ class TaskService {
         final created = TaskItemDto.fromJson(
           Map<String, dynamic>.from(response.data as Map),
         );
-        final mapped = persisted.copyWith(
-          id: created.id.toString(),
-          serverId: created.id,
-        );
-        await _local.replaceTaskId(persisted.id, mapped);
+        // Keep the stable local id so in-memory list rows stay editable
+        // while background sync assigns serverId.
+        final mapped = persisted.copyWith(serverId: created.id);
+        await _local.saveTask(mapped, isNew: false);
         return mapped;
       }
       await _apiClient.put(
@@ -84,7 +84,7 @@ class TaskService {
         entityId: persisted.serverId ?? int.tryParse(persisted.id),
         entityLocalId: persisted.localId,
       );
-      return;
+      return persisted;
     }
 
     unawaited(() async {
@@ -94,6 +94,7 @@ class TaskService {
         // Local copy remains the source of truth.
       }
     }());
+    return persisted;
   }
 
   Future<void> updateTaskStatus(String id, bool isDone) async {
@@ -162,23 +163,25 @@ class TaskService {
   }
 
   Future<void> assignServerId(Task task, int serverId) {
-    return _local.replaceTaskId(
-      task.id,
-      task.copyWith(id: serverId.toString(), serverId: serverId),
-    );
+    return _local.saveTask(task.copyWith(serverId: serverId), isNew: false);
   }
 
   Future<void> mergeRemoteTask(TaskItemDto dto) async {
     final existing = await _local.getTask(dto.id.toString());
-    final merged = dto.toTask(
-      priority: existing?.priority,
-      theme: existing?.theme,
-      completedAt: existing?.completedAt,
-    ).copyWith(
-      localId: existing?.localId,
-      serverId: dto.id,
-      lastModified: DateTime.now().toUtc(),
-    );
+    final merged = dto
+        .toTask(
+          priority: existing?.priority,
+          theme: existing?.theme,
+          completedAt: existing?.completedAt,
+          subtasks: dto.subtasks ?? existing?.subtasks,
+        )
+        .copyWith(
+          // Preserve local id so open edit sheets / list rows keep resolving.
+          id: existing?.id ?? dto.id.toString(),
+          localId: existing?.localId,
+          serverId: dto.id,
+          lastModified: DateTime.now().toUtc(),
+        );
     await _local.saveTask(merged, isNew: existing == null);
   }
 

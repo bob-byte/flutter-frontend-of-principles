@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -16,17 +18,25 @@ import '../views/widgets/schedule/schedule_format.dart';
 import 'app_loading_indicator.dart';
 import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
+import 'task_subtasks_editor.dart';
 import 'tasks_glass.dart';
 
-Future<bool?> showTaskEditSheet(
+Future<Task?> showTaskEditSheet(
   BuildContext context, {
   String? taskId,
   AiTaskDraft? aiDraft,
 }) async {
   final tasksVm = context.read<TasksViewModel>();
   final editVm = context.read<EditTaskViewModel>();
+  final seed = taskId == null ? null : tasksVm.taskById(taskId);
 
-  await editVm.load(taskId: taskId, aiDraft: aiDraft);
+  // Create opens immediately; edit uses in-memory seed then refreshes in bg.
+  if (taskId == null) {
+    editVm.prepareCreate(aiDraft: aiDraft);
+    unawaited(editVm.ensureThemesLoaded());
+  } else {
+    await editVm.load(taskId: taskId, aiDraft: aiDraft, seed: seed);
+  }
   if (!context.mounted) return null;
 
   // Для нового завдання без дати від AI — підставити дату з режиму списку.
@@ -47,7 +57,7 @@ Future<bool?> showTaskEditSheet(
     }
   }
 
-  return showModalBottomSheet<bool>(
+  return showModalBottomSheet<Task>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -73,6 +83,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   final _titleFocus = FocusNode();
   bool _optionsExpanded = false;
   bool _titleError = false;
+  bool _controllersSynced = false;
 
   static const _borderlessDecoration = InputDecoration(
     border: InputBorder.none,
@@ -89,6 +100,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final vm = context.read<EditTaskViewModel>();
       _syncControllers(vm);
       if (widget.taskId == null) {
@@ -99,8 +111,13 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   }
 
   void _syncControllers(EditTaskViewModel vm) {
-    _titleController.text = vm.title;
-    _descriptionController.text = vm.description;
+    if (_titleController.text != vm.title) {
+      _titleController.text = vm.title;
+    }
+    if (_descriptionController.text != vm.description) {
+      _descriptionController.text = vm.description;
+    }
+    _controllersSynced = true;
   }
 
   @override
@@ -140,13 +157,15 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   }
 
   Future<void> _save(EditTaskViewModel vm) async {
+    vm.setTitle(_titleController.text);
+    vm.setDescription(_descriptionController.text);
     if (vm.title.trim().isEmpty) {
       setState(() => _titleError = true);
       _titleFocus.requestFocus();
       return;
     }
-    final ok = await vm.save();
-    if (ok && mounted) Navigator.of(context).pop(true);
+    final saved = await vm.save();
+    if (saved != null && mounted) Navigator.of(context).pop(saved);
   }
 
   void _onTitleChanged(EditTaskViewModel vm, String value) {
@@ -180,6 +199,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     return Consumer<EditTaskViewModel>(
       builder: (context, vm, _) {
         if (vm.isLoading) {
+          _controllersSynced = false;
           return Padding(
             padding: EdgeInsets.only(bottom: bottomInset),
             child: _SheetSurface(
@@ -190,6 +210,15 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
               ),
             ),
           );
+        }
+
+        if (!_controllersSynced ||
+            (!_titleFocus.hasFocus &&
+                (_titleController.text != vm.title ||
+                    _descriptionController.text != vm.description))) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _syncControllers(vm);
+          });
         }
 
         return Padding(
@@ -297,6 +326,12 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                           ),
                           onChanged: vm.setDescription,
                         ),
+                        const SizedBox(height: 18),
+                        TaskSubtasksEditor(
+                          vm: vm,
+                          palette: palette,
+                          strings: strings,
+                        ),
                         if (_optionsExpanded) ...[
                           const SizedBox(height: 24),
                           ThemePickerSection(
@@ -386,7 +421,7 @@ class _SheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TasksGlassSheet(palette: palette, child: child);
+    return TasksGlassSheet(palette: palette, blur: 14, child: child);
   }
 }
 
@@ -548,7 +583,7 @@ class _SubmitButton extends StatelessWidget {
     return TasksGlassPanel(
       palette: palette,
       borderRadius: BorderRadius.circular(24),
-      blur: 14,
+      blur: 0,
       tint: palette.primary.withValues(alpha: palette.isDark ? 0.88 : 0.92),
       child: Material(
         color: Colors.transparent,

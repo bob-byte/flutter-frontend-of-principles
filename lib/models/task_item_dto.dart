@@ -3,6 +3,7 @@ import 'schedule_reminder_offset.dart';
 import 'task.dart';
 import 'task_priority.dart';
 import 'task_repeat_config.dart';
+import 'task_subtask.dart';
 
 /// DTO бекенду (`SET.WebAPI.Models.TaskItemDto`).
 class TaskItemDto {
@@ -20,6 +21,7 @@ class TaskItemDto {
     this.reminders = const [],
     this.repeat,
     this.constantNotificationRequestId,
+    this.subtasks,
   });
 
   final int id;
@@ -35,6 +37,9 @@ class TaskItemDto {
   final List<ScheduleReminderOffset> reminders;
   final TaskRepeatConfig? repeat;
   final int? constantNotificationRequestId;
+
+  /// Null means the payload omitted checklists (keep local on merge).
+  final List<TaskSubtask>? subtasks;
 
   factory TaskItemDto.fromJson(Map<String, dynamic> json) {
     final remindersRaw = json['reminders'] ?? json['Reminders'];
@@ -66,8 +71,7 @@ class TaskItemDto {
       endDate: _readDate(json['endDate'] ?? json['EndDate']),
       endTime: _readTime(json['endTime'] ?? json['EndTime']),
       allDay: json['allDay'] == true || json['AllDay'] == true,
-      isCompleted:
-          json['isCompleted'] == true || json['IsCompleted'] == true,
+      isCompleted: json['isCompleted'] == true || json['IsCompleted'] == true,
       constantReminder:
           json['constantReminder'] == true || json['ConstantReminder'] == true,
       reminders: reminders,
@@ -76,25 +80,29 @@ class TaskItemDto {
         json['constantNotificationRequestId'] ??
             json['ConstantNotificationRequestId'],
       ),
+      subtasks: json.containsKey('subtasks') || json.containsKey('Subtasks')
+          ? TaskSubtask.listFromJson(json['subtasks'] ?? json['Subtasks'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        if (id > 0) 'id': id,
-        'name': name,
-        'notes': notes,
-        'date': date,
-        'time': time,
-        'endDate': endDate,
-        'endTime': endTime,
-        'allDay': allDay,
-        'isCompleted': isCompleted,
-        'constantReminder': constantReminder,
-        'reminders': reminders.map((e) => e.toJson()).toList(),
-        if (repeat != null && !repeat!.isNone) 'repeat': repeat!.toJson(),
-        if (constantNotificationRequestId != null)
-          'constantNotificationRequestId': constantNotificationRequestId,
-      };
+    if (id > 0) 'id': id,
+    'name': name,
+    'notes': notes,
+    'date': date,
+    'time': time,
+    'endDate': endDate,
+    'endTime': endTime,
+    'allDay': allDay,
+    'isCompleted': isCompleted,
+    'constantReminder': constantReminder,
+    'reminders': reminders.map((e) => e.toJson()).toList(),
+    if (repeat != null && !repeat!.isNone) 'repeat': repeat!.toJson(),
+    if (constantNotificationRequestId != null)
+      'constantNotificationRequestId': constantNotificationRequestId,
+    if (subtasks != null) 'subtasks': subtasks!.map((e) => e.toJson()).toList(),
+  };
 
   static TaskItemDto fromTask(Task task) {
     String? date;
@@ -103,8 +111,7 @@ class TaskItemDto {
       final due = task.dueDate!;
       date =
           '${due.year.toString().padLeft(4, '0')}-${due.month.toString().padLeft(2, '0')}-${due.day.toString().padLeft(2, '0')}';
-      final hasClock =
-          due.hour != 0 || due.minute != 0 || due.second != 0;
+      final hasClock = due.hour != 0 || due.minute != 0 || due.second != 0;
       if (!task.allDay && (hasClock || task.reminders.isNotEmpty)) {
         time =
             '${due.hour.toString().padLeft(2, '0')}:${due.minute.toString().padLeft(2, '0')}:00';
@@ -137,6 +144,7 @@ class TaskItemDto {
       reminders: task.reminders,
       repeat: task.repeat.isNone ? null : task.repeat,
       constantNotificationRequestId: task.constantNotificationRequestId,
+      subtasks: task.subtasks,
     );
   }
 
@@ -144,6 +152,7 @@ class TaskItemDto {
     TaskPriority? priority,
     String? theme,
     DateTime? completedAt,
+    List<TaskSubtask>? subtasks,
   }) {
     DateTime? dueDate;
     if (date != null) {
@@ -201,6 +210,7 @@ class TaskItemDto {
       repeat: repeat ?? const TaskRepeatConfig(),
       constantNotificationRequestId: constantNotificationRequestId,
       completedAt: isCompleted ? completedAt : null,
+      subtasks: subtasks ?? this.subtasks ?? const [],
     );
   }
 }

@@ -51,14 +51,12 @@ void showTaskContextMenu({
                 icon: Icons.edit_outlined,
                 onTap: () async {
                   Navigator.of(dialogContext).pop();
-                  final changed = await TasksNavigation.openEditTask(
+                  final saved = await TasksNavigation.openEditTask(
                     context,
                     taskId: task.id,
                   );
-                  if (!context.mounted) return;
-                  if (changed == true) {
-                    await context.read<TasksViewModel>().load();
-                  }
+                  if (!context.mounted || saved == null) return;
+                  await context.read<TasksViewModel>().upsertTask(saved);
                 },
               ),
               if (canMoveToToday)

@@ -11,7 +11,7 @@ void main() {
   List<Habit> call({
     TasksListMode listMode = TasksListMode.today,
     required List<Habit> habits,
-    TaskStatusFilter statusFilter = TaskStatusFilter.all,
+    TaskStatusFilter statusFilter = TaskStatusFilter.active,
     TaskPriority? priorityFilter,
     String? themeFilter,
     bool Function(Habit)? isCompleted,
@@ -112,7 +112,22 @@ void main() {
     ];
     final done = {1};
 
-    final all = call(habits: habits, isCompleted: (h) => done.contains(h.id));
+    final all = call(
+      habits: habits,
+      statusFilter: TaskStatusFilter.all,
+      isCompleted: (h) => done.contains(h.id),
+    );
     expect(all.map((h) => h.name), ['Train', 'Walk', 'Read']);
+  });
+
+  test('default active status filter hides completed habits on today', () {
+    final habits = [habit(id: 1, name: 'Read'), habit(id: 2, name: 'Train')];
+    final done = {1};
+
+    final result = call(
+      habits: habits,
+      isCompleted: (h) => done.contains(h.id),
+    );
+    expect(result.map((h) => h.name), ['Train']);
   });
 }

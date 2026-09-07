@@ -25,7 +25,9 @@ class TasksGlassBackground extends StatelessWidget {
           top: -90,
           right: -50,
           child: _GlowOrb(
-            color: palette.primary.withValues(alpha: palette.isDark ? 0.45 : 0.28),
+            color: palette.primary.withValues(
+              alpha: palette.isDark ? 0.45 : 0.28,
+            ),
             size: 260,
           ),
         ),
@@ -33,7 +35,9 @@ class TasksGlassBackground extends StatelessWidget {
           top: 180,
           left: -70,
           child: _GlowOrb(
-            color: palette.accentMuted.withValues(alpha: palette.isDark ? 0.28 : 0.22),
+            color: palette.accentMuted.withValues(
+              alpha: palette.isDark ? 0.28 : 0.22,
+            ),
             size: 200,
           ),
         ),
@@ -41,8 +45,9 @@ class TasksGlassBackground extends StatelessWidget {
           bottom: 80,
           right: -30,
           child: _GlowOrb(
-            color: palette.primaryGradientEnd
-                .withValues(alpha: palette.isDark ? 0.22 : 0.18),
+            color: palette.primaryGradientEnd.withValues(
+              alpha: palette.isDark ? 0.22 : 0.18,
+            ),
             size: 220,
           ),
         ),
@@ -95,29 +100,31 @@ class TasksGlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final decorated = DecoratedBox(
+      decoration: BoxDecoration(
+        color: tint ?? palette.glassFill,
+        borderRadius: borderRadius,
+        border: Border.all(color: palette.glassBorder, width: 0.85),
+        boxShadow: [
+          BoxShadow(
+            color: palette.glassShadow,
+            blurRadius: blur > 0 ? 24 : 10,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+    );
+
+    // BackdropFilter is expensive when many tiles rebuild; skip for list rows.
     final panel = ClipRRect(
       borderRadius: borderRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tint ?? palette.glassFill,
-            borderRadius: borderRadius,
-            border: Border.all(color: palette.glassBorder, width: 0.85),
-            boxShadow: [
-              BoxShadow(
-                color: palette.glassShadow,
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: padding ?? EdgeInsets.zero,
-            child: child,
-          ),
-        ),
-      ),
+      child: blur > 0
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+              child: decorated,
+            )
+          : decorated,
     );
 
     if (onTap == null && onLongPress == null) return panel;
@@ -232,39 +239,43 @@ class TasksGlassSheet extends StatelessWidget {
     required this.palette,
     required this.child,
     this.maxHeightFactor = 0.88,
+    this.blur = 18,
   });
 
   final TasksUiPalette palette;
   final Widget child;
   final double maxHeightFactor;
+  final double blur;
 
   @override
   Widget build(BuildContext context) {
+    final sheet = Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * maxHeightFactor,
+      ),
+      decoration: BoxDecoration(
+        color: palette.glassSheetFill,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: palette.glassBorder.withValues(alpha: 0.55)),
+        boxShadow: [
+          BoxShadow(
+            color: palette.glassShadow,
+            blurRadius: 32,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * maxHeightFactor,
-          ),
-          decoration: BoxDecoration(
-            color: palette.glassSheetFill,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: palette.glassBorder.withValues(alpha: 0.55),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: palette.glassShadow,
-                blurRadius: 32,
-                offset: const Offset(0, -6),
-              ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
+      child: blur > 0
+          ? BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+              child: sheet,
+            )
+          : sheet,
     );
   }
 }
