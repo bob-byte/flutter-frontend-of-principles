@@ -159,6 +159,24 @@ class EditHabitViewModel extends ChangeNotifier {
     }
   }
 
+  void clearTargetGoal() {
+    if (targetGoal.isEmpty && targetGoalId == null) return;
+    targetGoal = '';
+    targetGoalId = null;
+    _shouldReloadRecommendedHabits = true;
+    notifyListeners();
+  }
+
+  /// Clears the selected goal when it was deleted from the goal picker.
+  void clearTargetGoalIfMatching(UserGoal goal) {
+    final matched = targetGoalId != null
+        ? targetGoalId == goal.id || targetGoalId == goal.localId
+        : targetGoal.trim().isNotEmpty &&
+              targetGoal.trim().toLowerCase() == goal.name.trim().toLowerCase();
+    if (!matched) return;
+    clearTargetGoal();
+  }
+
   Future<void> requestGoalSelection() async {
     final response = await _dialogService.showCustomSheet(
       variant: BottomSheetType.goalSelection,

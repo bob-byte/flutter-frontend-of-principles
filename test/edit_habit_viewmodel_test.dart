@@ -7,6 +7,7 @@ import 'package:principles_app/core/storage/local_db.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/models/frequency_config.dart';
 import 'package:principles_app/models/habit.dart';
+import 'package:principles_app/models/user_goal.dart';
 import 'package:principles_app/services/ai_recommendation_service.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/database_service.dart';
@@ -115,6 +116,23 @@ void main() {
     expect(stored.single.name, 'Morning walk');
     expect(stored.single.notes, 'Park');
     expect(stored.single.difficulty, 6);
+  });
+
+  test('clearTargetGoalIfMatching clears by id or name', () {
+    vm.init(Habit(name: 'Walk', targetGoal: 'Health', targetGoalId: 2));
+
+    vm.clearTargetGoalIfMatching(UserGoal(id: 9, name: 'Other'));
+    expect(vm.targetGoal, 'Health');
+    expect(vm.targetGoalId, 2);
+
+    vm.clearTargetGoalIfMatching(UserGoal(id: 2, name: 'Health'));
+    expect(vm.targetGoal, isEmpty);
+    expect(vm.targetGoalId, isNull);
+
+    vm.setTargetGoal(UserGoal(name: 'Read'));
+    vm.clearTargetGoalIfMatching(UserGoal(name: 'Read'));
+    expect(vm.targetGoal, isEmpty);
+    expect(vm.targetGoalId, isNull);
   });
 
   test('saveHabit updates an existing habit', () async {

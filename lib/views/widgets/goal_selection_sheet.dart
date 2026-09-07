@@ -6,7 +6,9 @@ import '../../core/theme/task_theme_palette.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../models/user_goal.dart';
 import '../../services/goal_service.dart';
+import '../../viewmodels/edit_habit_viewmodel.dart';
 import '../../viewmodels/goal_selection_viewmodel.dart';
+import '../../viewmodels/goals_viewmodel.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/context_menu_overlay.dart';
 import '../../widgets/themed_lottie.dart';
@@ -22,6 +24,8 @@ class GoalSelectionSheetWidget extends StatelessWidget {
       create: (ctx) => GoalSelectionViewModel(
         ctx.read<GoalService>(),
         currentTargetGoal: currentTargetGoal,
+        goalsViewModel: _maybeRead<GoalsViewModel>(ctx),
+        editHabitViewModel: _maybeRead<EditHabitViewModel>(ctx),
       ),
       child: const _GoalSelectionSheetContent(),
     );
@@ -349,5 +353,13 @@ class _GoalTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+T? _maybeRead<T>(BuildContext context) {
+  try {
+    return context.read<T>();
+  } on ProviderNotFoundException {
+    return null;
   }
 }

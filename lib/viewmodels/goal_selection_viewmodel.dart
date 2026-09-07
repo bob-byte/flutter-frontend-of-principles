@@ -3,9 +3,13 @@ import 'package:flutter/foundation.dart';
 import '../models/user_goal.dart';
 import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
+import 'edit_habit_viewmodel.dart';
+import 'goals_viewmodel.dart';
 
 class GoalSelectionViewModel extends ChangeNotifier {
   final GoalService _goalService;
+  final GoalsViewModel? _goalsViewModel;
+  final EditHabitViewModel? _editHabitViewModel;
   final DialogService _dialogService = DialogService();
 
   final String currentTargetGoal;
@@ -13,7 +17,13 @@ class GoalSelectionViewModel extends ChangeNotifier {
   List<UserGoal> goals = [];
   bool isLoading = true;
 
-  GoalSelectionViewModel(this._goalService, {required this.currentTargetGoal}) {
+  GoalSelectionViewModel(
+    this._goalService, {
+    required this.currentTargetGoal,
+    GoalsViewModel? goalsViewModel,
+    EditHabitViewModel? editHabitViewModel,
+  }) : _goalsViewModel = goalsViewModel,
+       _editHabitViewModel = editHabitViewModel {
     loadGoals();
   }
 
@@ -36,7 +46,12 @@ class GoalSelectionViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteGoal(UserGoal goal) async {
-    await _goalService.deleteGoal(goal);
+    if (_goalsViewModel != null) {
+      await _goalsViewModel.deleteGoal(goal);
+    } else {
+      await _goalService.deleteGoal(goal);
+    }
+    _editHabitViewModel?.clearTargetGoalIfMatching(goal);
     await loadGoals();
   }
 
@@ -50,6 +65,7 @@ class GoalSelectionViewModel extends ChangeNotifier {
       goal.copyWith(isCompleted: isCompleted),
     );
     await loadGoals();
+    await _goalsViewModel?.load(silent: true);
     _dialogService.showToast(
       isCompleted
           ? _dialogService.l10n.goalMarkedCompleted
@@ -65,6 +81,7 @@ class GoalSelectionViewModel extends ChangeNotifier {
 
     if (response != null && response.confirmed == true) {
       await loadGoals();
+      await _goalsViewModel?.load(silent: true);
     }
   }
 
