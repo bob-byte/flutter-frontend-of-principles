@@ -13,7 +13,9 @@ class ApiEndpoints {
   static const tasks = '/tasks';
   static const aiParseTask = '/ai/parse-task';
   static const aiChat = '/ai/chat';
+  static const aiTitle = '/ai/title';
   static const aiRecommendHabits = '/ai/recommend-habits';
+  static const aiConversations = '/ai/conversations';
   static const reminder = '/reminder';
   static const habitsReportReminder = '$reminder/habitsreport';
   static const allReminders = '$reminder/all';
@@ -27,4 +29,5 @@ class ApiEndpoints {
   static const sync = '/sync';
   static const syncPing = '$sync/ping';
   static const syncBootstrap = '$sync/bootstrap';
+  static const syncChanges = '$sync/changes';
 }

@@ -5,35 +5,40 @@ import 'package:flutter/foundation.dart';
 
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/network/server_required_retry.dart';
 import '../models/ai_task_draft.dart';
 
 const _sseDone = Object();
 
 /// AI via the app backend. The OpenAI key stays on the server.
+///
+/// Chat history is owned by [HelperViewModel]; this service does not keep a
+/// second copy in memory.
 class AiChatService {
   AiChatService(this._apiClient);
 
   static const _aiTimeout = Duration(seconds: 120);
 
   final ApiClient _apiClient;
-  final List<Map<String, String>> _messages = [];
 
-  Stream<String> streamAnswer(
-    String prompt, {
+  /// Posts the full [messages] list (including the latest user turn).
+  Stream<String> streamAnswer({
+    required List<Map<String, String>> messages,
     required String fallbackResponse,
     required String errorMessage,
   }) async* {
-    final trimmed = prompt.trim();
-    if (trimmed.isEmpty) return;
-
-    _messages.add({'role': 'user', 'content': trimmed});
+    if (messages.isEmpty) return;
 
     final cancelToken = CancelToken();
     final assembled = StringBuffer();
     try {
       final response = await _apiClient.postStream(
         ApiEndpoints.aiChat,
-        data: {'messages': List<Map<String, String>>.from(_messages)},
+        data: {
+          'messages': [
+            for (final m in messages) Map<String, String>.from(m),
+          ],
+        },
         receiveTimeout: _aiTimeout,
         cancelToken: cancelToken,
       );
@@ -47,18 +52,13 @@ class AiChatService {
       final content = assembled.toString();
       if (content.trim().isEmpty) {
         yield fallbackResponse;
-        _messages.add({'role': 'assistant', 'content': fallbackResponse});
-      } else {
-        _messages.add({'role': 'assistant', 'content': content});
       }
     } catch (e) {
+      if (isServerTechnicalWork(e)) {
+        throw ServerTechnicalWorkException.from(e);
+      }
       if (assembled.isEmpty) {
-        if (_messages.isNotEmpty && _messages.last['role'] == 'user') {
-          _messages.removeLast();
-        }
         yield await _errorText(e, errorMessage);
-      } else {
-        _messages.add({'role': 'assistant', 'content': assembled.toString()});
       }
     } finally {
       if (!cancelToken.isCancelled) {
@@ -67,16 +67,14 @@ class AiChatService {
     }
   }
 
-  void addAssistantAnswer(String text) {
-    if (text.trim().isEmpty) return;
-    if (_messages.isEmpty || _messages.last['role'] != 'assistant') {
-      _messages.add({'role': 'assistant', 'content': text.trim()});
-    }
-  }
+  /// No-op — history lives in the Helper viewmodel.
+  void clearChat() {}
 
-  void clearChat() {
-    _messages.clear();
-  }
+  /// No-op — history lives in the Helper viewmodel.
+  void loadMessages(List<Map<String, String>> messages) {}
+
+  /// No-op — history lives in the Helper viewmodel.
+  void replaceHistory(List<Map<String, String>> messages) {}
 
   Future<AiTaskDraft> parseTaskDraft(String prompt) async {
     final trimmed = prompt.trim();

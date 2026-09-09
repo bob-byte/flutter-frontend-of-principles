@@ -78,7 +78,9 @@ void main() {
     () async {
       final chunks = await service
           .streamAnswer(
-            'Hi',
+            messages: const [
+              {'role': 'user', 'content': 'Hi'},
+            ],
             fallbackResponse: 'fallback',
             errorMessage: 'error',
           )
