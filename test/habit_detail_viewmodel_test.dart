@@ -5,6 +5,7 @@ import 'package:principles_app/models/frequency_config.dart';
 import 'package:principles_app/models/habit.dart';
 import 'package:principles_app/models/habit_record.dart';
 import 'package:principles_app/models/habit_reminder.dart';
+import 'package:principles_app/models/progress_value.dart';
 import 'package:principles_app/viewmodels/habit_detail_viewmodel.dart';
 
 HabitRecord _record(
@@ -175,6 +176,40 @@ void main() {
     expect(vm.completedCalendarDays.contains(day), isFalse);
     expect(vm.completedDays, 0);
   });
+
+  test(
+    'every-N-days calendar marks auto-filled days and tap confirms them',
+    () {
+      final vm = HabitDetailViewModel();
+      vm.habit = Habit(
+        id: 1,
+        name: 'Train',
+        frequency: const FrequencyConfig(
+          type: FrequencyType.everyXDays,
+          interval: 3,
+        ),
+      );
+      vm.computeStats([_record(DateTime(2026, 9, 1))]);
+
+      expect(vm.completedCalendarDays.contains(DateTime(2026, 9, 1)), isTrue);
+      expect(
+        vm.autoCompletedCalendarDays.contains(DateTime(2026, 9, 2)),
+        isTrue,
+      );
+      expect(vm.statusForDay(DateTime(2026, 9, 2)), HabitStatus.completed);
+      expect(vm.progressValueForDay(DateTime(2026, 9, 4)), kProgressUnknown);
+
+      expect(
+        vm.applyCalendarToggle(DateTime(2026, 9, 2), now: DateTime(2026, 9, 3)),
+        CalendarDayTapResult.updated,
+      );
+      expect(vm.statusForDay(DateTime(2026, 9, 2)), HabitStatus.completed);
+      expect(
+        vm.autoCompletedCalendarDays.contains(DateTime(2026, 9, 2)),
+        isFalse,
+      );
+    },
+  );
 
   test('detail percentage matches habits-list PercentageAchieved', () {
     final today = DateTime(2026, 9, 3);

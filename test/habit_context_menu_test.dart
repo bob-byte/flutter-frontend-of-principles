@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/theme/task_theme_palette.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
-import 'package:principles_app/l10n/task_strings.dart';
 import 'package:principles_app/models/habit.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/habit_service.dart';
@@ -43,7 +42,6 @@ void main() {
                   habit: habit,
                   palette: palette,
                   isCompleted: false,
-                  strings: TaskStrings.en,
                   onTap: () {},
                   onToggle: () {},
                   onLongPress: (anchor) {

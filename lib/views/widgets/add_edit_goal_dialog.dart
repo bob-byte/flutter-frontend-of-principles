@@ -7,6 +7,7 @@ import '../../services/dialog_service.dart';
 import '../../services/goal_service.dart';
 import '../../viewmodels/add_edit_goal_viewmodel.dart';
 import '../../widgets/app_alert_dialog.dart';
+import '../../widgets/completion_burst.dart';
 
 class AddEditGoalDialogWidget extends StatelessWidget {
   final UserGoal? existingGoal;
@@ -74,18 +75,37 @@ class _AddEditGoalDialogContentState extends State<_AddEditGoalDialogContent> {
                 ),
                 counterText: '${vm.text.length}/255',
                 suffixIcon: vm.canToggleCompleted
-                    ? IconButton(
-                        key: const Key('goalDialogComplete'),
-                        tooltip: vm.isCompleted
-                            ? l10n.markGoalIncomplete
-                            : l10n.markGoalCompleted,
-                        onPressed: () => _toggleCompleted(context, vm, l10n),
-                        icon: Icon(
-                          vm.isCompleted
-                              ? Icons.check_circle
-                              : Icons.check_circle_outline,
-                          color: theme.colorScheme.primary,
-                        ),
+                    ? Builder(
+                        builder: (iconContext) {
+                          return IconButton(
+                            key: const Key('goalDialogComplete'),
+                            tooltip: vm.isCompleted
+                                ? l10n.markGoalIncomplete
+                                : l10n.markGoalCompleted,
+                            onPressed: () {
+                              if (!vm.isCompleted) {
+                                playCompletionCelebration(
+                                  iconContext,
+                                  color: theme.colorScheme.primary,
+                                  checkSize: 24,
+                                  radius: 40,
+                                );
+                              }
+                              _toggleCompleted(context, vm, l10n);
+                            },
+                            icon: CompletionCelebrate(
+                              isCompleted: vm.isCompleted,
+                              color: theme.colorScheme.primary,
+                              burstRadius: 40,
+                              child: Icon(
+                                vm.isCompleted
+                                    ? Icons.check_circle
+                                    : Icons.check_circle_outline,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          );
+                        },
                       )
                     : null,
               ),

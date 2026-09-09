@@ -12,6 +12,7 @@ import '../models/frequency_config.dart';
 import '../models/habit.dart';
 import '../models/habit_record.dart';
 import '../models/habit_reminder.dart';
+import '../models/progress_value.dart';
 import '../services/database_service.dart';
 import '../services/habit_service.dart';
 
@@ -59,6 +60,7 @@ class HabitDetailViewModel extends ChangeNotifier {
   List<int> weekDayExecution = List.filled(7, 0);
   List<StabilityPoint> stabilitySeries = [];
   Set<DateTime> completedCalendarDays = <DateTime>{};
+  Set<DateTime> autoCompletedCalendarDays = <DateTime>{};
   Set<DateTime> skippedCalendarDays = <DateTime>{};
   List<HabitRecord> _records = [];
 
@@ -137,7 +139,10 @@ class HabitDetailViewModel extends ChangeNotifier {
 
     final service = _habitService;
     if (service != null) {
-      final deletedRemotely = await service.deleteHabit(localId);
+      final deletedRemotely = await service.deleteHabit(
+        localId,
+        serverId: confirmedServerHabitId(habit!),
+      );
       if (!deletedRemotely) return false;
     }
 
@@ -166,12 +171,18 @@ class HabitDetailViewModel extends ChangeNotifier {
   @visibleForTesting
   void computeStats(List<HabitRecord> progresses) => _computeStats(progresses);
 
+  int progressValueForDay(DateTime date) {
+    final frequency =
+        habit?.frequency ?? const FrequencyConfig(type: FrequencyType.daily);
+    return habitProgressValueOnDate(
+      frequency: frequency,
+      records: _records,
+      date: date,
+    );
+  }
+
   HabitStatus statusForDay(DateTime date) {
-    final day = _dateOnly(date);
-    for (final record in _records) {
-      if (_dateOnly(record.date) == day) return record.status;
-    }
-    return HabitStatus.none;
+    return habitStatusFromProgressValue(progressValueForDay(date));
   }
 
   @visibleForTesting
@@ -183,10 +194,18 @@ class HabitDetailViewModel extends ChangeNotifier {
     final today = _dateOnly(now ?? DateTime.now());
     if (day.isAfter(today)) return CalendarDayTapResult.futureDate;
 
-    final next = nextCalendarStatus(statusForDay(day));
+    final value = progressValueForDay(day);
     _records.removeWhere((record) => _dateOnly(record.date) == day);
-    if (next != HabitStatus.none) {
-      _records.add(HabitRecord(habitId: habitId, date: day, status: next));
+    if (value == kProgressYesAuto) {
+      // MAUI [ProgressValue.NextToggled]: YES_AUTO → YES_MANUAL.
+      _records.add(
+        HabitRecord(habitId: habitId, date: day, status: HabitStatus.completed),
+      );
+    } else {
+      final next = nextCalendarStatus(habitStatusFromProgressValue(value));
+      if (next != HabitStatus.none) {
+        _records.add(HabitRecord(habitId: habitId, date: day, status: next));
+      }
     }
     _computeStats(_records);
     notifyListeners();
@@ -231,6 +250,7 @@ class HabitDetailViewModel extends ChangeNotifier {
     weekDayExecution = List.filled(7, 0);
     stabilitySeries = [];
     completedCalendarDays = <DateTime>{};
+    autoCompletedCalendarDays = <DateTime>{};
     skippedCalendarDays = <DateTime>{};
     _records = [];
   }
@@ -244,11 +264,6 @@ class HabitDetailViewModel extends ChangeNotifier {
 
     progresses = List<HabitRecord>.from(progresses)
       ..sort((a, b) => a.date.compareTo(b.date));
-    final completed = progresses
-        .where((p) => p.status == HabitStatus.completed)
-        .toList();
-
-    completedDays = completed.length;
 
     final frequency =
         habit?.frequency ?? const FrequencyConfig(type: FrequencyType.daily);
@@ -263,16 +278,45 @@ class HabitDetailViewModel extends ChangeNotifier {
 
     weekDayExecution = List.filled(7, 0);
     completedCalendarDays = <DateTime>{};
+    autoCompletedCalendarDays = <DateTime>{};
     skippedCalendarDays = <DateTime>{};
-    for (final p in progresses) {
-      final day = _dateOnly(p.date);
-      if (p.status == HabitStatus.completed) {
+
+    final dayValues = <DateTime, int>{};
+    for (final mark in computeHabitProgress(
+      marks: [
+        for (final record in progresses)
+          HabitProgressMark(date: record.date, value: record.value),
+      ],
+      frequency: frequency,
+    )) {
+      dayValues[_dateOnly(mark.date)] = mark.value;
+    }
+    for (final record in progresses) {
+      final day = _dateOnly(record.date);
+      if (record.value == kProgressSkip || record.value == kProgressYesManual) {
+        dayValues[day] = record.value;
+      } else {
+        dayValues.putIfAbsent(day, () => record.value);
+      }
+    }
+
+    for (final entry in dayValues.entries) {
+      final day = entry.key;
+      final value = entry.value;
+      if (value == kProgressYesManual || value == kProgressYesAuto) {
         completedCalendarDays.add(day);
         weekDayExecution[(day.weekday + 6) % 7] += 1;
-      } else if (p.status == HabitStatus.skipped) {
+        if (value == kProgressYesAuto) {
+          autoCompletedCalendarDays.add(day);
+        }
+      } else if (value == kProgressSkip) {
         skippedCalendarDays.add(day);
       }
     }
+
+    completedDays = completedCalendarDays.length;
+    final completed = completedCalendarDays.toList()
+      ..sort((a, b) => a.compareTo(b));
 
     final streaks = <StreakStat>[];
     longestStreak = 0;
@@ -289,8 +333,7 @@ class HabitDetailViewModel extends ChangeNotifier {
       maxGapDays = (period / interval).ceil() + 1;
     }
 
-    for (final p in completed) {
-      final dt = _dateOnly(p.date);
+    for (final dt in completed) {
       if (prev == null || dt.difference(prev).inDays <= maxGapDays) {
         streakStart ??= dt;
         current += 1;
@@ -325,10 +368,7 @@ class HabitDetailViewModel extends ChangeNotifier {
     required DateTime from,
     required DateTime to,
   }) {
-    final completedByDay = <DateTime>{
-      for (final p in progresses)
-        if (p.status == HabitStatus.completed) _dateOnly(p.date),
-    };
+    final completedByDay = Set<DateTime>.from(completedCalendarDays);
 
     final points = <StabilityPoint>[];
     var cursor = from.subtract(Duration(days: from.weekday - 1));

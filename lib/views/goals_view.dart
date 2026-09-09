@@ -3,6 +3,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_steps.dart';
 import '../core/theme/task_theme_palette.dart';
@@ -13,6 +14,7 @@ import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
 import '../widgets/app_loading_indicator.dart';
+import '../widgets/completion_burst.dart';
 import '../widgets/context_menu_overlay.dart';
 import '../widgets/themed_lottie.dart';
 import 'habit_detail_view.dart';
@@ -36,8 +38,12 @@ class _GoalsViewState extends State<GoalsView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (shouldSkipShellTabReload(context)) return;
       context.read<GoalsViewModel>().load(silent: widget.embedded);
-      context.read<HabitProgressViewModel>().load(silent: true);
+      context.read<HabitProgressViewModel>().load(
+        silent: true,
+        syncRemote: false,
+      );
     });
   }
 
@@ -139,6 +145,13 @@ class _GoalsBody extends StatelessWidget {
                       : Icons.check_circle_outline,
                   onTap: () {
                     Navigator.of(dialogContext).pop();
+                    if (!goal.isCompleted) {
+                      playCompletionCelebration(
+                        context,
+                        color: palette.primary,
+                        origin: anchor?.center,
+                      );
+                    }
                     vm.setGoalCompleted(goal, isCompleted: !goal.isCompleted);
                   },
                 ),
@@ -367,8 +380,13 @@ class _GoalDismissibleTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final tile = GlassListTile.standalone(
       key: Key(_goalKey(goal, index)),
-      leading: Icon(
-        goal.isCompleted ? Icons.check_circle_outline : Icons.flag_outlined,
+      leading: CompletionCelebrate(
+        isCompleted: goal.isCompleted,
+        color: scheme.primary,
+        burstRadius: 44,
+        child: Icon(
+          goal.isCompleted ? Icons.check_circle_outline : Icons.flag_outlined,
+        ),
       ),
       title: Text(
         isDemo ? '${goal.name} (${l10n.roadGuideExampleBadge})' : goal.name,

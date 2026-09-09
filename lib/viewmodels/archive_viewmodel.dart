@@ -69,7 +69,10 @@ class ArchiveViewModel extends ChangeNotifier {
     final habitId = habit.id;
     if (habitId == null) return false;
 
-    final deletedRemotely = await _habitService.deleteHabit(habitId);
+    final deletedRemotely = await _habitService.deleteHabit(
+      habitId,
+      serverId: confirmedServerHabitId(habit),
+    );
     if (!deletedRemotely) return false;
 
     await _dbService.deleteHabit(habitId);

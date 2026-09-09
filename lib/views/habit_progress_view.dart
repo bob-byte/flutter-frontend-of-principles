@@ -5,6 +5,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/habit_score.dart';
+import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_steps.dart';
 import '../core/theme/task_theme_palette.dart';
@@ -14,11 +15,11 @@ import '../models/habit.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import '../widgets/app_liquid_background.dart';
 import '../widgets/app_loading_indicator.dart';
+import '../widgets/completion_burst.dart';
 import '../widgets/habit_context_menu.dart';
 import 'edit_habit_view.dart';
 import 'habit_detail_view.dart';
 import '../services/dialog_service.dart';
-import 'widgets/global_reminder_sheet.dart';
 
 const _kGoalGroupAnimDuration = Duration(milliseconds: 280);
 const _kGoalGroupAnimCurve = Curves.easeInOutCubic;
@@ -53,7 +54,12 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<HabitProgressViewModel>().load(silent: widget.embedded);
+      if (!shouldSkipShellTabReload(context)) {
+        context.read<HabitProgressViewModel>().load(
+          silent: widget.embedded,
+          syncRemote: false,
+        );
+      }
       if (widget.isActive) {
         _scrollToCurrentDate();
       }
@@ -109,10 +115,12 @@ class _HabitProgressViewState extends State<HabitProgressView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHeader(context, vm, palette),
+                _buildFiltersPanel(context, vm, palette),
                 const SizedBox(height: 16),
                 _buildDateCarousel(context, vm, palette),
                 const SizedBox(height: 16),
-                // Summary banner ("Completed this day") hidden for now.
+                _buildSummaryBanner(context, vm, palette),
+                const SizedBox(height: 16),
                 Expanded(child: _buildHabitsList(context, vm, palette, guide)),
               ],
             ),
@@ -255,23 +263,14 @@ class _HabitProgressViewState extends State<HabitProgressView> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Дзвіночок
-              GestureDetector(
-                onTap: () {
-                  GlobalReminderBottomSheet.show(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _primarySoft(palette),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.notifications_none,
-                    color: palette.primary,
-                    size: 24,
-                  ),
-                ),
+              _HabitHeaderCircleButton(
+                key: const Key('habitFiltersButton'),
+                palette: palette,
+                icon: Icons.tune,
+                tooltip: l10n.habitFiltersTooltip,
+                emphasized: vm.filtersVisible || vm.hasActiveFilters,
+                showBadge: vm.hasActiveFilters,
+                onTap: vm.toggleFiltersVisible,
               ),
               const SizedBox(width: 12),
               // Архів
@@ -300,6 +299,21 @@ class _HabitProgressViewState extends State<HabitProgressView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFiltersPanel(
+    BuildContext context,
+    HabitProgressViewModel vm,
+    TasksUiPalette palette,
+  ) {
+    return AnimatedSize(
+      duration: _kGoalGroupAnimDuration,
+      curve: _kGoalGroupAnimCurve,
+      alignment: Alignment.topCenter,
+      child: vm.filtersVisible
+          ? _HabitsFiltersPanel(vm: vm, palette: palette)
+          : const SizedBox(width: double.infinity),
     );
   }
 
@@ -425,8 +439,6 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     );
   }
 
-  // Kept for a quick restore — temporarily unused while the banner is hidden.
-  // ignore: unused_element
   Widget _buildSummaryBanner(
     BuildContext context,
     HabitProgressViewModel vm,
@@ -477,17 +489,17 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     final l10n = AppLocalizations.of(context)!;
     final habits = [
       if (guide.showDemoData) roadGuideDemoHabit(l10n),
-      ...vm.habits,
+      ...(guide.isActive ? vm.habits : vm.filteredHabits),
     ];
-    if (vm.isLoading && habits.isEmpty) {
+    sortHabitsByNameAndReminder(habits);
+    if (vm.isLoading && vm.habits.isEmpty) {
       return const AppLoadingIndicator();
     }
 
-    final groups = groupHabitsByGoal(habits);
-    if (groups.isEmpty) {
+    if (habits.isEmpty) {
       return Center(
         child: Text(
-          l10n.habitsEmptyList,
+          vm.habits.isEmpty ? l10n.habitsEmptyList : l10n.habitFiltersEmpty,
           style: TextStyle(color: palette.textMuted),
         ),
       );
@@ -499,41 +511,19 @@ class _HabitProgressViewState extends State<HabitProgressView> {
         right: 24,
         bottom: widget.embedded ? 120 : 100,
       ),
-      itemCount: groups.length,
+      itemCount: habits.length,
       itemBuilder: (context, index) {
-        final group = groups[index];
-        final expanded = guide.isActive || vm.isGoalGroupExpanded(group.key);
-        final title = group.isUndefined
-            ? l10n.undefinedGoalLabel
-            : group.goalName!;
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _GoalHabitsSection(
-            key: ValueKey(group.key),
-            title: title,
-            isUndefined: group.isUndefined,
-            expanded: expanded,
-            palette: palette,
-            onToggle: () {
-              if (guide.isActive) return;
-              vm.toggleGoalGroup(group.key);
-            },
-            habitCards: [
-              for (final habit in group.habits)
-                _buildHabitCard(
-                  context,
-                  habit,
-                  vm,
-                  palette,
-                  guideActive: guide.isActive,
-                  isDemo: habit.id == RoadGuideDemoIds.habitId,
-                  spotlightKey: habit.id == RoadGuideDemoIds.habitId
-                      ? guide.keys.habitsDemo
-                      : null,
-                ),
-            ],
-          ),
+        final habit = habits[index];
+        return _buildHabitCard(
+          context,
+          habit,
+          vm,
+          palette,
+          guideActive: guide.isActive,
+          isDemo: habit.id == RoadGuideDemoIds.habitId,
+          spotlightKey: habit.id == RoadGuideDemoIds.habitId
+              ? guide.keys.habitsDemo
+              : null,
         );
       },
     );
@@ -551,8 +541,14 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     final l10n = AppLocalizations.of(context)!;
     final status = vm.getStatusForHabitAndDate(habit.id ?? 0, vm.selectedDate);
     final isCompleted = status == HabitStatus.completed;
+    final isAutoCompleted = vm.isHabitAutoCompleted(
+      habit.id ?? 0,
+      vm.selectedDate,
+    );
     final weeklyProgress = isDemo ? 0.35 : vm.getPercentageAchieved(habit);
-    final doneColor = _completedColor(palette);
+    final doneColor = isAutoCompleted
+        ? palette.textMuted
+        : _completedColor(palette);
     final progressColor = isCompleted ? doneColor : palette.primary;
     final displayName = isDemo
         ? '${habit.name} (${l10n.roadGuideExampleBadge})'
@@ -659,31 +655,60 @@ class _HabitProgressViewState extends State<HabitProgressView> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () =>
-                        vm.toggleHabitStatus(habit.id ?? 0, vm.selectedDate),
-                    child: AnimatedContainer(
-                      duration: kTasksProgressAnimDuration,
-                      curve: kTasksProgressAnimCurve,
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted ? doneColor : palette.softBg,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: kTasksProgressAnimDuration,
-                        switchInCurve: kTasksProgressAnimCurve,
-                        switchOutCurve: kTasksProgressAnimCurve,
-                        child: isCompleted
-                            ? const Icon(
-                                Icons.check,
-                                key: ValueKey('done'),
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : const SizedBox.shrink(key: ValueKey('empty')),
-                      ),
+                  CompletionBurstTarget(
+                    child: Builder(
+                      builder: (checkContext) {
+                        return GestureDetector(
+                          onTap: () {
+                            // Celebrate only when this tap will mark complete
+                            // (MAUI NextToggled: none → completed). Skip/clear
+                            // must not play the burst.
+                            if (status == HabitStatus.none) {
+                              playCompletionCelebration(
+                                checkContext,
+                                color: doneColor,
+                                onColor: Colors.white,
+                                checkSize: 40,
+                                radius: 56,
+                              );
+                            }
+                            vm.toggleHabitStatus(
+                              habit.id ?? 0,
+                              vm.selectedDate,
+                            );
+                          },
+                          child: CompletionCelebrate(
+                            isCompleted: isCompleted,
+                            color: doneColor,
+                            burstRadius: 48,
+                            child: AnimatedContainer(
+                              duration: kTasksProgressAnimDuration,
+                              curve: kTasksProgressAnimCurve,
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCompleted ? doneColor : palette.softBg,
+                              ),
+                              child: AnimatedSwitcher(
+                                duration: kTasksProgressAnimDuration,
+                                switchInCurve: kTasksProgressAnimCurve,
+                                switchOutCurve: kTasksProgressAnimCurve,
+                                child: isCompleted
+                                    ? const Icon(
+                                        Icons.check,
+                                        key: ValueKey('done'),
+                                        color: Colors.white,
+                                        size: 24,
+                                      )
+                                    : const SizedBox.shrink(
+                                        key: ValueKey('empty'),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -708,91 +733,267 @@ class _HabitProgressViewState extends State<HabitProgressView> {
   }
 }
 
-class _GoalHabitsSection extends StatelessWidget {
-  const _GoalHabitsSection({
+class _HabitHeaderCircleButton extends StatelessWidget {
+  const _HabitHeaderCircleButton({
     super.key,
-    required this.title,
-    required this.isUndefined,
-    required this.expanded,
     required this.palette,
-    required this.onToggle,
-    required this.habitCards,
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+    this.emphasized = false,
+    this.showBadge = false,
   });
 
-  final String title;
-  final bool isUndefined;
-  final bool expanded;
   final TasksUiPalette palette;
-  final VoidCallback onToggle;
-  final List<Widget> habitCards;
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+  final bool emphasized;
+  final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Material(
-          color: _primarySoft(palette),
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  AnimatedRotation(
-                    turns: expanded ? 0 : -0.25,
-                    duration: _kGoalGroupAnimDuration,
-                    curve: _kGoalGroupAnimCurve,
-                    child: Icon(
-                      Icons.expand_more,
-                      color: palette.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        color: palette.textPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        fontStyle: isUndefined
-                            ? FontStyle.italic
-                            : FontStyle.normal,
-                      ),
-                    ),
-                  ),
-                ],
+    final button = GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: emphasized ? _primarySoft(palette) : palette.softBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: emphasized ? palette.primary : palette.textMuted,
+              size: 24,
+            ),
+          ),
+          if (showBadge)
+            Positioned(
+              right: 2,
+              top: 2,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: palette.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: palette.cardBg, width: 1.5),
+                ),
               ),
+            ),
+        ],
+      ),
+    );
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
+  }
+}
+
+class _HabitsFiltersPanel extends StatelessWidget {
+  const _HabitsFiltersPanel({required this.vm, required this.palette});
+
+  final HabitProgressViewModel vm;
+  final TasksUiPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final goalOptions = vm.goalFilterOptions;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                l10n.habitFilters,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: palette.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              if (vm.hasActiveFilters)
+                TextButton(
+                  onPressed: vm.clearFilters,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    l10n.habitClearFilters,
+                    style: TextStyle(fontSize: 12, color: palette.primary),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _HabitFilterSectionTitle(
+            palette: palette,
+            label: l10n.habitFilterDayStatus,
+          ),
+          const SizedBox(height: 8),
+          _HabitFilterChipRow(
+            children: [
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterAll,
+                selected: vm.dayStatusFilter == HabitDayStatusFilter.all,
+                onTap: () => vm.setDayStatusFilter(HabitDayStatusFilter.all),
+              ),
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterNotDone,
+                selected: vm.dayStatusFilter == HabitDayStatusFilter.notDone,
+                onTap: () =>
+                    vm.setDayStatusFilter(HabitDayStatusFilter.notDone),
+              ),
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterDone,
+                selected: vm.dayStatusFilter == HabitDayStatusFilter.done,
+                onTap: () => vm.setDayStatusFilter(HabitDayStatusFilter.done),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _HabitFilterSectionTitle(
+            palette: palette,
+            label: l10n.habitFilterDue,
+          ),
+          const SizedBox(height: 8),
+          _HabitFilterChipRow(
+            children: [
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterAll,
+                selected: vm.dueFilter == HabitDueFilter.all,
+                onTap: () => vm.setDueFilter(HabitDueFilter.all),
+              ),
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterDueOnly,
+                selected: vm.dueFilter == HabitDueFilter.due,
+                onTap: () => vm.setDueFilter(HabitDueFilter.due),
+              ),
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterNotDue,
+                selected: vm.dueFilter == HabitDueFilter.notDue,
+                onTap: () => vm.setDueFilter(HabitDueFilter.notDue),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _HabitFilterSectionTitle(
+            palette: palette,
+            label: l10n.habitFilterGoal,
+          ),
+          const SizedBox(height: 8),
+          _HabitFilterChipRow(
+            children: [
+              _HabitFilterChip(
+                palette: palette,
+                label: l10n.habitFilterAll,
+                selected: vm.selectedGoalFilter == null,
+                onTap: () => vm.setGoalFilter(null),
+              ),
+              for (final option in goalOptions)
+                _HabitFilterChip(
+                  palette: palette,
+                  label: option.isUndefined
+                      ? l10n.undefinedGoalLabel
+                      : option.goalName!,
+                  selected: vm.selectedGoalFilter == option.key,
+                  onTap: () => vm.setGoalFilter(option.key),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HabitFilterSectionTitle extends StatelessWidget {
+  const _HabitFilterSectionTitle({required this.palette, required this.label});
+
+  final TasksUiPalette palette;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: palette.textMuted,
+      ),
+    );
+  }
+}
+
+class _HabitFilterChipRow extends StatelessWidget {
+  const _HabitFilterChipRow({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: children),
+    );
+  }
+}
+
+class _HabitFilterChip extends StatelessWidget {
+  const _HabitFilterChip({
+    required this.palette,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final TasksUiPalette palette;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? _primarySoft(palette) : palette.softBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? palette.primary : palette.cardBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected ? palette.primary : palette.textPrimary,
             ),
           ),
         ),
-        TweenAnimationBuilder<double>(
-          duration: _kGoalGroupAnimDuration,
-          curve: _kGoalGroupAnimCurve,
-          tween: Tween<double>(end: expanded ? 1 : 0),
-          builder: (context, value, child) {
-            final t = value.clamp(0.0, 1.0);
-            return ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: t,
-                child: Opacity(
-                  opacity: t,
-                  child: IgnorePointer(ignoring: t == 0, child: child),
-                ),
-              ),
-            );
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [const SizedBox(height: 8), ...habitCards],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

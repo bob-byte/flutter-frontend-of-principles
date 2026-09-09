@@ -12,6 +12,7 @@ import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
 import '../widgets/app_alert_dialog.dart';
+import '../widgets/completion_burst.dart';
 import '../widgets/app_liquid_background.dart';
 import '../widgets/app_loading_indicator.dart';
 import 'edit_habit_view.dart';
@@ -1182,38 +1183,73 @@ class _HabitCalendar extends StatelessWidget {
                   date.year == now.year &&
                   date.month == now.month &&
                   date.day == now.day;
+              final isAutoCompleted = vm.autoCompletedCalendarDays.contains(
+                date,
+              );
               final isCompleted = vm.completedCalendarDays.contains(date);
+              final fillColor = isCompleted
+                  ? (isAutoCompleted
+                        ? palette.primary.withValues(alpha: 0.35)
+                        : palette.primary)
+                  : null;
+              final completedLabelColor = isAutoCompleted
+                  ? palette.textPrimary
+                  : palette.onPrimary;
 
               return Center(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => _onDayTapped(context, date),
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isCompleted ? palette.primary : null,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        day.toString(),
-                        style: TextStyle(
-                          fontWeight: isCompleted || isToday
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isCompleted
-                              ? palette.onPrimary
-                              : palette.textPrimary,
-                          decoration: isToday
-                              ? TextDecoration.underline
-                              : TextDecoration.none,
-                          decorationColor: isCompleted
-                              ? palette.onPrimary
-                              : palette.textPrimary,
-                        ),
+                child: CompletionBurstTarget(
+                  child: CompletionCelebrate(
+                    key: ValueKey(date),
+                    isCompleted: isCompleted,
+                    color: palette.primary,
+                    burstRadius: 32,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Builder(
+                        builder: (dayContext) {
+                          return InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () {
+                              if (!isCompleted) {
+                                playCompletionCelebration(
+                                  dayContext,
+                                  color: palette.primary,
+                                  onColor: palette.onPrimary,
+                                  fillGradient: palette.primaryGradient,
+                                  checkSize: 35,
+                                  radius: 48,
+                                );
+                              }
+                              _onDayTapped(context, date);
+                            },
+                            child: Container(
+                              width: 35,
+                              height: 35,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: fillColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                day.toString(),
+                                style: TextStyle(
+                                  fontWeight: isCompleted || isToday
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isCompleted
+                                      ? completedLabelColor
+                                      : palette.textPrimary,
+                                  decoration: isToday
+                                      ? TextDecoration.underline
+                                      : TextDecoration.none,
+                                  decorationColor: isCompleted
+                                      ? completedLabelColor
+                                      : palette.textPrimary,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),

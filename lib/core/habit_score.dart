@@ -90,6 +90,115 @@ double recomputeHabitPercentageFromRecords({
   );
 }
 
+/// MAUI [ListOfProgressOfHabit.RecomputeFrom] for boolean habits.
+///
+/// [marks] should be stored days (manual / no / skip). Intervals are built
+/// from `YES_MANUAL` only, matching [ServiceOfHabit.RecomputedScoreAchieved].
+List<HabitProgressMark> computeHabitProgress({
+  required List<HabitProgressMark> marks,
+  required FrequencyConfig frequency,
+}) {
+  final known =
+      marks
+          .where((m) => m.value == kProgressYesManual || m.value == kProgressNo)
+          .map((m) => HabitProgressMark(date: dateOnly(m.date), value: m.value))
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+  return _recomputeFrom(known, frequency);
+}
+
+/// MAUI [ComputedProgresses.Get] plus stored skip / manual overlays.
+int computedProgressValueForDate({
+  required List<HabitProgressMark> marks,
+  required FrequencyConfig frequency,
+  required DateTime date,
+}) {
+  final day = dateOnly(date);
+  HabitProgressMark? stored;
+  for (final mark in marks) {
+    if (dateOnly(mark.date) == day) {
+      stored = mark;
+      break;
+    }
+  }
+  if (stored != null &&
+      (stored.value == kProgressSkip || stored.value == kProgressYesManual)) {
+    return stored.value;
+  }
+
+  for (final mark in computeHabitProgress(marks: marks, frequency: frequency)) {
+    if (dateOnly(mark.date) == day) return mark.value;
+  }
+  return stored?.value ?? kProgressUnknown;
+}
+
+int habitProgressValueOnDate({
+  required FrequencyConfig frequency,
+  required Iterable<HabitRecord> records,
+  required DateTime date,
+}) {
+  return computedProgressValueForDate(
+    marks: [
+      for (final record in records)
+        HabitProgressMark(date: record.date, value: record.value),
+    ],
+    frequency: frequency,
+    date: date,
+  );
+}
+
+/// Open check: [kProgressUnknown] or [kProgressNo].
+bool isHabitExecutionRequiredValue(int value) =>
+    value == kProgressUnknown || value == kProgressNo;
+
+/// Frequency already met: manual or auto-filled completion.
+bool isHabitSatisfiedValue(int value) =>
+    value == kProgressYesManual || value == kProgressYesAuto;
+
+bool isHabitExecutionRequiredOnDate({
+  required FrequencyConfig frequency,
+  required Iterable<HabitRecord> records,
+  required DateTime date,
+}) {
+  return isHabitExecutionRequiredValue(
+    habitProgressValueOnDate(
+      frequency: frequency,
+      records: records,
+      date: date,
+    ),
+  );
+}
+
+bool isHabitSatisfiedOnDate({
+  required FrequencyConfig frequency,
+  required Iterable<HabitRecord> records,
+  required DateTime date,
+}) {
+  return isHabitSatisfiedValue(
+    habitProgressValueOnDate(
+      frequency: frequency,
+      records: records,
+      date: date,
+    ),
+  );
+}
+
+/// Habit counts toward that day's list / completion ratio.
+bool habitAppliesOnDate({
+  required FrequencyConfig frequency,
+  required Iterable<HabitRecord> records,
+  required DateTime date,
+}) {
+  final value = habitProgressValueOnDate(
+    frequency: frequency,
+    records: records,
+    date: date,
+  );
+  return isHabitExecutionRequiredValue(value) ||
+      isHabitSatisfiedValue(value) ||
+      value == kProgressSkip;
+}
+
 /// MAUI [HabitComplexity.ToDaysCount] — calendar days a new habit needs.
 int daysCountForComplexity(int complexity) {
   return switch (complexity) {

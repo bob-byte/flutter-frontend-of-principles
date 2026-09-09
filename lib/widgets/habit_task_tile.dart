@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/task_theme_palette.dart';
-import '../l10n/task_strings.dart';
 import '../models/habit.dart';
+import 'completion_check.dart';
 import 'tasks_glass.dart';
 
 class HabitTaskTile extends StatelessWidget {
@@ -13,8 +13,8 @@ class HabitTaskTile extends StatelessWidget {
     required this.isCompleted,
     required this.onTap,
     required this.onToggle,
-    required this.strings,
     this.onLongPress,
+    this.keepActiveAppearance = false,
   });
 
   final Habit habit;
@@ -22,13 +22,16 @@ class HabitTaskTile extends StatelessWidget {
   final bool isCompleted;
   final VoidCallback onTap;
   final VoidCallback onToggle;
-  final TaskStrings strings;
   final ValueChanged<Rect?>? onLongPress;
+
+  /// During the completion burst: check fills, but title stays active.
+  final bool keepActiveAppearance;
 
   @override
   Widget build(BuildContext context) {
     final timeLabel = _habitTimeLabel(habit);
     final markColor = palette.primary;
+    final appearanceDone = isCompleted && !keepActiveAppearance;
 
     return TasksGlassPanel(
       palette: palette,
@@ -49,37 +52,10 @@ class HabitTaskTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: onToggle,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: isCompleted ? palette.primaryGradient : null,
-                color: isCompleted ? null : palette.glassChipFill,
-                border: isCompleted
-                    ? null
-                    : Border.all(color: palette.glassBorder, width: 1.5),
-                boxShadow: isCompleted
-                    ? [
-                        BoxShadow(
-                          color: palette.primary.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: isCompleted
-                  ? Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: palette.onPrimary,
-                    )
-                  : null,
-            ),
+          CompletionCheckButton(
+            isDone: isCompleted,
+            palette: palette,
+            onToggle: onToggle,
           ),
           const SizedBox(width: 12),
           Container(
@@ -109,19 +85,21 @@ class HabitTaskTile extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.2,
-                    color: isCompleted
+                    color: appearanceDone
                         ? palette.textMuted
                         : palette.textPrimary,
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    decoration: appearanceDone
+                        ? TextDecoration.lineThrough
+                        : null,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  timeLabel == null
-                      ? strings.taskHabitLabel
-                      : '${strings.taskHabitLabel} · $timeLabel',
-                  style: TextStyle(fontSize: 12, color: palette.textMuted),
-                ),
+                if (timeLabel != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    timeLabel,
+                    style: TextStyle(fontSize: 12, color: palette.textMuted),
+                  ),
+                ],
               ],
             ),
           ),

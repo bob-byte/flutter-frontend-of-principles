@@ -15,6 +15,7 @@ void main() {
     TaskPriority? priorityFilter,
     String? themeFilter,
     bool Function(Habit)? isCompleted,
+    bool Function(Habit)? keepVisibleWhileCompleted,
   }) {
     return habitsVisibleOnTasksTab(
       listMode: listMode,
@@ -23,6 +24,7 @@ void main() {
       priorityFilter: priorityFilter,
       themeFilter: themeFilter,
       isCompleted: isCompleted ?? (_) => false,
+      keepVisibleWhileCompleted: keepVisibleWhileCompleted,
     );
   }
 
@@ -80,6 +82,20 @@ void main() {
       isCompleted: (h) => done.contains(h.id),
     );
     expect(active.map((h) => h.name), ['Train']);
+  });
+
+  test('status filter: active keeps held completed habits visible', () {
+    final habits = [habit(id: 1, name: 'Read'), habit(id: 2, name: 'Train')];
+    final done = {1};
+    final held = {1};
+
+    final active = call(
+      habits: habits,
+      statusFilter: TaskStatusFilter.active,
+      isCompleted: (h) => done.contains(h.id),
+      keepVisibleWhileCompleted: (h) => held.contains(h.id),
+    );
+    expect(active.map((h) => h.name), ['Read', 'Train']);
   });
 
   test('status filter: done shows only completed habits', () {

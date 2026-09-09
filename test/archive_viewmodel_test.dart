@@ -121,7 +121,7 @@ class _FakeHabitService extends HabitService {
   }
 
   @override
-  Future<bool> deleteHabit(int habitId) async {
+  Future<bool> deleteHabit(int habitId, {int? serverId}) async {
     deletedIds.add(habitId);
     return deleteOk;
   }

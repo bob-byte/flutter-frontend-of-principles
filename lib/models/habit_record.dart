@@ -9,11 +9,13 @@ class HabitRecord {
     required this.date,
     HabitStatus? status,
     int? value,
+    this.lastModified,
   }) : value = value ?? progressValueFromStatus(status ?? HabitStatus.none);
 
   final int? id;
   final int habitId;
   final DateTime date;
+  final DateTime? lastModified;
 
   /// Raw .NET [ProgressValue].
   final int value;
@@ -27,6 +29,8 @@ class HabitRecord {
       'date': date.toIso8601String().substring(0, 10),
       'status': status.index,
       'value': value,
+      if (lastModified != null)
+        'lastModified': lastModified!.toUtc().toIso8601String(),
     };
   }
 
@@ -36,6 +40,9 @@ class HabitRecord {
       habitId: map['habitId'] as int,
       date: DateTime.parse(map['date'] as String),
       value: progressValueFromMap(map),
+      lastModified: map['lastModified'] != null
+          ? DateTime.tryParse('${map['lastModified']}')?.toUtc()
+          : null,
     );
   }
 }

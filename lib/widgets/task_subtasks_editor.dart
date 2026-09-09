@@ -4,6 +4,7 @@ import '../core/theme/task_theme_palette.dart';
 import '../l10n/task_strings.dart';
 import '../models/task_subtask.dart';
 import '../viewmodels/edit_task_viewmodel.dart';
+import 'completion_check.dart';
 
 class TaskSubtasksEditor extends StatefulWidget {
   const TaskSubtasksEditor({
@@ -24,6 +25,8 @@ class TaskSubtasksEditor extends StatefulWidget {
 class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
   final _controllers = <String, TextEditingController>{};
   final _focusNodes = <String, FocusNode>{};
+  // Don't steal focus from title/description/subtask fields (keeps IME up).
+  final _addButtonFocus = FocusNode(canRequestFocus: false);
   Set<String> _knownIds = {};
 
   static const _borderless = InputDecoration(
@@ -52,7 +55,9 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
       if (_knownIds.contains(item.id) || item.title.isNotEmpty) continue;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _focusNodes[item.id]?.requestFocus();
+        final node = _focusNodes[item.id];
+        if (node == null || !node.canRequestFocus) return;
+        node.requestFocus();
       });
     }
     _knownIds = {for (final item in widget.vm.subtasks) item.id};
@@ -81,6 +86,7 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
 
   @override
   void dispose() {
+    _addButtonFocus.dispose();
     for (final controller in _controllers.values) {
       controller.dispose();
     }
@@ -100,16 +106,6 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          strings.taskSubtasksLabel,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-            color: palette.textMuted,
-          ),
-        ),
-        const SizedBox(height: 8),
         for (var i = 0; i < items.length; i++)
           _SubtaskRow(
             key: ValueKey(items[i].id),
@@ -133,6 +129,7 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
+            focusNode: _addButtonFocus,
             onPressed: vm.isSaving ? null : vm.addSubtask,
             style: TextButton.styleFrom(
               foregroundColor: palette.primary,
@@ -185,12 +182,16 @@ class _SubtaskRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          GestureDetector(
-            onTap: onToggle,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 6, 8, 6),
-              child: _SubtaskCheckbox(palette: palette, isDone: item.isDone),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 6, 8, 6),
+            child: CompletionCheckButton(
+              isDone: item.isDone,
+              palette: palette,
+              size: 20,
+              iconSize: 13,
+              showShadow: false,
+              burstRadius: 34,
+              onToggle: onToggle,
             ),
           ),
           Expanded(
@@ -230,33 +231,6 @@ class _SubtaskRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SubtaskCheckbox extends StatelessWidget {
-  const _SubtaskCheckbox({required this.palette, required this.isDone});
-
-  final TasksUiPalette palette;
-  final bool isDone;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: isDone ? palette.primaryGradient : null,
-        color: isDone ? null : palette.glassChipFill,
-        border: isDone
-            ? null
-            : Border.all(color: palette.glassBorder, width: 1.4),
-      ),
-      child: isDone
-          ? Icon(Icons.check_rounded, size: 13, color: palette.onPrimary)
-          : null,
     );
   }
 }

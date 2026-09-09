@@ -1,15 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
+import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_steps.dart';
+import '../core/sync/sync_trigger.dart';
 import '../l10n/task_strings.dart';
 import '../app/task_navigation.dart';
 import '../core/utils/date_helpers.dart';
 import '../models/habit_record.dart';
 import '../models/task_priority.dart';
+import '../services/reminder_service.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
 import '../widgets/app_loading_indicator.dart';
@@ -18,30 +23,98 @@ import '../widgets/habit_task_tile.dart';
 import '../widgets/task_context_menu.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/tasks_glass.dart';
+import '../widgets/tasks_list_menu_sheet.dart';
+import 'widgets/global_reminder_sheet.dart';
 
 const _kSectionAnimDuration = Duration(milliseconds: 280);
 const _kSectionAnimCurve = Curves.easeInOutCubic;
 
 class TasksView extends StatefulWidget {
-  const TasksView({super.key, this.embedded = false});
+  const TasksView({super.key, this.embedded = false, this.isActive = true});
 
   static const routeName = '/tasks';
 
   final bool embedded;
+
+  /// When embedded in [MainShell], true while the Tasks tab is selected.
+  final bool isActive;
 
   @override
   State<TasksView> createState() => _TasksViewState();
 }
 
 class _TasksViewState extends State<TasksView> {
+  bool _dailyReminderEnabled = false;
+  TimeOfDay? _dailyReminderTime;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (shouldSkipShellTabReload(context)) return;
       context.read<TasksViewModel>().load(silent: widget.embedded);
-      context.read<HabitProgressViewModel>().load(silent: true);
+      context.read<HabitProgressViewModel>().load(
+        silent: true,
+        syncRemote: false,
+      );
+      unawaited(_refreshDailyReminderIcon());
     });
+  }
+
+  @override
+  void didUpdateWidget(TasksView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _syncOnTabFocus();
+      unawaited(_refreshDailyReminderIcon());
+    }
+  }
+
+  Future<void> _refreshDailyReminderIcon() async {
+    try {
+      final cached = await context
+          .read<ReminderService>()
+          .cachedHabitsReportReminder();
+      if (!mounted) return;
+      setState(() {
+        _dailyReminderEnabled = cached?.isEnabled == true;
+        _dailyReminderTime = cached?.isEnabled == true ? cached!.time : null;
+      });
+    } on ProviderNotFoundException {
+      // Widget tests may omit ReminderService.
+    }
+  }
+
+  Future<void> _openDailyReminder() async {
+    final guide = context.read<RoadGuideController>();
+    if (guide.isActive) return;
+    await GlobalReminderBottomSheet.show(context);
+    if (!mounted) return;
+    await _refreshDailyReminderIcon();
+  }
+
+  Future<void> _openListMenu() async {
+    final result = await TasksNavigation.openListMenu(context);
+    if (!mounted) return;
+    if (result == TasksListMenuResult.openDailyReminder) {
+      await _openDailyReminder();
+      return;
+    }
+    await _refreshDailyReminderIcon();
+  }
+
+  void _syncOnTabFocus() {
+    try {
+      unawaited(
+        context.read<LaunchDataLoader>().syncAndHydrate(
+          SyncTrigger.resume,
+          skipIfRecent: true,
+        ),
+      );
+    } on ProviderNotFoundException {
+      // Widget tests may mount TasksView without LaunchDataLoader.
+    }
   }
 
   @override
@@ -70,6 +143,30 @@ class _TasksViewState extends State<TasksView> {
                     color: palette.textPrimary,
                   ),
                 ),
+                actions: [
+                  Builder(
+                    builder: (context) {
+                      final l10n = AppLocalizations.of(context)!;
+                      final time = _dailyReminderTime;
+                      final tooltip = _dailyReminderEnabled && time != null
+                          ? l10n.habitsReportReminderOnTooltip(
+                              time.format(context),
+                            )
+                          : l10n.habitsReportReminderOffTooltip;
+                      return IconButton(
+                        tooltip: tooltip,
+                        icon: Icon(
+                          _dailyReminderEnabled
+                              ? Icons.notifications_active
+                              : Icons.notifications_none,
+                          color: palette.primary,
+                          size: 24,
+                        ),
+                        onPressed: _openDailyReminder,
+                      );
+                    },
+                  ),
+                ],
               ),
               body: vm.isLoading && vm.tasks.isEmpty
                   ? const AppLoadingIndicator()
@@ -77,11 +174,14 @@ class _TasksViewState extends State<TasksView> {
                       strings: strings,
                       palette: palette,
                       embedded: widget.embedded,
+                      onOpenDailyReminder: _openDailyReminder,
                     ),
               bottomNavigationBar: SafeArea(
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: widget.embedded ? _kEmbeddedTabBarClearance : 0,
+                    bottom: widget.embedded
+                        ? _embeddedTasksBarClearance(context)
+                        : 0,
                   ),
                   child: TasksGlassBottomBar(
                     palette: palette,
@@ -91,8 +191,7 @@ class _TasksViewState extends State<TasksView> {
                           palette: palette,
                           icon: Icons.menu_rounded,
                           tooltip: strings.taskListMenuTitle,
-                          onPressed: () =>
-                              TasksNavigation.openListMenu(context),
+                          onPressed: _openListMenu,
                         ),
                         const Spacer(),
                         TasksGlassCircleButton(
@@ -135,11 +234,13 @@ class _TasksBody extends StatelessWidget {
     required this.strings,
     required this.palette,
     required this.embedded,
+    required this.onOpenDailyReminder,
   });
 
   final TaskStrings strings;
   final TasksUiPalette palette;
   final bool embedded;
+  final Future<void> Function() onOpenDailyReminder;
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +270,8 @@ class _TasksBody extends StatelessWidget {
           isCompleted: (habit) =>
               habitVm.getStatusForHabitAndDate(habit.id ?? 0, habitsDay) ==
               HabitStatus.completed,
+          keepVisibleWhileCompleted: (habit) =>
+              habit.id != null && vm.isHeldCompletedHabit(habit.id!),
         );
         final todayHabitsTotal = habits.length;
         final todayHabitsCompleted = habitVm.completedHabitsOn(today);
@@ -265,6 +368,8 @@ class _TasksBody extends StatelessWidget {
               palette: palette,
               icon: Icons.checklist_outlined,
               label: strings.tasksTitle,
+              showLabel: strings.taskShow,
+              hideLabel: strings.taskHide,
               expanded: guide.isActive || vm.tasksSectionExpanded,
               onTap: vm.toggleTasksSectionExpanded,
             ),
@@ -277,7 +382,7 @@ class _TasksBody extends StatelessWidget {
                     Padding(
                       key: task.id == RoadGuideDemoIds.taskId
                           ? guide.keys.tasksDemo
-                          : null,
+                          : ValueKey('task-${task.id}'),
                       padding: const EdgeInsets.only(bottom: 10),
                       child: TaskTile(
                         key: Key('taskTile-${task.id}'),
@@ -286,6 +391,7 @@ class _TasksBody extends StatelessWidget {
                         themeColor: task.theme != null
                             ? vm.colorForTheme(task.theme!)
                             : palette.textMuted,
+                        keepActiveAppearance: vm.isHeldCompletedTask(task.id),
                         onTap: () async {
                           if (guide.isActive ||
                               task.id == RoadGuideDemoIds.taskId) {
@@ -345,9 +451,38 @@ class _TasksBody extends StatelessWidget {
               palette: palette,
               icon: Icons.insights_outlined,
               label: strings.taskHabitsSection,
+              showLabel: strings.taskShow,
+              hideLabel: strings.taskHide,
               expanded: guide.isActive || vm.habitsSectionExpanded,
               onTap: vm.toggleHabitsSectionExpanded,
             ),
+            if (guide.isActive || vm.habitsSectionExpanded)
+              Padding(
+                padding: const EdgeInsets.only(left: 4, right: 4, bottom: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: guide.isActive
+                        ? null
+                        : () => onOpenDailyReminder(),
+                    icon: Icon(
+                      Icons.notifications_none,
+                      size: 16,
+                      color: palette.accentMuted,
+                    ),
+                    label: Text(
+                      l10n.habitsReportReminderMenuHint,
+                      style: TextStyle(fontSize: 12, color: palette.textMuted),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: palette.textMuted,
+                    ),
+                  ),
+                ),
+              ),
             _CollapsibleSection(
               expanded: guide.isActive || vm.habitsSectionExpanded,
               child: Column(
@@ -356,6 +491,7 @@ class _TasksBody extends StatelessWidget {
                 children: [
                   for (final habit in visibleHabits)
                     Padding(
+                      key: ValueKey('habit-${habit.id}'),
                       padding: const EdgeInsets.only(bottom: 10),
                       child: HabitTaskTile(
                         key: Key('habitTaskTile-${habit.id}'),
@@ -368,7 +504,9 @@ class _TasksBody extends StatelessWidget {
                                     habitsDay,
                                   ) ==
                                   HabitStatus.completed,
-                        strings: strings,
+                        keepActiveAppearance:
+                            habit.id != null &&
+                            vm.isHeldCompletedHabit(habit.id!),
                         onTap: () async {
                           if (guide.isActive ||
                               habit.id == RoadGuideDemoIds.habitId) {
@@ -398,21 +536,38 @@ class _TasksBody extends StatelessWidget {
                           );
                         },
                         onToggle: () async {
+                          final habitId = habit.id!;
+                          final wasCompleted =
+                              habitVm.getStatusForHabitAndDate(
+                                habitId,
+                                habitsDay,
+                              ) ==
+                              HabitStatus.completed;
+                          if (!wasCompleted) {
+                            vm.holdCompletedHabit(habitId);
+                          }
                           final ok = await habitVm.toggleHabitCompleted(
-                            habit.id!,
+                            habitId,
                             habitsDay,
                           );
-                          if (ok || !context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.cannotCompleteHabitInTheFuture,
+                          if (!ok) {
+                            vm.releaseHeldCompletedHabit(habitId);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.cannotCompleteHabitInTheFuture,
+                                ),
+                                behavior: SnackBarBehavior.floating,
                               ),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                            );
+                            return;
+                          }
+                          if (wasCompleted) {
+                            vm.releaseHeldCompletedHabit(habitId);
+                          }
                         },
                       ),
                     ),
@@ -427,9 +582,41 @@ class _TasksBody extends StatelessWidget {
 }
 
 const _kTasksGlassBarHeight = 88.0;
-const _kEmbeddedTabBarClearance = 35.0;
+
+/// iOS-only: [GlassScaffold] does not SafeArea the shell tab bar, so this
+/// bar's own [SafeArea] (home indicator) already lifts it enough.
+const _kEmbeddedTabBarClearanceIos = 35.0;
+
+/// Matches [MainShell] [GlassTabBar.bottom] `barHeight` (the visible pill).
+const _kShellTabPillHeight = 58.0;
+
+/// Gap between the Tasks action panel and the shell tab pill on Android.
+/// [TasksGlassBottomBar] already adds 16px bottom padding inside the bar.
+const _kEmbeddedTabBarGapAndroid = 8.0;
+
+/// [GlassTabBar] preferred height: barHeight 58 + verticalPadding 20×2.
 const _kMainShellTabBarHeight = 98.0;
 const _kTasksListClearanceGap = 24.0;
+
+/// Space under the Tasks action bar so it clears the shell tab pill.
+///
+/// [GlassScaffold] applies bottom [SafeArea] to the tab bar on Android only.
+/// Clear to just above the visible pill (not the full preferred height — that
+/// includes the tab bar's top padding and left a large empty gap).
+double _embeddedTasksBarClearance(BuildContext context) {
+  if (Theme.of(context).platform == TargetPlatform.android) {
+    // From the shared SafeArea baseline: empty tab-bar bottom pad, then pill.
+    // [TasksGlassBottomBar] already pads 16px below the panel — subtract that
+    // so the visual gap above the pill is only [_kEmbeddedTabBarGapAndroid].
+    const tabBarBottomPad = 20.0;
+    const tasksBarBottomPad = 16.0;
+    return tabBarBottomPad +
+        _kShellTabPillHeight +
+        _kEmbeddedTabBarGapAndroid -
+        tasksBarBottomPad;
+  }
+  return _kEmbeddedTabBarClearanceIos;
+}
 
 double _tasksListBottomPadding(BuildContext context, {required bool embedded}) {
   final systemBottom = MediaQuery.viewPaddingOf(context).bottom;
@@ -479,6 +666,8 @@ class _TasksSectionHeader extends StatelessWidget {
     required this.palette,
     required this.icon,
     required this.label,
+    required this.showLabel,
+    required this.hideLabel,
     required this.expanded,
     required this.onTap,
   });
@@ -486,6 +675,8 @@ class _TasksSectionHeader extends StatelessWidget {
   final TasksUiPalette palette;
   final IconData icon;
   final String label;
+  final String showLabel;
+  final String hideLabel;
   final bool expanded;
   final VoidCallback onTap;
 
@@ -514,11 +705,13 @@ class _TasksSectionHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                AnimatedRotation(
-                  turns: expanded ? 0.5 : 0,
-                  duration: _kSectionAnimDuration,
-                  curve: _kSectionAnimCurve,
-                  child: Icon(Icons.expand_more, color: palette.textMuted),
+                Text(
+                  expanded ? hideLabel : showLabel,
+                  style: TextStyle(fontSize: 12, color: palette.textMuted),
+                ),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  color: palette.textMuted,
                 ),
               ],
             ),
@@ -639,37 +832,40 @@ class _TasksFiltersPanel extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _FilterSectionTitle(
-                palette: palette,
-                label: strings.taskFilterStatus,
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    TasksGlassChip(
-                      label: strings.taskAll,
-                      palette: palette,
-                      selected: vm.statusFilter == TaskStatusFilter.all,
-                      onTap: () => vm.setStatusFilter(TaskStatusFilter.all),
-                    ),
-                    TasksGlassChip(
-                      label: strings.taskStatusActive,
-                      palette: palette,
-                      selected: vm.statusFilter == TaskStatusFilter.active,
-                      onTap: () => vm.setStatusFilter(TaskStatusFilter.active),
-                    ),
-                    TasksGlassChip(
-                      label: strings.taskStatusDone,
-                      palette: palette,
-                      selected: vm.statusFilter == TaskStatusFilter.done,
-                      onTap: () => vm.setStatusFilter(TaskStatusFilter.done),
-                    ),
-                  ],
+              if (vm.showsStatusFilter) ...[
+                const SizedBox(height: 12),
+                _FilterSectionTitle(
+                  palette: palette,
+                  label: strings.taskFilterStatus,
                 ),
-              ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      TasksGlassChip(
+                        label: strings.taskAll,
+                        palette: palette,
+                        selected: vm.statusFilter == TaskStatusFilter.all,
+                        onTap: () => vm.setStatusFilter(TaskStatusFilter.all),
+                      ),
+                      TasksGlassChip(
+                        label: strings.taskStatusActive,
+                        palette: palette,
+                        selected: vm.statusFilter == TaskStatusFilter.active,
+                        onTap: () =>
+                            vm.setStatusFilter(TaskStatusFilter.active),
+                      ),
+                      TasksGlassChip(
+                        label: strings.taskStatusDone,
+                        palette: palette,
+                        selected: vm.statusFilter == TaskStatusFilter.done,
+                        onTap: () => vm.setStatusFilter(TaskStatusFilter.done),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               _FilterSectionTitle(palette: palette, label: strings.taskThemes),
               const SizedBox(height: 8),

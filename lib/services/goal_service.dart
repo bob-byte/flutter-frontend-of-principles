@@ -200,7 +200,9 @@ class GoalService {
     final payload = goal.toJson();
     Future<void> remote() async {
       final token = await _authService.getToken();
-      if (token == null) return;
+      if (token == null) {
+        throw StateError('Missing auth token');
+      }
       final serverId = isNew ? 0 : (goal.id ?? 0);
       final response = await _dio.post(
         '${AuthService.baseUrl}${ApiEndpoints.goals}/$serverId',
@@ -211,12 +213,13 @@ class GoalService {
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        final newId = data is Map ? data['id'] as int? : null;
-        if (newId != null && newId != goal.id) {
-          await assignServerId(goal, newId);
-        }
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw StateError('Push goal failed: ${response.statusCode}');
+      }
+      final data = response.data;
+      final newId = data is Map ? data['id'] as int? : null;
+      if (newId != null && newId != goal.id) {
+        await assignServerId(goal, newId);
       }
     }
 

@@ -6,6 +6,7 @@ import '../core/config/app_config.dart';
 import '../core/network/network_service.dart';
 import '../core/sync/local_remote_executor.dart';
 import '../core/sync/operation_kind.dart';
+import '../core/sync/pending_sync_index.dart';
 import '../core/sync/sync_handler_type.dart';
 import '../core/sync/sync_queue_service.dart';
 import '../models/habit.dart';
@@ -320,7 +321,9 @@ class HabitService {
   }
 
   /// Resolves a backend habit id, creating the habit first when it is local-only.
-  Future<ServerHabitIdResolution> ensureServerHabitId(int localOrServerId) async {
+  Future<ServerHabitIdResolution> ensureServerHabitId(
+    int localOrServerId,
+  ) async {
     final habit =
         await _dbService.getHabitById(localOrServerId) ??
         await _dbService.getHabitByServerId(localOrServerId);
@@ -378,78 +381,156 @@ class HabitService {
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        for (var item in data) {
-          // Parse UserHabitInProgressShortDto
-          final backendId = _readInt(item['id'] ?? item['Id']);
-          if (backendId == null) continue;
-          if (_queue != null &&
-              await _queue.hasBlocking(
-                handlerType: SyncHandlerType.userHabit,
-                entityId: backendId,
-                entityLocalId: backendId,
-              )) {
+      if (response.statusCode != 200 || response.data is! List) return;
+      final data = response.data as List<dynamic>;
+      if (data.isEmpty) return;
+      final pending = _queue == null
+          ? PendingSyncIndex(const [])
+          : PendingSyncIndex(await _queue.getBlockingItems());
+
+      final remoteIds = <int>{
+        for (final item in data)
+          if (item is Map)
+            if (_readInt(item['id'] ?? item['Id']) != null)
+              _readInt(item['id'] ?? item['Id'])!,
+      };
+      var localHabits = await _dbService.getAllHabits(isArchived: null);
+      var vacatedAny = false;
+      for (final local in localHabits) {
+        final id = local.id;
+        if (id == null || !remoteIds.contains(id)) continue;
+        if (confirmedServerHabitId(local) != null) continue;
+        final vacated = await _dbService.vacateLocalOnlyHabitOccupyingId(id);
+        if (vacated == null) continue;
+        vacatedAny = true;
+        await _queue?.repointEntity(
+          handlerType: SyncHandlerType.userHabit,
+          fromLocalId: id,
+          toLocalId: vacated,
+        );
+        await _queue?.rewriteProgressHabitId(
+          fromHabitId: id,
+          toHabitId: vacated,
+        );
+      }
+      if (vacatedAny) {
+        localHabits = await _dbService.getAllHabits(isArchived: null);
+      }
+      final byId = <int, Habit>{
+        for (final habit in localHabits)
+          if (habit.id != null) habit.id!: habit,
+      };
+      final byServerId = <int, Habit>{
+        for (final habit in localHabits)
+          if (confirmedServerHabitId(habit) != null)
+            confirmedServerHabitId(habit)!: habit,
+      };
+      Habit? lookup(int backendId) => byServerId[backendId] ?? byId[backendId];
+
+      final habitsToUpsert = <Habit>[];
+      final existingHabitIds = <int>{};
+      final progressWrites = <HabitRecordWrite>[];
+      final recordHabitIds = <int>{
+        for (final id in remoteIds) id,
+        for (final id in remoteIds)
+          if (lookup(id)?.id != null) lookup(id)!.id!,
+      };
+      final recordsByHabit = <int, Map<String, HabitRecord>>{};
+      for (final record in await _dbService.getRecordsForHabitIds(
+        recordHabitIds,
+      )) {
+        final dateKey = record.date.toIso8601String().substring(0, 10);
+        (recordsByHabit[record.habitId] ??= {})[dateKey] = record;
+      }
+
+      for (final item in data) {
+        if (item is! Map) continue;
+        final backendId = _readInt(item['id'] ?? item['Id']);
+        if (backendId == null) continue;
+        final local = lookup(backendId);
+        if (pending.pendingHabit(serverId: backendId, localId: local?.id)) {
+          continue;
+        }
+
+        final habitName = item['name'] ?? item['Name'] ?? 'Невідома звичка';
+        final description = item['description'] ?? item['Description'];
+        final complexity =
+            _readInt(item['complexity'] ?? item['Complexity']) ?? 5;
+        final habitType = _readInt(item['type'] ?? item['Type']);
+        final goalId = _readInt(
+          item['goalId'] ??
+              item['GoalId'] ??
+              _mapValue(item['goal'] ?? item['Goal'], 'id', 'Id'),
+        );
+        final goalNameRaw =
+            item['goalName'] ??
+            item['GoalName'] ??
+            _mapValue(item['goal'] ?? item['Goal'], 'name', 'Name');
+        final goalName = goalNameRaw == null ? '' : '$goalNameRaw';
+        final frequency =
+            frequencyFromApi(item['frequency'] ?? item['Frequency']) ??
+            const FrequencyConfig(type: FrequencyType.daily);
+        final localId = local?.id ?? backendId;
+        final notes = description?.toString() ?? '';
+        final skipHabitWrite =
+            local != null &&
+            local.name == '$habitName' &&
+            local.notes == notes &&
+            local.difficulty == complexity &&
+            local.targetGoal == goalName &&
+            local.targetGoalId == goalId;
+        if (!skipHabitWrite) {
+          habitsToUpsert.add(
+            Habit(
+              id: localId,
+              serverId: backendId,
+              name: '$habitName',
+              notes: notes,
+              difficulty: complexity,
+              targetGoal: goalName,
+              targetGoalId: goalId,
+              isFlexible: habitType != kTypeOfHabitPrincipled,
+              frequency: frequency,
+              isArchived: local?.isArchived ?? false,
+              lastModified: local?.lastModified,
+              reminders: local?.reminders ?? const [],
+            ),
+          );
+          if (local?.id != null) existingHabitIds.add(local!.id!);
+        }
+
+        final localByDate =
+            recordsByHabit[localId] ?? recordsByHabit[backendId] ?? const {};
+        final progresses = item['progresses'] ?? item['Progresses'] ?? [];
+        if (progresses is! List) continue;
+        for (final prog in progresses) {
+          if (prog is! Map) continue;
+          final progMap = Map<dynamic, dynamic>.from(prog);
+          final parsedDate = progressDateFromApi(
+            progMap['date'] ?? progMap['Date'],
+          );
+          final pVal = _readInt(progMap['value'] ?? progMap['Value']);
+          if (parsedDate == null || pVal == null || pVal == kProgressUnknown) {
             continue;
           }
-
-          final habitName = item['name'] ?? item['Name'] ?? 'Невідома звичка';
-          final description = item['description'] ?? item['Description'];
-          final complexity =
-              _readInt(item['complexity'] ?? item['Complexity']) ?? 5;
-          final habitType = _readInt(item['type'] ?? item['Type']);
-          final goalId = _readInt(
-            item['goalId'] ??
-                item['GoalId'] ??
-                _mapValue(item['goal'] ?? item['Goal'], 'id', 'Id'),
-          );
-          final goalNameRaw =
-              item['goalName'] ??
-              item['GoalName'] ??
-              _mapValue(item['goal'] ?? item['Goal'], 'name', 'Name');
-          final goalName = goalNameRaw == null ? '' : '$goalNameRaw';
-          final frequency =
-              frequencyFromApi(item['frequency'] ?? item['Frequency']) ??
-              const FrequencyConfig(type: FrequencyType.daily);
-
-          // Parse progresses
-          final progresses = item['progresses'] ?? item['Progresses'] ?? [];
-
-          // Create local Habit object
-          final localHabit = Habit(
-            // We temporarily map the backend ID to our local ID so they match
-            id: backendId,
-            serverId: backendId,
-            name: habitName,
-            notes: description ?? '',
-            difficulty: complexity,
-            targetGoal: goalName,
-            targetGoalId: goalId,
-            isFlexible: habitType != kTypeOfHabitPrincipled,
-            frequency: frequency,
-          );
-
-          // Note: To prevent duplicating, we can just insert with conflict resolution,
-          // or we can just fetch and update.
-          // We will rely on _dbService for the actual insert/update.
-          await _dbService.insertOrUpdateHabitWithBackendId(localHabit);
-
-          // Now parse records
-          for (var prog in progresses) {
-            if (prog is! Map) continue;
-            final progMap = Map<dynamic, dynamic>.from(prog);
-            final parsedDate = progressDateFromApi(
-              progMap['date'] ?? progMap['Date'],
-            );
-            final pVal = _readInt(progMap['value'] ?? progMap['Value']);
-            if (parsedDate != null &&
-                pVal != null &&
-                pVal != kProgressUnknown) {
-              await _dbService.setHabitRecordValue(backendId, parsedDate, pVal);
-            }
-          }
+          final dateKey = parsedDate.toIso8601String().substring(0, 10);
+          final existing = localByDate[dateKey];
+          if (existing != null && existing.value == pVal) continue;
+          progressWrites.add((
+            habitId: backendId,
+            date: parsedDate,
+            value: pVal,
+            existingId: existing?.id,
+            lastModified: null,
+          ));
         }
       }
+
+      await _dbService.upsertHabits(
+        habitsToUpsert,
+        existingLocalIds: existingHabitIds,
+      );
+      await _dbService.applyHabitRecordWrites(progressWrites);
     } catch (e) {
       debugPrint('Sync From Backend Error: $e');
     }
@@ -474,17 +555,32 @@ class HabitService {
     );
     if (response.statusCode != 200 || response.data is! List) return;
 
+    final localHabits = await _dbService.getAllHabits(isArchived: null);
+    final existingIds = <int>{
+      for (final habit in localHabits)
+        if (habit.id != null) habit.id!,
+    };
+    final alreadyArchived = {
+      for (final habit in localHabits)
+        if (habit.isArchived && habit.id != null) habit.id!,
+    };
+    final toUpsert = <({int id, String name})>[];
     for (final item in response.data as List<dynamic>) {
       if (item is! Map) continue;
       final map = Map<String, dynamic>.from(item);
       final id = _readInt(map['id'] ?? map['Id']);
       if (id == null) continue;
+      if (alreadyArchived.contains(id)) continue;
       final rawName = map['name'] ?? map['Name'];
       final name = rawName == null || '$rawName'.trim().isEmpty
           ? 'Habit'
           : '$rawName';
-      await _dbService.upsertArchivedHabit(id: id, name: name);
+      toUpsert.add((id: id, name: name));
     }
+    await _dbService.upsertArchivedHabits(
+      toUpsert,
+      existingLocalIds: existingIds,
+    );
   }
 
   Future<bool> setArchiveStatus(Habit habit) async {
@@ -505,7 +601,7 @@ class HabitService {
         handlerType: SyncHandlerType.userHabit,
         operation: OperationKind.setArchiveStatus,
         payload: payload,
-        entityId: habit.serverId ?? habit.id,
+        entityId: confirmedServerHabitId(habit),
         entityLocalId: habit.id,
       );
       return true;
@@ -522,7 +618,7 @@ class HabitService {
             handlerType: SyncHandlerType.userHabit,
             operation: OperationKind.setArchiveStatus,
             payload: payload,
-            entityId: habit.serverId ?? habit.id,
+            entityId: confirmedServerHabitId(habit),
             entityLocalId: habit.id,
           );
         }),
@@ -534,7 +630,7 @@ class HabitService {
         handlerType: SyncHandlerType.userHabit,
         operation: OperationKind.setArchiveStatus,
         payload: payload,
-        entityId: habit.serverId ?? habit.id,
+        entityId: confirmedServerHabitId(habit),
         entityLocalId: habit.id,
       );
       return true;
@@ -566,43 +662,69 @@ class HabitService {
     }
   }
 
-  Future<bool> deleteHabit(int habitId) async {
+  Future<bool> deleteHabit(int habitId, {int? serverId}) async {
     if (habitId <= 0) return false;
     if (AppConfig.useLocalData) return true;
 
+    Habit? existing;
+    try {
+      existing = await _dbService.getHabitById(habitId);
+    } catch (_) {
+      existing = null;
+    }
+    final remoteId =
+        serverId ??
+        (existing != null ? confirmedServerHabitId(existing) : habitId);
+
+    Future<void> remote() async {
+      if (remoteId == null || remoteId == 0) return;
+      await deleteHabitRemote(remoteId);
+    }
+
+    if (_executor != null) {
+      await _executor.execute<void>(
+        localCall: () async {},
+        remoteCall: remote,
+        handlerType: SyncHandlerType.userHabit,
+        operation: OperationKind.delete,
+        payload: {'id': remoteId ?? 0},
+        entityId: remoteId,
+        entityLocalId: habitId,
+      );
+      return true;
+    }
+
     if (_online) {
-      unawaited(() async {
-        try {
-          await deleteHabitRemote(habitId);
-        } on DioException catch (e) {
-          if (e.response?.statusCode == 404) return;
-          debugPrint('Delete Habit Error: $e');
-          await _queue?.addToQueue(
-            handlerType: SyncHandlerType.userHabit,
-            operation: OperationKind.delete,
-            payload: {'id': habitId},
-            entityId: habitId,
-            entityLocalId: habitId,
-          );
-        } catch (e) {
-          debugPrint('Delete Habit Error: $e');
-          await _queue?.addToQueue(
-            handlerType: SyncHandlerType.userHabit,
-            operation: OperationKind.delete,
-            payload: {'id': habitId},
-            entityId: habitId,
-            entityLocalId: habitId,
-          );
-        }
-      }());
+      try {
+        await remote();
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) return true;
+        debugPrint('Delete Habit Error: $e');
+        await _queue?.addToQueue(
+          handlerType: SyncHandlerType.userHabit,
+          operation: OperationKind.delete,
+          payload: {'id': remoteId ?? 0},
+          entityId: remoteId,
+          entityLocalId: habitId,
+        );
+      } catch (e) {
+        debugPrint('Delete Habit Error: $e');
+        await _queue?.addToQueue(
+          handlerType: SyncHandlerType.userHabit,
+          operation: OperationKind.delete,
+          payload: {'id': remoteId ?? 0},
+          entityId: remoteId,
+          entityLocalId: habitId,
+        );
+      }
       return true;
     }
 
     await _queue?.addToQueue(
       handlerType: SyncHandlerType.userHabit,
       operation: OperationKind.delete,
-      payload: {'id': habitId},
-      entityId: habitId,
+      payload: {'id': remoteId ?? 0},
+      entityId: remoteId,
       entityLocalId: habitId,
     );
     return true;
@@ -641,15 +763,19 @@ class HabitService {
   }) async {
     Future<int?> remote() async {
       final token = await _authService.getToken();
-      if (token == null) return null;
+      if (token == null) {
+        throw StateError('Missing auth token');
+      }
 
-      final backendId = isNew ? 0 : (habit.serverId ?? habit.id ?? 0);
+      final confirmed = confirmedServerHabitId(habit);
+      final treatAsNew = isNew || confirmed == null;
+      final backendId = treatAsNew ? 0 : confirmed;
       final resolvedGoalId = await _dbService.resolveGoalServerId(
         habit.targetGoalId,
       );
       final payload = buildEditUserHabitDto(
         habit,
-        isNew: isNew,
+        isNew: treatAsNew,
         goalId: resolvedGoalId ?? 0,
       );
 
@@ -660,13 +786,28 @@ class HabitService {
       );
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        return null;
+        throw StateError('Push habit failed: ${response.statusCode}');
       }
 
       final remoteId =
-          _readSaveHabitResponseId(response.data) ?? (isNew ? null : habit.id);
-      if (remoteId != null && habit.id != null && remoteId != habit.id) {
-        await _dbService.reassignHabitId(habit.id!, remoteId);
+          _readSaveHabitResponseId(response.data) ??
+          (treatAsNew ? null : confirmed);
+      if (remoteId == null || remoteId == 0) {
+        throw StateError('Push habit returned no id.');
+      }
+      if (habit.id != null && remoteId != habit.id) {
+        final vacated = await _dbService.reassignHabitId(habit.id!, remoteId);
+        if (vacated != null) {
+          await _queue?.repointEntity(
+            handlerType: SyncHandlerType.userHabit,
+            fromLocalId: remoteId,
+            toLocalId: vacated,
+          );
+          await _queue?.rewriteProgressHabitId(
+            fromHabitId: remoteId,
+            toHabitId: vacated,
+          );
+        }
         await _queue?.repointEntity(
           handlerType: SyncHandlerType.userHabit,
           fromLocalId: habit.id!,
@@ -705,7 +846,7 @@ class HabitService {
       handlerType: SyncHandlerType.userHabit,
       operation: OperationKind.save,
       payload: habit.toMap(),
-      entityId: habit.serverId ?? (isNew ? null : habit.id),
+      entityId: confirmedServerHabitId(habit),
       entityLocalId: habit.id,
       awaitRemote: awaitRemote,
     );
@@ -716,7 +857,7 @@ class HabitService {
           handlerType: SyncHandlerType.userHabit,
           operation: OperationKind.save,
           payload: habit.toMap(),
-          entityId: habit.serverId ?? (isNew ? null : habit.id),
+          entityId: confirmedServerHabitId(habit),
           entityLocalId: habit.id,
         ) ??
         Future.value();
@@ -745,7 +886,8 @@ class HabitService {
     }
 
     final serverHabitId = resolved.serverId;
-    final record = await _dbService.findRecord(habitId, date) ??
+    final record =
+        await _dbService.findRecord(habitId, date) ??
         (serverHabitId == null
             ? null
             : await _dbService.findRecord(serverHabitId, date));

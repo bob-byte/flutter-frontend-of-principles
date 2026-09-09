@@ -12,6 +12,7 @@ import '../../viewmodels/archive_viewmodel.dart';
 import '../../widgets/app_alert_dialog.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/context_menu_overlay.dart';
+import '../../widgets/expandable_bottom_sheet.dart';
 import '../../widgets/themed_lottie.dart';
 import '../edit_habit_view.dart';
 import '../habit_detail_view.dart';
@@ -22,15 +23,39 @@ class ArchiveBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (ctx) =>
-          ArchiveViewModel(DatabaseService(), ctx.read<HabitService>()),
-      child: const _ArchiveBottomSheetContent(),
+      create: (ctx) => ArchiveViewModel(
+        ctx.read<DatabaseService>(),
+        ctx.read<HabitService>(),
+      ),
+      child: const _ArchiveBottomSheetShell(),
+    );
+  }
+}
+
+class _ArchiveBottomSheetShell extends StatelessWidget {
+  const _ArchiveBottomSheetShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: ExpandableSheetDefaults.maxChildSize,
+      snap: true,
+      snapSizes: const [0.6, ExpandableSheetDefaults.maxChildSize],
+      shouldCloseOnMinExtent: true,
+      builder: (context, scrollController) {
+        return _ArchiveBottomSheetContent(scrollController: scrollController);
+      },
     );
   }
 }
 
 class _ArchiveBottomSheetContent extends StatelessWidget {
-  const _ArchiveBottomSheetContent();
+  const _ArchiveBottomSheetContent({required this.scrollController});
+
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +64,6 @@ class _ArchiveBottomSheetContent extends StatelessWidget {
     final palette = context.watch<ThemeController>().palette;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: palette.cardBg,
@@ -51,6 +75,12 @@ class _ArchiveBottomSheetContent extends StatelessWidget {
           children: [
             Column(
               children: [
+                BottomSheetDragHandle(
+                  color: palette.textMuted.withValues(alpha: 0.35),
+                  width: 40,
+                  topPadding: 0,
+                  bottomPadding: 8,
+                ),
                 Row(
                   children: [
                     _HeaderCircleButton(
@@ -199,6 +229,7 @@ class _ArchiveBottomSheetContent extends StatelessWidget {
     }
 
     return ListView.builder(
+      controller: scrollController,
       itemCount: vm.archivedHabits.length,
       itemBuilder: (context, index) {
         final habit = vm.archivedHabits[index];

@@ -18,8 +18,8 @@ void main() {
     );
   }
 
-  test('groups habits by goal and puts undefined goals first', () {
-    final groups = groupHabitsByGoal([
+  test('habitGoalFilterOptions lists unique goals with undefined first', () {
+    final options = habitGoalFilterOptions([
       habit(
         id: 1,
         name: 'Read 10 pages',
@@ -36,16 +36,10 @@ void main() {
       habit(id: 4, name: 'Network', targetGoal: 'Collaborate'),
     ]);
 
-    expect(groups, hasLength(3));
-    expect(groups[0].isUndefined, isTrue);
-    expect(groups[0].habits.map((h) => h.name), ['Train']);
-    expect(groups[1].goalName, 'Be a reader');
-    expect(groups[1].habits.map((h) => h.name), [
-      'Carry a book',
-      'Read 10 pages',
-    ]);
-    expect(groups[2].goalName, 'Collaborate');
-    expect(groups[2].habits.map((h) => h.name), ['Network']);
+    expect(options, hasLength(3));
+    expect(options[0].isUndefined, isTrue);
+    expect(options[1].goalName, 'Be a reader');
+    expect(options[2].goalName, 'Collaborate');
   });
 
   test('habitsForGoal matches by id or name', () {

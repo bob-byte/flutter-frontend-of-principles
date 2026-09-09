@@ -240,6 +240,7 @@ class TasksGlassSheet extends StatelessWidget {
     required this.child,
     this.maxHeightFactor = 0.88,
     this.blur = 18,
+    this.fillHeight = false,
   });
 
   final TasksUiPalette palette;
@@ -247,12 +248,19 @@ class TasksGlassSheet extends StatelessWidget {
   final double maxHeightFactor;
   final double blur;
 
+  /// When true, fills the parent (use inside [DraggableScrollableSheet]).
+  final bool fillHeight;
+
   @override
   Widget build(BuildContext context) {
     final sheet = Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * maxHeightFactor,
-      ),
+      width: double.infinity,
+      height: fillHeight ? double.infinity : null,
+      constraints: fillHeight
+          ? null
+          : BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * maxHeightFactor,
+            ),
       decoration: BoxDecoration(
         color: palette.glassSheetFill,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
