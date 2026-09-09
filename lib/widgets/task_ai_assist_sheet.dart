@@ -8,26 +8,36 @@ import '../l10n/task_strings.dart';
 import '../models/ai_task_draft.dart';
 import '../services/ai_chat_service.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import 'expandable_bottom_sheet.dart';
 import 'tasks_glass.dart';
 
 Future<AiTaskDraft?> showTaskAiAssistSheet(BuildContext context) {
   final palette = context.read<TasksViewModel>().palette;
   final themeData = context.read<TasksViewModel>().themeData;
-  return showModalBottomSheet<AiTaskDraft>(
+  return showExpandableModalBottomSheet<AiTaskDraft>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Theme(
+    initialChildSize: 0.55,
+    minChildSize: 0.4,
+    maxChildSize: ExpandableSheetDefaults.maxChildSize,
+    builder: (sheetContext, scrollController) => Theme(
       data: themeData,
-      child: TaskAiAssistSheet(palette: palette),
+      child: TaskAiAssistSheet(
+        palette: palette,
+        scrollController: scrollController,
+      ),
     ),
   );
 }
 
 class TaskAiAssistSheet extends StatefulWidget {
-  const TaskAiAssistSheet({super.key, required this.palette});
+  const TaskAiAssistSheet({
+    super.key,
+    required this.palette,
+    required this.scrollController,
+  });
 
   final TasksUiPalette palette;
+  final ScrollController scrollController;
 
   @override
   State<TaskAiAssistSheet> createState() => _TaskAiAssistSheetState();
@@ -192,149 +202,137 @@ class _TaskAiAssistSheetState extends State<TaskAiAssistSheet> {
   @override
   Widget build(BuildContext context) {
     final strings = TaskStrings.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: TasksGlassSheet(
-        palette: palette,
-        blur: 14,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return TasksGlassSheet(
+      palette: palette,
+      blur: 14,
+      fillHeight: true,
+      child: SafeArea(
+        top: false,
+        child: ListView(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            BottomSheetDragHandle(
+              color: palette.textMuted.withValues(alpha: 0.3),
+              width: 40,
+            ),
+            const SizedBox(height: 16),
+            Row(
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: palette.textMuted.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Icon(Icons.auto_awesome, color: palette.primary, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        strings.taskAiAssistTitle,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: palette.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  strings.taskAiAssistHint,
-                  style: TextStyle(fontSize: 13, color: palette.textMuted),
-                ),
-                const SizedBox(height: 16),
-                TasksGlassPanel(
-                  palette: palette,
-                  blur: 0,
-                  borderRadius: BorderRadius.circular(18),
-                  padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focus,
-                          autofocus: true,
-                          minLines: 2,
-                          maxLines: 5,
-                          enabled: !_isProcessing,
-                          keyboardType: TextInputType.multiline,
-                          textCapitalization: TextCapitalization.sentences,
-                          enableSuggestions: true,
-                          enableIMEPersonalizedLearning: true,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: palette.textPrimary,
-                            height: 1.35,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: strings.taskAiPromptHint,
-                            hintStyle: TextStyle(color: palette.textMuted),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            filled: false,
-                          ),
-                          textInputAction: TextInputAction.newline,
-                          onChanged: (_) {
-                            if (_error != null) setState(() => _error = null);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      _RoundAction(
-                        palette: palette,
-                        icon: _isListening ? Icons.mic : Icons.mic_none,
-                        active: _isListening,
-                        onPressed: _isProcessing ? null : _toggleMic,
-                        tooltip: strings.taskAiMicTooltip,
-                      ),
-                      const SizedBox(width: 6),
-                      _RoundAction(
-                        palette: palette,
-                        icon: Icons.arrow_upward_rounded,
-                        primary: true,
-                        busy: _isProcessing,
-                        onPressed: _isProcessing ? null : _submit,
-                        tooltip: strings.taskAiSendTooltip,
-                      ),
-                    ],
-                  ),
-                ),
-                if (_isListening) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    strings.taskAiListening,
-                    textAlign: TextAlign.center,
+                Icon(Icons.auto_awesome, color: palette.primary, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    strings.taskAiAssistTitle,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: palette.primary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: palette.textPrimary,
                     ),
                   ),
-                ],
-                if (_isProcessing) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    strings.taskAiProcessing,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: palette.textMuted),
-                  ),
-                ],
-                if (_error != null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 6),
+            Text(
+              strings.taskAiAssistHint,
+              style: TextStyle(fontSize: 13, color: palette.textMuted),
+            ),
+            const SizedBox(height: 16),
+            TasksGlassPanel(
+              palette: palette,
+              blur: 0,
+              borderRadius: BorderRadius.circular(18),
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focus,
+                      autofocus: true,
+                      minLines: 2,
+                      maxLines: 5,
+                      enabled: !_isProcessing,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      enableSuggestions: true,
+                      enableIMEPersonalizedLearning: true,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: palette.textPrimary,
+                        height: 1.35,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: strings.taskAiPromptHint,
+                        hintStyle: TextStyle(color: palette.textMuted),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        filled: false,
+                      ),
+                      textInputAction: TextInputAction.newline,
+                      onChanged: (_) {
+                        if (_error != null) setState(() => _error = null);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _RoundAction(
+                    palette: palette,
+                    icon: _isListening ? Icons.mic : Icons.mic_none,
+                    active: _isListening,
+                    onPressed: _isProcessing ? null : _toggleMic,
+                    tooltip: strings.taskAiMicTooltip,
+                  ),
+                  const SizedBox(width: 6),
+                  _RoundAction(
+                    palette: palette,
+                    icon: Icons.arrow_upward_rounded,
+                    primary: true,
+                    busy: _isProcessing,
+                    onPressed: _isProcessing ? null : _submit,
+                    tooltip: strings.taskAiSendTooltip,
+                  ),
+                ],
+              ),
+            ),
+            if (_isListening) ...[
+              const SizedBox(height: 10),
+              Text(
+                strings.taskAiListening,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: palette.primary,
+                ),
+              ),
+            ],
+            if (_isProcessing) ...[
+              const SizedBox(height: 10),
+              Text(
+                strings.taskAiProcessing,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: palette.textMuted),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

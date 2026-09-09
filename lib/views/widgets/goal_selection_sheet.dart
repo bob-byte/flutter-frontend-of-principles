@@ -10,7 +10,9 @@ import '../../viewmodels/edit_habit_viewmodel.dart';
 import '../../viewmodels/goal_selection_viewmodel.dart';
 import '../../viewmodels/goals_viewmodel.dart';
 import '../../widgets/app_loading_indicator.dart';
+import '../../widgets/completion_burst.dart';
 import '../../widgets/context_menu_overlay.dart';
+import '../../widgets/expandable_bottom_sheet.dart';
 import '../../widgets/themed_lottie.dart';
 
 class GoalSelectionSheetWidget extends StatelessWidget {
@@ -27,24 +29,43 @@ class GoalSelectionSheetWidget extends StatelessWidget {
         goalsViewModel: _maybeRead<GoalsViewModel>(ctx),
         editHabitViewModel: _maybeRead<EditHabitViewModel>(ctx),
       ),
-      child: const _GoalSelectionSheetContent(),
+      child: const _GoalSelectionSheetShell(),
+    );
+  }
+}
+
+class _GoalSelectionSheetShell extends StatelessWidget {
+  const _GoalSelectionSheetShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.72,
+      minChildSize: 0.4,
+      maxChildSize: ExpandableSheetDefaults.maxChildSize,
+      snap: true,
+      snapSizes: const [0.72, ExpandableSheetDefaults.maxChildSize],
+      shouldCloseOnMinExtent: true,
+      builder: (context, scrollController) {
+        return _GoalSelectionSheetContent(scrollController: scrollController);
+      },
     );
   }
 }
 
 class _GoalSelectionSheetContent extends StatelessWidget {
-  const _GoalSelectionSheetContent();
+  const _GoalSelectionSheetContent({required this.scrollController});
+
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<GoalSelectionViewModel>();
     final l10n = AppLocalizations.of(context)!;
     final palette = context.watch<ThemeController>().palette;
-    final media = MediaQuery.of(context);
-    final sheetHeight = media.size.height * 0.72;
 
     return Container(
-      height: sheetHeight,
       decoration: BoxDecoration(
         color: palette.cardBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -52,16 +73,12 @@ class _GoalSelectionSheetContent extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Column(
             children: [
-              Container(
+              BottomSheetDragHandle(
+                color: palette.textMuted.withValues(alpha: 0.35),
                 width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.textMuted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -124,19 +141,19 @@ class _GoalSelectionSheetContent extends StatelessWidget {
     }
 
     if (vm.goals.isEmpty) {
-      return Column(
+      return ListView(
+        controller: scrollController,
         children: [
-          const Expanded(
-            child: Center(
-              child: ThemedLottie(
-                assetPath: 'assets/lottie/goals.json',
-                width: 160,
-                height: 160,
-              ),
+          const SizedBox(height: 24),
+          const Center(
+            child: ThemedLottie(
+              assetPath: 'assets/lottie/goals.json',
+              width: 160,
+              height: 160,
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
             child: Text(
               l10n.goalsEmptyList,
               textAlign: TextAlign.center,
@@ -152,6 +169,7 @@ class _GoalSelectionSheetContent extends StatelessWidget {
     }
 
     return ListView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.only(top: 4, bottom: 8),
       itemCount: vm.goals.length,
       itemBuilder: (context, index) {
@@ -219,6 +237,13 @@ class _GoalSelectionSheetContent extends StatelessWidget {
                       : Icons.check_circle_outline,
                   onTap: () {
                     Navigator.of(dialogContext).pop();
+                    if (!goal.isCompleted) {
+                      playCompletionCelebration(
+                        context,
+                        color: palette.primary,
+                        origin: anchor?.center,
+                      );
+                    }
                     vm.setGoalCompleted(goal, isCompleted: !goal.isCompleted);
                   },
                 ),
@@ -303,14 +328,19 @@ class _GoalTile extends StatelessWidget {
                       ),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      isSelected
-                          ? Icons.check_rounded
-                          : goal.isCompleted
-                          ? Icons.check_circle_outline
-                          : Icons.flag_outlined,
+                    child: CompletionCelebrate(
+                      isCompleted: goal.isCompleted,
                       color: palette.primary,
-                      size: 20,
+                      burstRadius: 42,
+                      child: Icon(
+                        isSelected
+                            ? Icons.check_rounded
+                            : goal.isCompleted
+                            ? Icons.check_circle_outline
+                            : Icons.flag_outlined,
+                        color: palette.primary,
+                        size: 20,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

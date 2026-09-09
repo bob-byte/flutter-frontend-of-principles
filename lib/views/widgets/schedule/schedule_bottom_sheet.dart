@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/task_theme_palette.dart';
@@ -7,6 +8,7 @@ import '../../../core/utils/date_helpers.dart';
 import '../../../l10n/schedule_strings.dart';
 import '../../../models/schedule_reminder_offset.dart';
 import '../../../viewmodels/schedule_draft.dart';
+import '../../../widgets/expandable_bottom_sheet.dart';
 import '../../../widgets/tasks_glass.dart';
 import 'reminder_picker_sheet.dart';
 import 'repeat_picker_sheet.dart';
@@ -28,32 +30,39 @@ Future<ScheduleDraft?> showScheduleBottomSheet(
         showDuration: showDuration,
       );
 
-  return showModalBottomSheet<ScheduleDraft>(
+  return showExpandableModalBottomSheet<ScheduleDraft>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) {
+    initialChildSize: 0.62,
+    minChildSize: 0.4,
+    maxChildSize: 0.94,
+    builder: (ctx, scrollController) {
       return ChangeNotifierProvider<ScheduleDraft>.value(
         value: draft,
-        child: ScheduleBottomSheet(palette: palette),
+        child: ScheduleBottomSheet(
+          palette: palette,
+          scrollController: scrollController,
+        ),
       );
     },
   );
 }
 
 class ScheduleBottomSheet extends StatelessWidget {
-  const ScheduleBottomSheet({super.key, required this.palette});
+  const ScheduleBottomSheet({
+    super.key,
+    required this.palette,
+    required this.scrollController,
+  });
 
   final TasksUiPalette palette;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     final strings = ScheduleStrings.of(context);
     final draft = context.watch<ScheduleDraft>();
-    final bottom = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottom),
+    return SizedBox.expand(
       child: TasksGlassPanel(
         palette: palette,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
@@ -61,19 +70,14 @@ class ScheduleBottomSheet extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
-              Container(
+              BottomSheetDragHandle(
+                color: palette.textMuted.withValues(alpha: 0.35),
                 width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.textMuted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
+                topPadding: 8,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
                 child: Row(
                   children: [
                     TextButton(
@@ -121,8 +125,9 @@ class ScheduleBottomSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              Flexible(
+              Expanded(
                 child: SingleChildScrollView(
+                  controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: !draft.showDateDuration
                       ? _TimeReminderOnly(palette: palette, strings: strings)
@@ -239,18 +244,124 @@ class _TimeReminderOnly extends StatelessWidget {
   Widget build(BuildContext context) {
     final draft = context.watch<ScheduleDraft>();
     final slots = draft.habitTimeSlots;
-    return _SettingsCard(
-      palette: palette,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < slots.length; i++)
-          _HabitTimeSlotBlock(
-            palette: palette,
-            strings: strings,
-            index: i,
-            slot: slots[i],
+        const _HabitReminderCopyFields(),
+        const SizedBox(height: 12),
+        _SettingsCard(
+          palette: palette,
+          children: [
+            for (var i = 0; i < slots.length; i++)
+              _HabitTimeSlotBlock(
+                palette: palette,
+                strings: strings,
+                index: i,
+                slot: slots[i],
+              ),
+            _AddTimeRow(palette: palette, strings: strings),
+            _ReminderRow(palette: palette, strings: strings),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Title + description editors for habit notification copy (MAUI Reminder sheet).
+class _HabitReminderCopyFields extends StatefulWidget {
+  const _HabitReminderCopyFields();
+
+  @override
+  State<_HabitReminderCopyFields> createState() =>
+      _HabitReminderCopyFieldsState();
+}
+
+class _HabitReminderCopyFieldsState extends State<_HabitReminderCopyFields> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = context.read<ScheduleDraft>();
+    _titleController = TextEditingController(text: draft.notificationTitle);
+    _descriptionController = TextEditingController(
+      text: draft.notificationDescription,
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final palette = context.watch<ThemeController>().palette;
+    final draft = context.read<ScheduleDraft>();
+
+    InputDecoration decoration({
+      required String label,
+      required IconData icon,
+      bool multiline = false,
+    }) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: palette.textMuted),
+        prefixIcon: multiline
+            ? Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: Icon(icon, color: palette.textMuted),
+              )
+            : Icon(icon, color: palette.textMuted),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: palette.cardBorder.withValues(alpha: 0.65),
           ),
-        _AddTimeRow(palette: palette, strings: strings),
-        _ReminderRow(palette: palette, strings: strings),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: palette.primary),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          key: const Key('habitReminderTitleField'),
+          controller: _titleController,
+          style: TextStyle(color: palette.textPrimary),
+          cursorColor: palette.primary,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: decoration(
+            label: l10n.reminderTitleLabel,
+            icon: Icons.local_offer_outlined,
+          ),
+          onChanged: draft.setNotificationTitle,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          key: const Key('habitReminderDescriptionField'),
+          controller: _descriptionController,
+          style: TextStyle(color: palette.textPrimary),
+          cursorColor: palette.primary,
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: decoration(
+            label: l10n.reminderDescriptionLabel,
+            icon: Icons.description_outlined,
+            multiline: true,
+          ),
+          onChanged: draft.setNotificationDescription,
+        ),
       ],
     );
   }
@@ -294,6 +405,8 @@ class _HabitTimeSlotBlock extends StatelessWidget {
             final picked = await showTimePicker(
               context: context,
               initialTime: slot.time,
+              // Keyboard mode: start empty so typing replaces without backspace.
+              emptyInitialInput: true,
             );
             if (picked != null) draft.setSlotTime(index, picked);
           },
@@ -498,6 +611,8 @@ class _DurationTab extends StatelessWidget {
       final tod = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(initial),
+        // Keyboard mode: start empty so typing replaces without backspace.
+        emptyInitialInput: true,
       );
       if (tod != null) {
         result = DateTime(
@@ -760,10 +875,12 @@ class _TimeRow extends StatelessWidget {
       onTap: () async {
         final initial = draft.hasTime && draft.dueDate != null
             ? TimeOfDay.fromDateTime(draft.dueDate!)
-            : const TimeOfDay(hour: 9, minute: 0);
+            : TimeOfDay.fromDateTime(nearestNextHour());
         final picked = await showTimePicker(
           context: context,
           initialTime: initial,
+          // Keyboard mode: start empty so typing replaces without backspace.
+          emptyInitialInput: true,
         );
         if (picked != null) draft.setTime(picked);
       },

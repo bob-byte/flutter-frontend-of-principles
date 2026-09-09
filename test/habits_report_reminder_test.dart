@@ -52,9 +52,8 @@ void main() {
   });
 
   group('applyHabitsReportDefaults', () {
-    const title = 'Remember today\'s habits';
-    const body =
-        'time to note what habits were accomplished yesterday and remind yourself of habits and goals';
+    const title = 'Remember your day';
+    const body = 'time to review your goals, habits, and tasks';
 
     test('prefixes the user name when the server has no reminder', () {
       final result = applyHabitsReportDefaults(
@@ -150,13 +149,16 @@ void main() {
       );
 
       await vm.load(
-        defaultTitle: 'Remember today\'s habits',
-        defaultDescription: 'time to note yesterday',
+        defaultTitle: 'Remember your day',
+        defaultDescription: 'time to review your goals, habits, and tasks',
       );
 
       expect(vm.isLoading, isFalse);
-      expect(vm.reminder.title, 'Remember today\'s habits');
-      expect(vm.reminder.description, 'Ada, time to note yesterday');
+      expect(vm.reminder.title, 'Remember your day');
+      expect(
+        vm.reminder.description,
+        'Ada, time to review your goals, habits, and tasks',
+      );
       expect(vm.time, const TimeOfDay(hour: 7, minute: 0));
       expect(vm.isEnabled, isTrue);
     });
@@ -168,8 +170,8 @@ void main() {
         userService: UserService(forceLocalOnly: true),
       );
       await vm.load(
-        defaultTitle: 'Remember today\'s habits',
-        defaultDescription: 'time to note yesterday',
+        defaultTitle: 'Remember your day',
+        defaultDescription: 'time to review your goals, habits, and tasks',
       );
       vm.setTime(const TimeOfDay(hour: 8, minute: 0));
       vm.setEnabled(false);
@@ -185,6 +187,27 @@ void main() {
       expect(stored.description, 'Wrap up the day');
       expect(stored.time, const TimeOfDay(hour: 8, minute: 0));
       expect(stored.isEnabled, isFalse);
+    });
+
+    test('save returns notSupported when local notifications are unavailable', () async {
+      final service = ReminderService(forceLocalOnly: true)
+        ..localNotificationSupportedOverride = false;
+      final vm = GlobalReminderViewModel(
+        reminderService: service,
+        userService: UserService(forceLocalOnly: true),
+      );
+      await vm.load(
+        defaultTitle: 'Remember your day',
+        defaultDescription: 'time to review your goals, habits, and tasks',
+      );
+      vm.setEnabled(true);
+
+      final result = await vm.save(
+        title: 'Remember your day',
+        description: 'time to review your goals, habits, and tasks',
+      );
+
+      expect(result, GlobalReminderSaveResult.notSupported);
     });
   });
 }

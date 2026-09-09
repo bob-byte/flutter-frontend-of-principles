@@ -9,15 +9,18 @@ import '../../models/habit_reminder.dart';
 import '../../services/dialog_service.dart';
 import '../../services/reminder_service.dart';
 import '../../models/habit.dart'; // Needed if we want to pass Habit
+import '../../widgets/expandable_bottom_sheet.dart';
 
 class ReminderBottomSheet extends StatefulWidget {
   final HabitReminder? initialReminder;
   final Habit habit;
+  final ScrollController scrollController;
 
   const ReminderBottomSheet({
     super.key,
     this.initialReminder,
     required this.habit,
+    required this.scrollController,
   });
 
   static Future<HabitReminder?> show(
@@ -25,19 +28,15 @@ class ReminderBottomSheet extends StatefulWidget {
     Habit habit, {
     HabitReminder? initialReminder,
   }) {
-    return showModalBottomSheet<HabitReminder>(
+    return showExpandableModalBottomSheet<HabitReminder>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: ReminderBottomSheet(
-          initialReminder: initialReminder,
-          habit: habit,
-        ),
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: ExpandableSheetDefaults.maxChildSize,
+      builder: (ctx, scrollController) => ReminderBottomSheet(
+        initialReminder: initialReminder,
+        habit: habit,
+        scrollController: scrollController,
       ),
     );
   }
@@ -222,218 +221,221 @@ class _ReminderBottomSheetState extends State<ReminderBottomSheet> {
   Widget build(BuildContext context) {
     final palette = context.watch<ThemeController>().palette;
 
-    return Material(
-      key: const Key('reminderSheetSurface'),
-      color: palette.cardBg,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
+    return SizedBox.expand(
+      child: Material(
+        key: const Key('reminderSheetSurface'),
+        color: palette.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        clipBehavior: Clip.antiAlias,
+        child: SingleChildScrollView(
+          controller: widget.scrollController,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              BottomSheetDragHandle(
                 key: const Key('reminderSheetHandle'),
+                color: palette.textMuted.withValues(alpha: 0.35),
                 width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: palette.textMuted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(2),
+                topPadding: 0,
+                bottomPadding: 20,
+              ),
+              Text(
+                'Нагадування',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: palette.textPrimary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            Text(
-              'Нагадування',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: palette.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            TextField(
-              key: const Key('reminderTitleField'),
-              controller: _titleController,
-              style: TextStyle(color: palette.textPrimary),
-              cursorColor: palette.primary,
-              decoration: InputDecoration(
-                labelText: 'Заголовок',
-                labelStyle: TextStyle(color: palette.textMuted),
-                prefixIcon: Icon(
-                  Icons.local_offer_outlined,
-                  color: palette.textMuted,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              key: const Key('reminderDescriptionField'),
-              controller: _descController,
-              style: TextStyle(color: palette.textPrimary),
-              cursorColor: palette.primary,
-              decoration: InputDecoration(
-                labelText: 'Опис',
-                labelStyle: TextStyle(color: palette.textMuted),
-                prefixIcon: Icon(
-                  Icons.description_outlined,
-                  color: palette.textMuted,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            InkWell(
-              key: const Key('reminderTimeField'),
-              onTap: _selectTime,
-              child: InputDecorator(
+              TextField(
+                key: const Key('reminderTitleField'),
+                controller: _titleController,
+                style: TextStyle(color: palette.textPrimary),
+                cursorColor: palette.primary,
                 decoration: InputDecoration(
-                  labelText: 'Час',
+                  labelText: 'Заголовок',
                   labelStyle: TextStyle(color: palette.textMuted),
-                  prefixIcon: Icon(Icons.access_time, color: palette.textMuted),
+                  prefixIcon: Icon(
+                    Icons.local_offer_outlined,
+                    color: palette.textMuted,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  _time.format(context),
-                  style: TextStyle(fontSize: 16, color: palette.textPrimary),
+              ),
+              const SizedBox(height: 16),
+
+              TextField(
+                key: const Key('reminderDescriptionField'),
+                controller: _descController,
+                style: TextStyle(color: palette.textPrimary),
+                cursorColor: palette.primary,
+                decoration: InputDecoration(
+                  labelText: 'Опис',
+                  labelStyle: TextStyle(color: palette.textMuted),
+                  prefixIcon: Icon(
+                    Icons.description_outlined,
+                    color: palette.textMuted,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            Row(
-              children: [
-                Switch(
-                  key: const Key('reminderEnabledSwitch'),
-                  value: _isEnabled,
-                  onChanged: (val) => setState(() => _isEnabled = val),
-                  activeTrackColor: palette.primary,
-                  activeThumbColor: palette.onPrimary,
+              InkWell(
+                key: const Key('reminderTimeField'),
+                onTap: _selectTime,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Час',
+                    labelStyle: TextStyle(color: palette.textMuted),
+                    prefixIcon: Icon(
+                      Icons.access_time,
+                      color: palette.textMuted,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    _time.format(context),
+                    style: TextStyle(fontSize: 16, color: palette.textPrimary),
+                  ),
                 ),
-                Text(
-                  'Увімкнути',
-                  style: TextStyle(fontSize: 16, color: palette.textPrimary),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
 
-            // Days selection
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: List.generate(7, (index) {
-                final dayType = index + 1; // 1 to 7
-                final isSelected = _selectedDays.contains(dayType);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedDays.remove(dayType);
-                      } else {
-                        _selectedDays.add(dayType);
-                      }
-                    });
-                  },
-                  child: CircleAvatar(
-                    key: Key('reminderDay$dayType'),
-                    radius: 20,
-                    backgroundColor: isSelected
-                        ? palette.primary
-                        : palette.primary.withValues(
-                            alpha: palette.isDark ? 0.12 : 0.10,
+              Row(
+                children: [
+                  Switch(
+                    key: const Key('reminderEnabledSwitch'),
+                    value: _isEnabled,
+                    onChanged: (val) => setState(() => _isEnabled = val),
+                    activeTrackColor: palette.primary,
+                    activeThumbColor: palette.onPrimary,
+                  ),
+                  Text(
+                    'Увімкнути',
+                    style: TextStyle(fontSize: 16, color: palette.textPrimary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Days selection
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: List.generate(7, (index) {
+                  final dayType = index + 1; // 1 to 7
+                  final isSelected = _selectedDays.contains(dayType);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedDays.remove(dayType);
+                        } else {
+                          _selectedDays.add(dayType);
+                        }
+                      });
+                    },
+                    child: CircleAvatar(
+                      key: Key('reminderDay$dayType'),
+                      radius: 20,
+                      backgroundColor: isSelected
+                          ? palette.primary
+                          : palette.primary.withValues(
+                              alpha: palette.isDark ? 0.12 : 0.10,
+                            ),
+                      child: Text(
+                        _dayLabels[index],
+                        style: TextStyle(
+                          color: isSelected
+                              ? palette.onPrimary
+                              : palette.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      key: const Key('reminderCancelButton'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: palette.textPrimary.withValues(
+                          alpha: palette.isDark ? 0.18 : 0.08,
+                        ),
+                        foregroundColor: palette.textPrimary,
+                        side: BorderSide(
+                          color: palette.cardBorder.withValues(alpha: 0.65),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.cancel, size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            'Скасувати',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                    child: Text(
-                      _dayLabels[index],
-                      style: TextStyle(
-                        color: isSelected ? palette.onPrimary : palette.primary,
-                        fontWeight: FontWeight.bold,
+                        ],
                       ),
                     ),
                   ),
-                );
-              }),
-            ),
-            const SizedBox(height: 24),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: TextButton(
-                    key: const Key('reminderCancelButton'),
-                    style: TextButton.styleFrom(
-                      backgroundColor: palette.textPrimary.withValues(
-                        alpha: palette.isDark ? 0.18 : 0.08,
-                      ),
-                      foregroundColor: palette.textPrimary,
-                      side: BorderSide(
-                        color: palette.cardBorder.withValues(alpha: 0.65),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.cancel, size: 18),
-                        SizedBox(width: 4),
-                        Text(
-                          'Скасувати',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      key: const Key('reminderSaveButton'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: palette.primary,
+                        foregroundColor: palette.onPrimary,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    key: const Key('reminderSaveButton'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: palette.primary,
-                      foregroundColor: palette.onPrimary,
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      onPressed: _save,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 18),
+                          SizedBox(width: 4),
+                          Text(
+                            'Зберегти',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ),
-                    onPressed: _save,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle_outline, size: 18),
-                        SizedBox(width: 4),
-                        Text(
-                          'Зберегти',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

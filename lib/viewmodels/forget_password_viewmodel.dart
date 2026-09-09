@@ -12,7 +12,10 @@ class ForgetPasswordViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   String? get error => _error;
 
-  Future<int?> generateCode(String email, {required String genericError}) async {
+  Future<int?> generateCode(
+    String email, {
+    required String genericError,
+  }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
@@ -27,8 +30,10 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('EmailIsIncorrect')) {
         _error = 'Такого користувача не знайдено (Email не зареєстровано).';
-      } else if (errorMsg.contains('Transaction failed') || errorMsg.contains('500')) {
-        _error = 'Помилка поштового сервера на бекенді. Зверніться до адміністратора.';
+      } else if (errorMsg.contains('Transaction failed') ||
+          errorMsg.contains('500')) {
+        _error =
+            'Помилка поштового сервера на бекенді. Зверніться до адміністратора.';
       } else {
         _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       }
@@ -39,7 +44,11 @@ class ForgetPasswordViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> changePassword(String email, String newPassword, {required String genericError}) async {
+  Future<bool> changePassword(
+    String email,
+    String newPassword, {
+    required String genericError,
+  }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
@@ -49,7 +58,8 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       if (!success) {
         _error = genericError;
       } else {
-        // Log in automatically after password change to get the token
+        // Log in automatically after password change to get the token.
+        // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
         await _authService.login(email, newPassword);
       }
       return success;

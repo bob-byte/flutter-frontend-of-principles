@@ -15,6 +15,7 @@ import '../models/frequency_config.dart';
 import '../models/user_goal.dart';
 import '../models/habit_reminder.dart';
 import '../models/schedule_reminder_offset.dart';
+import '../core/network/server_required_retry.dart';
 import '../services/ai_recommendation_service.dart';
 import '../services/dialog_service.dart';
 import '../services/user_service.dart';
@@ -28,7 +29,9 @@ class EditHabitViewModel extends ChangeNotifier {
     this._aiRecommendationService,
     this._userService, {
     DatabaseService? dbService,
-  }) : _dbService = dbService ?? DatabaseService();
+    ServerRequiredRetry? serverRetry,
+  }) : _dbService = dbService ?? DatabaseService(),
+       _serverRetry = serverRetry ?? ServerRequiredRetry();
 
   final HabitService _habitService;
   final ReminderService _reminderService;
@@ -37,6 +40,7 @@ class EditHabitViewModel extends ChangeNotifier {
   final UserService _userService;
   final DatabaseService _dbService;
   final DialogService _dialogService = DialogService();
+  final ServerRequiredRetry _serverRetry;
 
   int? editingHabitId;
   List<HabitProgressMark> _progressMarks = [];
@@ -207,7 +211,10 @@ class EditHabitViewModel extends ChangeNotifier {
     }
   }
 
-  void applySchedule(ScheduleDraft draft) {
+  void applySchedule(
+    ScheduleDraft draft, {
+    String reminderFallbackTitle = 'Reminder',
+  }) {
     // Habits use Frequency for recurrence; schedule is time + reminder offsets.
     // Times can differ by weekday via multiple HabitTimeSlots.
     endDate = null;
@@ -258,7 +265,19 @@ class EditHabitViewModel extends ChangeNotifier {
       return _reminderService.allocateNotificationId();
     }
 
-    final title = habitName.trim().isEmpty ? 'Reminder' : habitName;
+    // Match MAUI AddReminderAsync: empty title → goal or "Reminder";
+    // empty description → habit name or title.
+    var title = draft.notificationTitle.trim();
+    if (title.isEmpty) {
+      final goal = targetGoal.trim();
+      title = goal.isNotEmpty ? goal : reminderFallbackTitle;
+    }
+    var description = draft.notificationDescription.trim();
+    if (description.isEmpty) {
+      final name = habitName.trim();
+      description = name.isNotEmpty ? name : title;
+    }
+
     final built = <HabitReminder>[];
     for (var i = 0; i < slots.length; i++) {
       final slot = slots[i];
@@ -269,10 +288,8 @@ class EditHabitViewModel extends ChangeNotifier {
       built.add(
         HabitReminder(
           id: previous?.id,
-          title: (previous?.title.trim().isNotEmpty ?? false)
-              ? previous!.title
-              : title,
-          description: previous?.description ?? '',
+          title: title,
+          description: description,
           time: slot.time,
           isEnabled: true,
           daysOfWeek: days,
@@ -293,6 +310,33 @@ class EditHabitViewModel extends ChangeNotifier {
     reminders = built;
     constantReminder = draft.constantReminder;
     notifyListeners();
+  }
+
+  /// Seeds title/description for the habit reminder sheet like MAUI
+  /// [OpenReminderBottomSheet]: goal → mission → personality title; description → habit name.
+  Future<void> seedReminderCopyDefaults(
+    ScheduleDraft draft, {
+    required String personalityFallbackTitle,
+  }) async {
+    if (draft.notificationTitle.trim().isEmpty) {
+      final goal = targetGoal.trim();
+      if (goal.isNotEmpty) {
+        draft.setNotificationTitle(goal);
+      } else {
+        try {
+          final user = await _userService.getCurrentUser();
+          final mission = user.mission?.trim() ?? '';
+          draft.setNotificationTitle(
+            mission.isNotEmpty ? mission : personalityFallbackTitle,
+          );
+        } catch (_) {
+          draft.setNotificationTitle(personalityFallbackTitle);
+        }
+      }
+    }
+    if (draft.notificationDescription.trim().isEmpty) {
+      draft.setNotificationDescription(habitName.trim());
+    }
   }
 
   void incrementDifficulty() {
@@ -321,9 +365,14 @@ class EditHabitViewModel extends ChangeNotifier {
         msg: _dialogService.l10n.confirmRecommendedHabitsMessage,
       );
       if (!confirmed) return false;
-      _loadRecommendedHabits(culture: culture);
+      unawaited(_loadRecommendedHabits(culture: culture));
     }
     return true;
+  }
+
+  @visibleForTesting
+  Future<void> loadRecommendedHabits({required String culture}) {
+    return _loadRecommendedHabits(culture: culture);
   }
 
   Future<void> _loadRecommendedHabits({required String culture}) async {
@@ -335,21 +384,33 @@ class EditHabitViewModel extends ChangeNotifier {
       final user = await _userService.getCurrentUser();
       final habits = await _dbService.getAllHabits();
       final goals = await _goalService.getGoals();
-      final result = await _aiRecommendationService.recommendHabits(
-        culture: culture,
-        currentHabits: [
-          for (final habit in habits)
-            if (habit.name.trim().isNotEmpty) habit.name.trim(),
-        ],
-        goals: [
-          for (final goal in goals)
-            if (goal.name.trim().isNotEmpty) goal.name.trim(),
-        ],
-        mission: user.mission,
-        slogan: user.mainSlogan,
-        goal: targetGoal.trim().isEmpty ? null : targetGoal.trim(),
-        gender: user.gender,
+      final result = await _serverRetry.run(
+        () => _aiRecommendationService.recommendHabits(
+          culture: culture,
+          currentHabits: [
+            for (final habit in habits)
+              if (habit.name.trim().isNotEmpty) habit.name.trim(),
+          ],
+          goals: [
+            for (final goal in goals)
+              if (goal.name.trim().isNotEmpty) goal.name.trim(),
+          ],
+          mission: user.mission,
+          slogan: user.mainSlogan,
+          goal: targetGoal.trim().isEmpty ? null : targetGoal.trim(),
+          gender: user.gender,
+        ),
       );
+      if (result == null) {
+        try {
+          recommendedHabitsError =
+              _dialogService.l10n.serverTechnicalWorkIsInProgress;
+        } on StateError {
+          recommendedHabitsError =
+              'Technical work on our server is in progress. Please try again later.';
+        }
+        return;
+      }
       recommendedHabits = result;
       _shouldReloadRecommendedHabits = false;
     } catch (e) {
@@ -411,6 +472,7 @@ class EditHabitViewModel extends ChangeNotifier {
         endDate: endDate,
         allDay: allDay,
         constantReminder: constantReminder,
+        lastModified: DateTime.now().toUtc(),
       );
 
       var localId = editingHabitId;

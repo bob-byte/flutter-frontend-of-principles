@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -8,34 +6,34 @@ import '../../core/theme/task_theme_palette.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../models/recommended_habit.dart';
 import '../../viewmodels/edit_habit_viewmodel.dart';
+import '../../widgets/expandable_bottom_sheet.dart';
 import '../../widgets/themed_lottie.dart';
 
 class RecommendedHabitsSheet {
   static Future<RecommendedHabit?> show(BuildContext context) {
-    return showModalBottomSheet<RecommendedHabit>(
+    return showExpandableModalBottomSheet<RecommendedHabit>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      builder: (_) => const _RecommendedHabitsSheetContent(),
+      initialChildSize: 0.78,
+      minChildSize: 0.45,
+      maxChildSize: ExpandableSheetDefaults.maxChildSize,
+      builder: (_, scrollController) =>
+          _RecommendedHabitsSheetContent(scrollController: scrollController),
     );
   }
 }
 
 class _RecommendedHabitsSheetContent extends StatelessWidget {
-  const _RecommendedHabitsSheetContent();
+  const _RecommendedHabitsSheetContent({required this.scrollController});
+
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<EditHabitViewModel>();
     final l10n = AppLocalizations.of(context)!;
     final palette = context.watch<ThemeController>().palette;
-    final media = MediaQuery.of(context);
-    final heightFactor = media.size.height < 700 ? 0.86 : 0.78;
-    final sheetHeight = math.min(media.size.height * heightFactor, 720.0);
 
     return Container(
-      height: sheetHeight,
       decoration: BoxDecoration(
         color: palette.cardBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -48,16 +46,12 @@ class _RecommendedHabitsSheetContent extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           child: Column(
             children: [
-              Container(
+              BottomSheetDragHandle(
+                color: palette.textMuted.withValues(alpha: 0.35),
                 width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: palette.textMuted.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
               ),
               const SizedBox(height: 18),
               _SheetHeader(
@@ -147,6 +141,7 @@ class _RecommendedHabitsSheetContent extends StatelessWidget {
     }
 
     return ListView.builder(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: 8),
       itemCount: vm.recommendedHabits.length,
       itemBuilder: (context, index) {

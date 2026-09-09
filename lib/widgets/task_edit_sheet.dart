@@ -16,6 +16,7 @@ import '../viewmodels/tasks_viewmodel.dart';
 import '../views/widgets/schedule/schedule_bottom_sheet.dart';
 import '../views/widgets/schedule/schedule_format.dart';
 import 'app_loading_indicator.dart';
+import 'expandable_bottom_sheet.dart';
 import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
 import 'task_subtasks_editor.dart';
@@ -57,21 +58,23 @@ Future<Task?> showTaskEditSheet(
     }
   }
 
-  return showModalBottomSheet<Task>(
+  return showExpandableModalBottomSheet<Task>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) => Theme(
+    initialChildSize: 0.72,
+    minChildSize: 0.4,
+    maxChildSize: 0.94,
+    builder: (sheetContext, scrollController) => Theme(
       data: tasksVm.themeData,
-      child: TaskEditSheet(taskId: taskId),
+      child: TaskEditSheet(taskId: taskId, scrollController: scrollController),
     ),
   );
 }
 
 class TaskEditSheet extends StatefulWidget {
-  const TaskEditSheet({super.key, this.taskId});
+  const TaskEditSheet({super.key, this.taskId, required this.scrollController});
 
   final String? taskId;
+  final ScrollController scrollController;
 
   @override
   State<TaskEditSheet> createState() => _TaskEditSheetState();
@@ -135,14 +138,9 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
 
     vm.applyAiDraft(aiDraft);
     _syncControllers(vm);
-    setState(() {
-      if (vm.themeMode != ThemePickerMode.none) {
-        _optionsExpanded = true;
-      }
-      if (_titleError && vm.title.trim().isNotEmpty) {
-        _titleError = false;
-      }
-    });
+    if (_titleError && vm.title.trim().isNotEmpty) {
+      setState(() => _titleError = false);
+    }
   }
 
   Future<void> _pickDate(EditTaskViewModel vm) async {
@@ -194,20 +192,16 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   Widget build(BuildContext context) {
     final strings = TaskStrings.of(context);
     final palette = context.watch<TasksViewModel>().palette;
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Consumer<EditTaskViewModel>(
       builder: (context, vm, _) {
         if (vm.isLoading) {
           _controllersSynced = false;
-          return Padding(
-            padding: EdgeInsets.only(bottom: bottomInset),
-            child: _SheetSurface(
-              palette: palette,
-              child: const SizedBox(
-                height: 180,
-                child: AppLoadingIndicator(size: 72),
-              ),
+          return _SheetSurface(
+            palette: palette,
+            child: const SizedBox(
+              height: 180,
+              child: AppLoadingIndicator(size: 72),
             ),
           );
         }
@@ -221,191 +215,184 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
           });
         }
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: _SheetSurface(
-            palette: palette,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: palette.textMuted.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          focusNode: _titleFocus,
-                          autofocus: widget.taskId == null,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.sentences,
-                          enableSuggestions: true,
-                          style: TextStyle(
+        return _SheetSurface(
+          palette: palette,
+          child: Column(
+            children: [
+              BottomSheetDragHandle(
+                color: palette.textMuted.withValues(alpha: 0.3),
+                width: 40,
+                topPadding: 8,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: widget.scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _titleController,
+                        focusNode: _titleFocus,
+                        autofocus: widget.taskId == null,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.sentences,
+                        enableSuggestions: true,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                          color: palette.textPrimary,
+                          height: 1.35,
+                        ),
+                        decoration: _borderlessDecoration.copyWith(
+                          hintText: strings.taskWhatNeedsToBeDone,
+                          hintStyle: TextStyle(
+                            color: palette.textMuted.withValues(alpha: 0.75),
+                            fontWeight: FontWeight.w400,
                             fontSize: 17,
-                            fontWeight: FontWeight.w500,
-                            color: palette.textPrimary,
-                            height: 1.35,
                           ),
-                          decoration: _borderlessDecoration.copyWith(
-                            hintText: strings.taskWhatNeedsToBeDone,
-                            hintStyle: TextStyle(
-                              color: palette.textMuted.withValues(alpha: 0.75),
-                              fontWeight: FontWeight.w400,
-                              fontSize: 17,
-                            ),
-                            suffixIcon: widget.taskId == null
-                                ? Tooltip(
-                                    message: strings.taskAiAssistTitle,
-                                    child: GestureDetector(
-                                      onTap: vm.isSaving
-                                          ? null
-                                          : () => _openAiAssist(vm),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Icon(
-                                        Icons.auto_awesome,
-                                        size: 20,
-                                        color: palette.primary,
-                                      ),
+                          suffixIcon: widget.taskId == null
+                              ? Tooltip(
+                                  message: strings.taskAiAssistTitle,
+                                  child: GestureDetector(
+                                    onTap: vm.isSaving
+                                        ? null
+                                        : () => _openAiAssist(vm),
+                                    behavior: HitTestBehavior.opaque,
+                                    child: Icon(
+                                      Icons.auto_awesome,
+                                      size: 20,
+                                      color: palette.primary,
                                     ),
-                                  )
-                                : null,
-                            suffixIconConstraints: const BoxConstraints(
-                              minWidth: 20,
-                              minHeight: 20,
-                            ),
+                                  ),
+                                )
+                              : null,
+                          suffixIconConstraints: const BoxConstraints(
+                            minWidth: 20,
+                            minHeight: 20,
                           ),
-                          textInputAction: TextInputAction.next,
-                          onChanged: (value) => _onTitleChanged(vm, value),
                         ),
-                        if (_titleError) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            strings.taskNameRequired,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).colorScheme.error,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 14),
-                        Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: palette.textMuted.withValues(alpha: 0.22),
-                        ),
-                        const SizedBox(height: 14),
-                        TextField(
-                          controller: _descriptionController,
-                          minLines: 1,
-                          maxLines: 6,
-                          keyboardType: TextInputType.multiline,
-                          textCapitalization: TextCapitalization.sentences,
-                          enableSuggestions: true,
+                        textInputAction: TextInputAction.next,
+                        onChanged: (value) => _onTitleChanged(vm, value),
+                      ),
+                      if (_titleError) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          strings.taskNameRequired,
                           style: TextStyle(
-                            fontSize: 15,
-                            color: palette.textPrimary,
-                            height: 1.4,
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.w500,
                           ),
-                          decoration: _borderlessDecoration.copyWith(
-                            hintText: strings.taskDescriptionHint,
-                            hintStyle: TextStyle(
-                              color: palette.textMuted.withValues(alpha: 0.65),
-                              fontSize: 15,
-                            ),
-                          ),
-                          onChanged: vm.setDescription,
                         ),
-                        const SizedBox(height: 18),
-                        TaskSubtasksEditor(
-                          vm: vm,
-                          palette: palette,
+                      ],
+                      const SizedBox(height: 14),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: palette.textMuted.withValues(alpha: 0.22),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: _descriptionController,
+                        minLines: 1,
+                        maxLines: 6,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        enableSuggestions: true,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: palette.textPrimary,
+                          height: 1.4,
+                        ),
+                        decoration: _borderlessDecoration.copyWith(
+                          hintText: strings.taskDescriptionHint,
+                          hintStyle: TextStyle(
+                            color: palette.textMuted.withValues(alpha: 0.65),
+                            fontSize: 15,
+                          ),
+                        ),
+                        onChanged: vm.setDescription,
+                      ),
+                      const SizedBox(height: 18),
+                      TaskSubtasksEditor(
+                        vm: vm,
+                        palette: palette,
+                        strings: strings,
+                      ),
+                      if (_optionsExpanded) ...[
+                        const SizedBox(height: 24),
+                        ThemePickerSection(
+                          mode: vm.themeMode,
+                          colorForTheme: vm.colorForTheme,
+                          existingThemes: vm.sortedThemes,
+                          selectedTheme: vm.selectedTheme,
+                          selectedColor: vm.themeColor,
+                          newThemeName: vm.newThemeName,
+                          onModeChanged: vm.setThemeMode,
+                          onThemeSelected: vm.setSelectedTheme,
+                          onNewThemeNameChanged: vm.setNewThemeName,
+                          onColorSelected: vm.setThemeColor,
                           strings: strings,
                         ),
-                        if (_optionsExpanded) ...[
-                          const SizedBox(height: 24),
-                          ThemePickerSection(
-                            mode: vm.themeMode,
-                            colorForTheme: vm.colorForTheme,
-                            existingThemes: vm.sortedThemes,
-                            selectedTheme: vm.selectedTheme,
-                            selectedColor: vm.themeColor,
-                            newThemeName: vm.newThemeName,
-                            onModeChanged: vm.setThemeMode,
-                            onThemeSelected: vm.setSelectedTheme,
-                            onNewThemeNameChanged: vm.setNewThemeName,
-                            onColorSelected: vm.setThemeColor,
-                            strings: strings,
-                          ),
-                        ],
                       ],
-                    ),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: palette.cardBorder.withValues(alpha: 0.35),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _ActionChip(
-                              palette: palette,
-                              icon: Icons.calendar_today_outlined,
-                              label: _dateLabel(strings, vm),
-                              active: vm.hasDueDate,
-                              onTap: () => _pickDate(vm),
-                              onLongPress: () {
-                                vm.setHasDueDate(!vm.hasDueDate);
-                              },
-                            ),
-                            _PriorityChip(
-                              palette: palette,
-                              priority: vm.priority,
-                              strings: strings,
-                              onSelected: vm.setPriority,
-                            ),
-                            _ActionChip(
-                              palette: palette,
-                              icon: Icons.label_outline,
-                              label: vm.resolvedTheme() ?? strings.taskNoTheme,
-                              active: vm.themeMode != ThemePickerMode.none,
-                              onTap: () => setState(
-                                () => _optionsExpanded = !_optionsExpanded,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      _SubmitButton(
-                        palette: palette,
-                        isSaving: vm.isSaving,
-                        onPressed: vm.isSaving ? null : () => _save(vm),
-                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: palette.cardBorder.withValues(alpha: 0.35),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _ActionChip(
+                            palette: palette,
+                            icon: Icons.calendar_today_outlined,
+                            label: _dateLabel(strings, vm),
+                            active: vm.hasDueDate,
+                            onTap: () => _pickDate(vm),
+                            onLongPress: () {
+                              vm.setHasDueDate(!vm.hasDueDate);
+                            },
+                          ),
+                          _PriorityChip(
+                            palette: palette,
+                            priority: vm.priority,
+                            strings: strings,
+                            onSelected: vm.setPriority,
+                          ),
+                          _ActionChip(
+                            palette: palette,
+                            icon: Icons.label_outline,
+                            label: vm.resolvedTheme() ?? strings.taskNoTheme,
+                            active: vm.themeMode != ThemePickerMode.none,
+                            onTap: () => setState(
+                              () => _optionsExpanded = !_optionsExpanded,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _SubmitButton(
+                      palette: palette,
+                      isSaving: vm.isSaving,
+                      onPressed: vm.isSaving ? null : () => _save(vm),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -421,7 +408,12 @@ class _SheetSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TasksGlassSheet(palette: palette, blur: 14, child: child);
+    return TasksGlassSheet(
+      palette: palette,
+      blur: 14,
+      fillHeight: true,
+      child: child,
+    );
   }
 }
 
@@ -488,26 +480,37 @@ class _PriorityChip extends StatelessWidget {
   final TaskStrings strings;
   final ValueChanged<TaskPriority?> onSelected;
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final hasPriority = priority != null;
-    final color = hasPriority
-        ? priorityColor(priority!, scheme)
-        : palette.textMuted;
-    final label = hasPriority
-        ? priority!.label(strings)
-        : strings.taskPriorityNone;
+  static const _menuOffset = Offset(0, -168);
 
-    return PopupMenuButton<TaskPriority?>(
+  Future<void> _openMenu(BuildContext context) async {
+    // Keep the active text field focused so the soft keyboard stays up.
+    final focus = FocusManager.instance.primaryFocus;
+    final button = context.findRenderObject() as RenderBox?;
+    final overlay =
+        Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
+    if (button == null || overlay == null) return;
+
+    final scheme = Theme.of(context).colorScheme;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(_menuOffset, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero) + _menuOffset,
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    final menuFuture = showMenu<TaskPriority?>(
+      context: context,
+      position: position,
       initialValue: priority,
-      onSelected: onSelected,
-      offset: const Offset(0, -168),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      itemBuilder: (context) => [
+      items: [
         PopupMenuItem(
           value: null,
-          // PopupMenuButton treats a null result as cancel, not a selection.
+          // showMenu returns null for both cancel and this item.
           onTap: () => onSelected(null),
           child: Row(
             children: [
@@ -542,8 +545,42 @@ class _PriorityChip extends StatelessWidget {
           ),
         ),
       ],
-      child: Material(
-        color: Colors.transparent,
+    );
+    // Popup route autofocuses; reclaim the field so the IME stays open.
+    _restoreTextInput(focus);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreTextInput(focus);
+    });
+
+    final selected = await menuFuture;
+    if (selected != null) onSelected(selected);
+    _restoreTextInput(focus);
+  }
+
+  void _restoreTextInput(FocusNode? focus) {
+    if (focus == null || !focus.canRequestFocus) return;
+    focus.requestFocus();
+    SystemChannels.textInput.invokeMethod('TextInput.show');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasPriority = priority != null;
+    final color = hasPriority
+        ? priorityColor(priority!, scheme)
+        : palette.textMuted;
+    final label = hasPriority
+        ? priority!.label(strings)
+        : strings.taskPriorityNone;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        // Avoid stealing focus from title/description/subtask fields.
+        canRequestFocus: false,
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => _openMenu(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(

@@ -5,6 +5,7 @@ import 'package:principles_app/core/config/app_config.dart';
 import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/network/api_endpoints.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
+import 'package:principles_app/core/network/server_required_retry.dart';
 import 'package:principles_app/models/recommended_habit.dart';
 import 'package:principles_app/services/ai_recommendation_service.dart';
 
@@ -86,5 +87,47 @@ void main() {
       'mainSlogan': 'Stay honest',
       'gender': 0,
     });
+  });
+
+  test('recommendHabits throws ServerTechnicalWorkException on 404', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      AppConfig.tokenStorageKey: 'test-token',
+    });
+
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+    final apiClient = ApiClient(SecureStore(), dio: dio);
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              response: Response(
+                requestOptions: options,
+                statusCode: 404,
+                data: 'Not Found',
+              ),
+              type: DioExceptionType.badResponse,
+            ),
+          );
+        },
+      ),
+    );
+
+    final service = AiRecommendationService(apiClient);
+    expect(
+      () => service.recommendHabits(
+        culture: 'en',
+        currentHabits: const [],
+        goals: const [],
+      ),
+      throwsA(
+        isA<ServerTechnicalWorkException>().having(
+          (e) => e.statusCode,
+          'statusCode',
+          404,
+        ),
+      ),
+    );
   });
 }

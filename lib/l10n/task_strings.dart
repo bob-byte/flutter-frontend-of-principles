@@ -76,8 +76,6 @@ class TaskStrings {
     required this.taskOverdue,
     required this.taskMoveToToday,
     required this.taskHabitsSection,
-    required this.taskHabitLabel,
-    required this.taskSubtasksLabel,
     required this.taskAddSubtask,
     required this.taskSubtaskHint,
     required this.taskRemoveSubtask,
@@ -157,8 +155,6 @@ class TaskStrings {
   final String taskOverdue;
   final String taskMoveToToday;
   final String taskHabitsSection;
-  final String taskHabitLabel;
-  final String taskSubtasksLabel;
   final String taskAddSubtask;
   final String taskSubtaskHint;
   final String taskRemoveSubtask;
@@ -266,9 +262,7 @@ class TaskStrings {
     taskCalendarSelectDay: 'Show this day',
     taskOverdue: 'Overdue',
     taskMoveToToday: 'Move to today',
-    taskHabitsSection: 'Habits',
-    taskHabitLabel: 'Habit',
-    taskSubtasksLabel: 'Sub-tasks',
+    taskHabitsSection: 'Habits to do',
     taskAddSubtask: 'Add sub-task',
     taskSubtaskHint: 'Sub-task',
     taskRemoveSubtask: 'Remove',
@@ -349,9 +343,7 @@ class TaskStrings {
     taskCalendarSelectDay: 'Показати цей день',
     taskOverdue: 'Протерміновано',
     taskMoveToToday: 'Перенести на сьогодні',
-    taskHabitsSection: 'Звички',
-    taskHabitLabel: 'Звичка',
-    taskSubtasksLabel: 'Підзавдання',
+    taskHabitsSection: 'Звички до виконання',
     taskAddSubtask: 'Додати підзавдання',
     taskSubtaskHint: 'Підзавдання',
     taskRemoveSubtask: 'Прибрати',

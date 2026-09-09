@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/task_theme_palette.dart';
 import '../core/utils/date_helpers.dart';
 import '../l10n/task_strings.dart';
 import '../viewmodels/tasks_viewmodel.dart';
+import 'expandable_bottom_sheet.dart';
 import 'task_calendar_sheet.dart';
 import 'tasks_glass.dart';
 
-Future<void> showTasksListMenuSheet(BuildContext context) {
+enum TasksListMenuResult { openDailyReminder }
+
+Future<TasksListMenuResult?> showTasksListMenuSheet(BuildContext context) {
   final vm = context.read<TasksViewModel>();
-  return showModalBottomSheet<void>(
+  return showExpandableModalBottomSheet<TasksListMenuResult>(
     context: context,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) =>
-        Theme(data: vm.themeData, child: const TasksListMenuSheet()),
+    initialChildSize: 0.52,
+    minChildSize: 0.34,
+    maxChildSize: 0.94,
+    builder: (sheetContext, scrollController) => Theme(
+      data: vm.themeData,
+      child: TasksListMenuSheet(scrollController: scrollController),
+    ),
   );
 }
 
 class TasksListMenuSheet extends StatelessWidget {
-  const TasksListMenuSheet({super.key});
+  const TasksListMenuSheet({super.key, required this.scrollController});
+
+  final ScrollController scrollController;
 
   Future<void> _pickDay(BuildContext context, TasksViewModel vm) async {
     final picked = await showTaskCalendarSheet(
@@ -35,25 +45,21 @@ class TasksListMenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = TaskStrings.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final vm = context.watch<TasksViewModel>();
     final palette = vm.palette;
     final isDayMode = vm.listMode == TasksListMode.day;
 
     return TasksGlassSheet(
       palette: palette,
+      fillHeight: true,
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          controller: scrollController,
           children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: palette.textMuted.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(999),
-              ),
+            BottomSheetDragHandle(
+              color: palette.textMuted.withValues(alpha: 0.35),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -119,6 +125,16 @@ class TasksListMenuSheet extends StatelessWidget {
               onTap: () {
                 vm.setListModeCompleted();
                 Navigator.pop(context);
+              },
+            ),
+            _MenuTile(
+              palette: palette,
+              icon: Icons.notifications_none,
+              label: l10n.habitsReportReminderSheetTitle,
+              subtitle: l10n.habitsReportReminderMenuHint,
+              selected: false,
+              onTap: () {
+                Navigator.pop(context, TasksListMenuResult.openDailyReminder);
               },
             ),
             const SizedBox(height: 12),

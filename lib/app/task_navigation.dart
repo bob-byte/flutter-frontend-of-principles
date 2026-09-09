@@ -22,7 +22,7 @@ class TasksNavigation {
     return openEditTask(context);
   }
 
-  static Future<void> openListMenu(BuildContext context) {
+  static Future<TasksListMenuResult?> openListMenu(BuildContext context) {
     return showTasksListMenuSheet(context);
   }
 }

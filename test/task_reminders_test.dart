@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
+import 'package:principles_app/core/utils/date_helpers.dart';
 import 'package:principles_app/models/schedule_reminder_offset.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/models/task_item_dto.dart';
@@ -161,6 +162,41 @@ void main() {
       expect(draft.hasTime, isFalse);
       expect(draft.reminders, isEmpty);
       expect(draft.constantReminder, isFalse);
+    });
+
+    test('setReminders without time defaults to nearest next hour', () {
+      final draft = ScheduleDraft.defaults(showDuration: false);
+      draft.selectDate(DateTime(2026, 9, 12));
+      draft.setReminders(const [ScheduleReminderOffset(offsetMinutes: 0)]);
+
+      final expected = nearestNextHour();
+      expect(draft.hasTime, isTrue);
+      expect(draft.dueDate!.hour, expected.hour);
+      expect(draft.dueDate!.minute, 0);
+      expect(draft.dueDate!.day, 12);
+    });
+  });
+
+  group('nearestNextHour', () {
+    test('rounds partial hour up', () {
+      expect(
+        nearestNextHour(DateTime(2026, 9, 8, 19, 24)),
+        DateTime(2026, 9, 8, 20),
+      );
+    });
+
+    test('keeps exact hour', () {
+      expect(
+        nearestNextHour(DateTime(2026, 9, 8, 19)),
+        DateTime(2026, 9, 8, 19),
+      );
+    });
+
+    test('rolls to next day after 23', () {
+      expect(
+        nearestNextHour(DateTime(2026, 9, 8, 23, 15)),
+        DateTime(2026, 9, 9, 0),
+      );
     });
   });
 

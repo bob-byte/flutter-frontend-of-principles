@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/network/server_required_retry.dart';
 import '../models/recommended_habit.dart';
 
 class AiRecommendationService {
@@ -61,6 +62,9 @@ class AiRecommendationService {
       }
       return habits;
     } catch (e) {
+      if (isServerTechnicalWork(e)) {
+        throw ServerTechnicalWorkException.from(e);
+      }
       throw StateError(
         _userFacingError(e, 'Не вдалося отримати рекомендації.'),
       );

@@ -1,16 +1,16 @@
-import 'package:encrypt/encrypt.dart';
+import '../config/app_config.dart';
+import '../security/password_encryptor.dart';
 
+/// Encrypts passwords for `/api/account/*` using the same AES-CBC scheme as MAUI.
+///
+/// Keys follow [AppConfig.isLocal]: Development when `API_ENV=local` /
+/// `LOCALDEBUG=true`, otherwise production.
 class PasswordChanger {
-  static const String _firstKey = 'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
-  static const String _secondKey = 'M%m5Vy9R(_k74t^M';
-
   static String encryptNewPassword(String plainText) {
-    final key = Key.fromUtf8(_firstKey);
-    final iv = IV.fromUtf8(_secondKey);
-
-    final encrypter = Encrypter(AES(key, mode: AESMode.cbc, padding: 'PKCS7'));
-
-    final encrypted = encrypter.encrypt(plainText, iv: iv);
-    return encrypted.base64;
+    return PasswordEncryptor.encryptPassword(
+      plainText,
+      AppConfig.passwordEncryptionFirstKey,
+      AppConfig.passwordEncryptionSecondKey,
+    );
   }
 }

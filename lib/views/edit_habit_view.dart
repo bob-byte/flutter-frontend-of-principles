@@ -91,6 +91,9 @@ class _EditHabitViewState extends State<EditHabitView> {
   }
 
   Future<void> _openHabitSchedule(EditHabitViewModel vm) async {
+    final l10n = AppLocalizations.of(context)!;
+    // Keep reminder description default in sync with the name field.
+    vm.habitName = _nameController.text;
     final habit = Habit(
       name: vm.habitName,
       frequency: vm.frequency,
@@ -100,13 +103,20 @@ class _EditHabitViewState extends State<EditHabitView> {
     final initial = vm.reminders.isEmpty
         ? ScheduleDraft.defaults(showRepeat: false, showDateDuration: false)
         : ScheduleDraft.fromHabit(habit);
+    await vm.seedReminderCopyDefaults(
+      initial,
+      personalityFallbackTitle: l10n.becomeTruePersonalityTitle,
+    );
+    if (!mounted) return;
     final result = await showScheduleBottomSheet(
       context,
       initial: initial,
       showRepeat: false,
       showDateDuration: false,
     );
-    if (result != null) vm.applySchedule(result);
+    if (result != null) {
+      vm.applySchedule(result, reminderFallbackTitle: l10n.habitReminder);
+    }
   }
 
   Future<void> _maybeShowRecommendedHabitsHint() async {

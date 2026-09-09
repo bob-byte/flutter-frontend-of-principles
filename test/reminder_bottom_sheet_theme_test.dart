@@ -40,7 +40,10 @@ void main() {
           child: MaterialApp(
             theme: controller.theme,
             home: Scaffold(
-              body: ReminderBottomSheet(habit: Habit(name: 'Read')),
+              body: ReminderBottomSheet(
+                habit: Habit(name: 'Read'),
+                scrollController: ScrollController(),
+              ),
             ),
           ),
         ),

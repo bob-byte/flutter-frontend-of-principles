@@ -34,6 +34,8 @@ class ScheduleDraft extends ChangeNotifier {
     TaskRepeatConfig? repeat,
     bool hasTime = false,
     List<HabitTimeSlot>? timeSlots,
+    String notificationTitle = '',
+    String notificationDescription = '',
   }) : _dueDate = dueDate,
        _endDate = showDateDuration && showDuration ? endDate : null,
        _allDay = showDateDuration && showDuration ? allDay : false,
@@ -42,6 +44,8 @@ class ScheduleDraft extends ChangeNotifier {
        _repeat = repeat ?? const TaskRepeatConfig(),
        _hasTime = hasTime,
        _timeSlots = List.of(timeSlots ?? const []),
+       _notificationTitle = notificationTitle,
+       _notificationDescription = notificationDescription,
        _tab = showDateDuration && showDuration && endDate != null
            ? ScheduleTab.duration
            : ScheduleTab.date;
@@ -113,6 +117,8 @@ class ScheduleDraft extends ChangeNotifier {
           habit.constantReminder || (reminder?.constantReminder ?? false),
       hasTime: hasTime,
       timeSlots: slots,
+      notificationTitle: reminder?.title ?? '',
+      notificationDescription: reminder?.description ?? '',
     );
   }
 
@@ -188,6 +194,14 @@ class ScheduleDraft extends ChangeNotifier {
   bool _constantReminder;
   bool get constantReminder => _constantReminder;
 
+  /// Notification title shown for habit reminders (MAUI Reminder Title).
+  String _notificationTitle;
+  String get notificationTitle => _notificationTitle;
+
+  /// Notification body shown for habit reminders (MAUI Reminder Description).
+  String _notificationDescription;
+  String get notificationDescription => _notificationDescription;
+
   TaskRepeatConfig _repeat;
   TaskRepeatConfig get repeat => _repeat;
 
@@ -210,13 +224,7 @@ class ScheduleDraft extends ChangeNotifier {
     _endDate ??= (_dueDate ?? start).add(const Duration(hours: 1));
     if (!_hasTime && !_allDay) {
       _hasTime = true;
-      _dueDate = DateTime(
-        _dueDate!.year,
-        _dueDate!.month,
-        _dueDate!.day,
-        9,
-        0,
-      );
+      _dueDate = DateTime(_dueDate!.year, _dueDate!.month, _dueDate!.day, 9, 0);
       _endDate = _dueDate!.add(const Duration(hours: 1));
     }
   }
@@ -282,7 +290,8 @@ class ScheduleDraft extends ChangeNotifier {
     } else {
       _hasTime = true;
       final d = _dueDate ?? DateTime.now();
-      _dueDate = DateTime(d.year, d.month, d.day, 9, 0);
+      final next = nearestNextHour();
+      _dueDate = DateTime(d.year, d.month, d.day, next.hour, next.minute);
       _endDate = _dueDate!.add(const Duration(hours: 1));
     }
     notifyListeners();
@@ -414,7 +423,8 @@ class ScheduleDraft extends ChangeNotifier {
       ..clear()
       ..addAll(value);
     if (_reminders.isNotEmpty && !_hasTime && !_allDay) {
-      setTime(const TimeOfDay(hour: 9, minute: 0));
+      final next = nearestNextHour();
+      setTime(TimeOfDay(hour: next.hour, minute: next.minute));
       return;
     }
     notifyListeners();
@@ -422,6 +432,18 @@ class ScheduleDraft extends ChangeNotifier {
 
   void setConstantReminder(bool value) {
     _constantReminder = value;
+    notifyListeners();
+  }
+
+  void setNotificationTitle(String value) {
+    if (_notificationTitle == value) return;
+    _notificationTitle = value;
+    notifyListeners();
+  }
+
+  void setNotificationDescription(String value) {
+    if (_notificationDescription == value) return;
+    _notificationDescription = value;
     notifyListeners();
   }
 
@@ -438,6 +460,8 @@ class ScheduleDraft extends ChangeNotifier {
     _timeSlots.clear();
     _reminders.clear();
     _constantReminder = false;
+    _notificationTitle = '';
+    _notificationDescription = '';
     _repeat = const TaskRepeatConfig();
     _tab = ScheduleTab.date;
     notifyListeners();

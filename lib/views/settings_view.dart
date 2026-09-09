@@ -4,10 +4,12 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/home_widget/home_widget_add_prompt.dart';
 import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
+import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
 import '../widgets/app_alert_dialog.dart';
@@ -40,6 +42,7 @@ class _SettingsViewState extends State<SettingsView> {
     // LaunchDataLoader often finished pre-auth and never hydrated profile.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (launchSessionAlreadyHydrated(context)) return;
       context.read<SettingsViewModel>().load(silent: widget.embedded);
     });
   }
@@ -261,6 +264,35 @@ class _SettingsBody extends StatelessWidget {
                   ),
                 ],
               ),
+              if (showHomeCalendarWidgetSettingsEntry()) ...[
+                const SizedBox(height: 12),
+                GlassGroupedSection(
+                  useOwnLayer: true,
+                  margin: _settingsSectionMargin,
+                  header: Text(l10n.calendarWidgetSettingsSection),
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: GlassListTile(
+                        key: context
+                            .read<RoadGuideController>()
+                            .keys
+                            .settingsCalendarWidget,
+                        contentPadding: _settingsTilePadding,
+                        leading: const Icon(Icons.calendar_month_outlined),
+                        title: Text(l10n.calendarWidgetSettingsTitle),
+                        subtitle: Text(
+                          l10n.calendarWidgetSettingsSubtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: GlassListTile.chevron,
+                        onTap: () => showAddHomeCalendarWidgetPrompt(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               GlassGroupedSection(
                 useOwnLayer: true,
@@ -577,6 +609,9 @@ class _SettingsBody extends StatelessWidget {
     } catch (_) {}
     try {
       context.read<HabitProgressViewModel>().clear();
+    } catch (_) {}
+    try {
+      context.read<HelperViewModel>().clear();
     } catch (_) {}
     try {
       context.read<LaunchDataLoader>().reset();

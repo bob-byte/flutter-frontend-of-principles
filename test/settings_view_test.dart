@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,6 +156,24 @@ void main() {
         .read<ThemeController>()
         .uiTheme;
     expect(theme, TasksUiTheme.darkBlue);
+  });
+
+  testWidgets('calendar widget settings opens how-to dialog', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(_buildWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Calendar widget'), findsOneWidget);
+      await tester.tap(find.text('Calendar widget'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Long-press the Home Screen'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('calendarWidgetHowToOkButton')));
+      await tester.pumpAndSettle();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('email is not editable', (tester) async {

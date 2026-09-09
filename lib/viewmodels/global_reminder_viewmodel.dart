@@ -4,7 +4,7 @@ import '../models/reminder.dart';
 import '../services/reminder_service.dart';
 import '../services/user_service.dart';
 
-enum GlobalReminderSaveResult { saved, notificationsDenied }
+enum GlobalReminderSaveResult { saved, notificationsDenied, notSupported }
 
 class GlobalReminderViewModel extends ChangeNotifier {
   GlobalReminderViewModel({
@@ -22,6 +22,15 @@ class GlobalReminderViewModel extends ChangeNotifier {
   bool isLoading = true;
   bool isSaving = false;
 
+  /// Localized defaults after applying the user-name prefix (for customize UI).
+  String defaultTitle = '';
+  String defaultDescription = '';
+
+  bool matchesDefaults(String title, String description) {
+    return title.trim() == defaultTitle.trim() &&
+        description.trim() == defaultDescription.trim();
+  }
+
   Future<void> load({
     required String defaultTitle,
     required String defaultDescription,
@@ -31,6 +40,15 @@ class GlobalReminderViewModel extends ChangeNotifier {
     try {
       final loaded = await _reminderService.habitsReportReminder();
       final user = await _userService.getCurrentUser();
+      final appliedDefaults = applyHabitsReportDefaults(
+        reminder: Reminder(),
+        defaultTitle: defaultTitle,
+        defaultDescription: defaultDescription,
+        userName: user.name,
+      );
+      this.defaultTitle = appliedDefaults.title;
+      this.defaultDescription = appliedDefaults.description;
+
       reminder = applyHabitsReportDefaults(
         reminder: loaded,
         defaultTitle: defaultTitle,
@@ -63,6 +81,9 @@ class GlobalReminderViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       if (isEnabled) {
+        if (!_reminderService.isLocalNotificationSupported) {
+          return GlobalReminderSaveResult.notSupported;
+        }
         final allowed = await _reminderService
             .requestAccessToSendNotifications();
         if (!allowed) return GlobalReminderSaveResult.notificationsDenied;

@@ -69,8 +69,8 @@ void main() {
         constantReminder: true,
         reminders: [
           HabitReminder(
-            title: 'Read',
-            description: '',
+            title: 'Read goal',
+            description: 'Evening chapter',
             time: const TimeOfDay(hour: 21, minute: 0),
             isEnabled: true,
             daysOfWeek: [
@@ -94,6 +94,8 @@ void main() {
       expect(draft.constantReminder, isTrue);
       expect(draft.habitTimeSlots, hasLength(1));
       expect(draft.habitTimeSlots.single.weekdays, {DateTime.tuesday});
+      expect(draft.notificationTitle, 'Read goal');
+      expect(draft.notificationDescription, 'Evening chapter');
     });
 
     test('loads a separate time slot per weekday group', () {
@@ -268,6 +270,92 @@ void main() {
       expect(vm.constantReminder, isTrue);
       expect(vm.endDate, isNull);
       expect(vm.allDay, isFalse);
+      // Empty draft copy → title falls back to Reminder, description to habit name.
+      expect(reminder.title, 'Reminder');
+      expect(reminder.description, 'Meditate');
+    });
+
+    test('applies custom notification title and description', () {
+      final draft = ScheduleDraft(
+        showRepeat: false,
+        showDateDuration: false,
+        dueDate: DateTime(2026, 9, 4, 8),
+        hasTime: true,
+        reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+        notificationTitle: '  Stay focused  ',
+        notificationDescription: '  Five minutes  ',
+      );
+
+      vm.targetGoal = 'Deep work';
+      vm.applySchedule(draft, reminderFallbackTitle: 'Reminder');
+
+      expect(vm.reminders.single.title, 'Stay focused');
+      expect(vm.reminders.single.description, 'Five minutes');
+    });
+
+    test('empty title falls back to goal then Reminder label', () {
+      vm.targetGoal = 'Health';
+      vm.applySchedule(
+        ScheduleDraft(
+          showDateDuration: false,
+          dueDate: DateTime(2026, 9, 4, 8),
+          hasTime: true,
+          reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+        ),
+        reminderFallbackTitle: 'Reminder',
+      );
+      expect(vm.reminders.single.title, 'Health');
+      expect(vm.reminders.single.description, 'Meditate');
+
+      vm.targetGoal = '';
+      vm.applySchedule(
+        ScheduleDraft(
+          showDateDuration: false,
+          dueDate: DateTime(2026, 9, 4, 9),
+          hasTime: true,
+          reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+          notificationTitle: '',
+          notificationDescription: '',
+        ),
+        reminderFallbackTitle: 'Reminder',
+      );
+      expect(vm.reminders.single.title, 'Reminder');
+      expect(vm.reminders.single.description, 'Meditate');
+    });
+
+    test('seedReminderCopyDefaults fills goal and habit name', () async {
+      vm.targetGoal = 'Fitness';
+      vm.habitName = 'Push-ups';
+      final draft = ScheduleDraft.defaults(
+        showRepeat: false,
+        showDateDuration: false,
+      );
+
+      await vm.seedReminderCopyDefaults(
+        draft,
+        personalityFallbackTitle: 'Become a true personality',
+      );
+
+      expect(draft.notificationTitle, 'Fitness');
+      expect(draft.notificationDescription, 'Push-ups');
+    });
+
+    test('seedReminderCopyDefaults keeps existing copy', () async {
+      final draft = ScheduleDraft(
+        showDateDuration: false,
+        notificationTitle: 'Custom',
+        notificationDescription: 'Body',
+      );
+      vm.targetGoal = 'Ignored';
+      vm.habitName = 'Ignored';
+
+      await vm.seedReminderCopyDefaults(
+        draft,
+        personalityFallbackTitle: 'Become a true personality',
+      );
+
+      expect(draft.notificationTitle, 'Custom');
+      expect(draft.notificationDescription, 'Body');
     });
 
     test('clearing schedule removes reminders', () {

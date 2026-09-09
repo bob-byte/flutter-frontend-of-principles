@@ -67,9 +67,24 @@ class AppConfig {
 
   static bool get allowBadCertificates => isLocal && !kIsWeb;
 
-  /// MAUI production `EncryptionSettings` — шифрування пароля для `/authorization`.
-  static const passwordEncryptionFirstKey = 'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
-  static const passwordEncryptionSecondKey = 'M%m5Vy9R(_k74t^M';
+  /// MAUI / backend production `EncryptionSettings` (password AES for auth).
+  static const productionPasswordEncryptionFirstKey =
+      'yX7g53NL7X)xjV7#6DP+ipK5n)@9)_r!';
+  static const productionPasswordEncryptionSecondKey = 'M%m5Vy9R(_k74t^M';
+
+  /// Matches `appsettings.Development.json` / MAUI Development EncryptionSettings.
+  static const developmentPasswordEncryptionFirstKey =
+      '9&KG6L#~UCea+Z4T&Jx4d8n5gr&)+b29';
+  static const developmentPasswordEncryptionSecondKey = '2xf7YtC^_7D7+e*V';
+
+  /// Active password encryption key — Development when [isLocal], else production.
+  static String get passwordEncryptionFirstKey => isLocal
+      ? developmentPasswordEncryptionFirstKey
+      : productionPasswordEncryptionFirstKey;
+
+  static String get passwordEncryptionSecondKey => isLocal
+      ? developmentPasswordEncryptionSecondKey
+      : productionPasswordEncryptionSecondKey;
 
   static const productionAuthTokenKey = 'auth_access_token';
 }
