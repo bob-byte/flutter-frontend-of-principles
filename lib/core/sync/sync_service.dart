@@ -30,11 +30,13 @@ class SyncService {
   final SyncSnapshotMergeService mergeService;
   final DatabaseService databaseService;
   final List<SyncQueueHandler> _handlers;
-  Future<void>? _inFlight;
+  Future<DateTime?>? _inFlight;
 
-  Future<void> runSync() => sync();
+  Future<void> runSync() async {
+    await sync();
+  }
 
-  /// Runs bootstrap sync, joining any already in-flight run instead of
+  /// Runs bootstrap/changes sync, joining any already in-flight run instead of
   /// returning immediately with an empty local store.
   Future<void> runSyncSafely() async {
     try {
@@ -44,21 +46,25 @@ class SyncService {
     }
   }
 
-  Future<void> sync() async {
-    if (AppConfig.useLocalData) return;
+  /// Pulls remote state and drains the outbound queue.
+  ///
+  /// When [since] is set, prefers GET `/sync/changes` (falls back to full
+  /// bootstrap if the server asks or the endpoint is missing). Returns the
+  /// server cursor to store as the next `since` value.
+  Future<DateTime?> sync({DateTime? since}) async {
+    if (AppConfig.useLocalData) return null;
     final token = await authService.getToken();
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) return null;
 
     final existing = _inFlight;
     if (existing != null) {
-      await existing;
-      return;
+      return existing;
     }
 
-    final inFlight = _syncBody();
+    final inFlight = _syncBody(since: since);
     _inFlight = inFlight;
     try {
-      await inFlight;
+      return await inFlight;
     } finally {
       if (identical(_inFlight, inFlight)) {
         _inFlight = null;
@@ -66,30 +72,60 @@ class SyncService {
     }
   }
 
-  Future<void> _syncBody() async {
+  Future<DateTime?> _syncBody({DateTime? since}) async {
+    await queue.removeProcessedItems();
     await queue.resetFailedItems();
     await queue.resetStuckItems();
     await queue.resetDeferredItems();
     await queue.compactQueue();
 
-    final initial = await _fetchBootstrap();
+    final initial = await _fetchSnapshot(since: since);
     await _reconcileQueueAgainstSnapshot(initial);
     await mergeService.merge(initial);
 
+    var processedAny = false;
     while (true) {
       final items = await queue.getPendingItems();
       if (items.isEmpty) break;
       var processed = 0;
-      for (final item in items) {
-        if (await _process(item)) processed++;
+      for (var i = 0; i < items.length; i++) {
+        if (await _process(items[i])) processed++;
       }
       if (processed == 0) break;
+      processedAny = true;
       await queue.compactQueue();
     }
 
     await queue.compactQueue();
-    final finalSnapshot = await _fetchBootstrap();
+
+    // First sync / empty queue: one pull is enough. A second pull is only
+    // needed after we pushed local writes so server ids / peers can land.
+    var cursor = initial.serverTime;
+    if (!processedAny) {
+      return cursor ?? DateTime.now().toUtc();
+    }
+
+    final finalSnapshot = await _fetchSnapshot(since: since);
     await mergeService.merge(finalSnapshot);
+    cursor = finalSnapshot.serverTime ?? cursor;
+    return cursor ?? DateTime.now().toUtc();
+  }
+
+  Future<SyncBootstrapSnapshot> _fetchSnapshot({DateTime? since}) async {
+    if (since != null) {
+      try {
+        final changes = await _fetchChanges(since);
+        if (!changes.requiresFullBootstrap) return changes;
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        if (status == 401 || status == 403) {
+          throw SyncAuthenticationException();
+        }
+        // Older servers: no /changes — fall through to full bootstrap.
+        if (status != 404) rethrow;
+      }
+    }
+    return _fetchBootstrap();
   }
 
   Future<SyncBootstrapSnapshot> _fetchBootstrap() async {
@@ -103,6 +139,14 @@ class SyncService {
       }
       rethrow;
     }
+  }
+
+  Future<SyncBootstrapSnapshot> _fetchChanges(DateTime since) async {
+    final response = await apiClient.get(
+      ApiEndpoints.syncChanges,
+      queryParameters: {'since': since.toUtc().toIso8601String()},
+    );
+    return SyncBootstrapSnapshot.fromChangesJson(response.data);
   }
 
   Future<void> _reconcileQueueAgainstSnapshot(
@@ -214,7 +258,10 @@ class SyncService {
         orElse: () => null,
       );
       if (handler == null) {
-        await queue.markAsFailed(id, 'Handler for ${item.handlerType} not found');
+        await queue.markAsFailed(
+          id,
+          'Handler for ${item.handlerType} not found',
+        );
         return false;
       }
       // Reload so remaps from earlier items in this drain (e.g. local habit

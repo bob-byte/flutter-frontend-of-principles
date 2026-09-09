@@ -131,7 +131,7 @@ class TaskItemDto {
     }
 
     return TaskItemDto(
-      id: int.tryParse(task.id) ?? 0,
+      id: task.serverId ?? int.tryParse(task.id) ?? 0,
       name: task.title,
       notes: task.description.isEmpty ? null : task.description,
       date: date,

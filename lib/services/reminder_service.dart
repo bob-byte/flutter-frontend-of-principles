@@ -10,8 +10,11 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../core/config/app_config.dart';
+import '../core/deep_link/notification_payload.dart';
+import '../core/helpers/open_notification_settings.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/reminder/reminder_restore_isolate.dart';
 import '../core/storage/local_db.dart';
 import '../core/sync/local_remote_executor.dart';
 import '../core/sync/operation_kind.dart';
@@ -21,6 +24,8 @@ import '../models/habit_reminder.dart';
 import '../models/reminder.dart';
 import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
+import 'dialog_service.dart';
+import 'task_service.dart';
 
 class ReminderService {
   ReminderService({
@@ -28,9 +33,13 @@ class ReminderService {
     this.forceLocalOnly = false,
     LocalDb? localDb,
     LocalRemoteExecutor? executor,
+    DialogService? dialogService,
+    TaskService? taskService,
   }) : _apiClient = apiClient,
        _localDb = localDb,
-       _executor = executor;
+       _executor = executor,
+       _dialogService = dialogService,
+       _taskService = taskService;
 
   static const prefsKey = 'habits_report_reminder_v1';
 
@@ -38,10 +47,18 @@ class ReminderService {
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
 
+  /// Set by [DeepLinkBinder]; may fire with no [BuildContext].
+  static void Function(String? payload)? onNotificationOpened;
+
   final ApiClient? _apiClient;
   final bool forceLocalOnly;
   final LocalDb? _localDb;
   final LocalRemoteExecutor? _executor;
+  final DialogService? _dialogService;
+  final TaskService? _taskService;
+
+  /// Last bootstrap `generalReminders` / `userHabitReminders` (SyncGate restore).
+  AllRemindersResponse? _bootstrapReminders;
 
   bool get _useRemote =>
       !forceLocalOnly && !AppConfig.useLocalData && _apiClient != null;
@@ -69,6 +86,7 @@ class ReminderService {
         InitializationSettings(
           android: initializationSettingsAndroid,
           iOS: initializationSettingsDarwin,
+          macOS: initializationSettingsDarwin,
         );
 
     await _notificationsPlugin.initialize(
@@ -81,29 +99,21 @@ class ReminderService {
   static const _constantTaskIdsKey = 'constant_task_reminder_ids_v1';
   static const _constantHabitIdsKey = 'constant_habit_reminder_ids_v1';
 
-  Future<void> _onNotificationResponse(NotificationResponse response) async {
-    final payload = response.payload;
-    if (payload == null || payload.isEmpty) return;
-    if (payload.startsWith('task_constant:')) {
-      final taskId = payload.substring('task_constant:'.length);
-      if (await _isConstantTaskActive(taskId)) {
-        await _scheduleConstantFollowUp(
-          id: _stableId('task_const_$taskId'),
-          title: 'Reminder',
-          body: null,
-          payload: payload,
-        );
-      }
-    } else if (payload.startsWith('habit_constant:')) {
-      final habitId = payload.substring('habit_constant:'.length);
-      if (await _isConstantHabitActive(habitId)) {
-        await _scheduleConstantFollowUp(
-          id: _stableId('habit_const_$habitId'),
-          title: 'Reminder',
-          body: null,
-          payload: payload,
-        );
-      }
+  static void _onNotificationResponse(NotificationResponse response) {
+    onNotificationOpened?.call(response.payload);
+  }
+
+  /// Cold-start payload when the OS launched the app from a notification tap.
+  static Future<String?> consumeAppLaunchNotificationPayload() async {
+    if (kIsWeb) return null;
+    try {
+      final details = await _notificationsPlugin
+          .getNotificationAppLaunchDetails();
+      if (details == null || !details.didNotificationLaunchApp) return null;
+      return details.notificationResponse?.payload;
+    } catch (e) {
+      debugPrint('Read notification launch details failed: $e');
+      return null;
     }
   }
 
@@ -114,8 +124,6 @@ class ReminderService {
     }
     return value;
   }
-
-  int _stableId(String seed) => seed.hashCode.abs() % 2000000000;
 
   Future<Task> prepareTaskNotifications(Task task) async {
     final offsets = <ScheduleReminderOffset>[];
@@ -138,15 +146,20 @@ class ReminderService {
     );
   }
 
-  Future<void> syncTaskNotifications(Task task) async {
+  Future<void> syncTaskNotifications(
+    Task task, {
+    bool ensurePermission = true,
+  }) async {
     if (kIsWeb || forceLocalOnly) return;
     await cancelTaskNotifications(task);
     if (task.isDone || task.dueDate == null || task.reminders.isEmpty) {
       await _setConstantTaskActive(task.id, false);
       return;
     }
-    final allowed = await requestPermissions();
-    if (!allowed) return;
+    if (ensurePermission) {
+      final allowed = await requestPermissions();
+      if (!allowed) return;
+    }
     final start = task.dueDate!;
     for (final offset in task.reminders) {
       final id = offset.notificationRequestId;
@@ -158,7 +171,7 @@ class ReminderService {
         title: task.title,
         body: task.description.isEmpty ? null : task.description,
         when: fire,
-        payload: 'task:${task.id}',
+        payload: '${NotificationPayloads.task}${task.id}',
       );
     }
     if (task.constantReminder) {
@@ -173,7 +186,7 @@ class ReminderService {
         title: task.title,
         body: task.description.isEmpty ? null : task.description,
         when: fire,
-        payload: 'task_constant:${task.id}',
+        payload: '${NotificationPayloads.taskConstant}${task.id}',
       );
     } else {
       await _setConstantTaskActive(task.id, false);
@@ -189,15 +202,23 @@ class ReminderService {
     if (constantId != null) await cancelNotification(constantId);
   }
 
-  Future<void> syncHabitNotifications(Habit habit) async {
+  Future<void> syncHabitNotifications(
+    Habit habit, {
+    bool ensurePermission = true,
+  }) async {
     if (kIsWeb || forceLocalOnly) return;
     if (habit.reminders.isEmpty) {
       await _setConstantHabitActive('${habit.id}', false);
       return;
     }
-    final allowed = await requestPermissions();
-    if (!allowed) return;
+    if (ensurePermission) {
+      final allowed = await requestPermissions();
+      if (!allowed) return;
+    }
 
+    final habitPayload = habit.id == null
+        ? null
+        : '${NotificationPayloads.habit}${habit.id}';
     var anyEnabled = false;
     var wantsConstant = habit.constantReminder;
     for (final reminder in habit.reminders) {
@@ -234,6 +255,8 @@ class ReminderService {
               type: day.type,
               userNotificationRequestId: id.abs() % 2000000000,
             ),
+            payload: habitPayload,
+            ensurePermission: false,
           );
         }
       }
@@ -261,44 +284,12 @@ class ReminderService {
     );
   }
 
-  Future<void> _scheduleConstantFollowUp({
-    required int id,
-    required String title,
-    String? body,
-    required String payload,
-  }) async {
-    final when = DateTime.now().add(const Duration(minutes: 5));
-    await _zonedOneShot(
-      id: id,
-      title: title,
-      body: body,
-      when: when,
-      payload: payload,
-    );
-  }
-
-  Future<bool> _isConstantTaskActive(String taskId) async {
-    final ids = await _loadIdSet(_constantTaskIdsKey);
-    return ids.contains(taskId);
-  }
-
-  Future<bool> _isConstantHabitActive(String habitId) async {
-    final ids = await _loadIdSet(_constantHabitIdsKey);
-    return ids.contains(habitId);
-  }
-
   Future<void> _setConstantTaskActive(String taskId, bool active) async {
     await _mutateIdSet(_constantTaskIdsKey, taskId, active);
   }
 
   Future<void> _setConstantHabitActive(String habitId, bool active) async {
     await _mutateIdSet(_constantHabitIdsKey, habitId, active);
-  }
-
-  Future<Set<String>> _loadIdSet(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(key) ?? const [];
-    return raw.toSet();
   }
 
   Future<void> _mutateIdSet(String key, String id, bool active) async {
@@ -322,10 +313,22 @@ class ReminderService {
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
       );
 
+  final NotificationPermissionGate _permissionGate =
+      NotificationPermissionGate();
+
+  /// One native permission sheet per session. A second iOS/macOS
+  /// `requestPermissions` after Allow can hang the Flutter isolate.
   Future<bool> requestPermissions() async {
+    if (kIsWeb || forceLocalOnly) return true;
+    return _permissionGate.run(_requestPermissionsNative);
+  }
+
+  Future<bool> _requestPermissionsNative() async {
     await init();
+    if (await areNotificationsEnabled()) return true;
     final android = await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -336,9 +339,45 @@ class ReminderService {
           IOSFlutterLocalNotificationsPlugin
         >()
         ?.requestPermissions(alert: true, badge: true, sound: true);
+    final macOS = await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
     if (android == false) return false;
     if (ios == false) return false;
+    if (macOS == false) return false;
     return true;
+  }
+
+  /// Check without prompting (MAUI [AreNotificationsEnabledAsync]).
+  Future<bool> areNotificationsEnabled() async {
+    if (kIsWeb || forceLocalOnly) return false;
+    await init();
+    final android = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android != null) {
+      return await android.areNotificationsEnabled() ?? false;
+    }
+    final ios = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (ios != null) {
+      final status = await ios.checkPermissions();
+      return status?.isEnabled ?? false;
+    }
+    final macOS = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin
+        >();
+    if (macOS != null) {
+      final status = await macOS.checkPermissions();
+      return status?.isEnabled ?? false;
+    }
+    return false;
   }
 
   /// MAUI [RequestAccessToSendNotificationsAsync]. Web has no local notifications.
@@ -347,13 +386,30 @@ class ReminderService {
     return requestPermissions();
   }
 
+  /// Whether this build can schedule OS local notifications (Flutter-only gate).
+  ///
+  /// Does not change the shared API — MAUI keeps its own support check.
+  bool get isLocalNotificationSupported =>
+      localNotificationSupportedOverride ?? !kIsWeb;
+
+  /// Test hook for [isLocalNotificationSupported].
+  @visibleForTesting
+  bool? localNotificationSupportedOverride;
+
+  /// Local cache only (no network). Used for Tasks chrome; safe if unset.
+  Future<Reminder?> cachedHabitsReportReminder() => _loadCached();
+
   Future<void> addNotificationToDeviceAsync(
     HabitReminder reminder,
-    WeekDay weekDay,
-  ) async {
+    WeekDay weekDay, {
+    String? payload,
+    bool ensurePermission = true,
+  }) async {
     if (reminder.isEnabled) {
-      final allowed = await requestPermissions();
-      if (!allowed) return;
+      if (ensurePermission) {
+        final allowed = await requestPermissions();
+        if (!allowed) return;
+      }
 
       final now = DateTime.now();
       int reminderDayIndex = weekDay.type; // 0 = Sunday, 1 = Monday...
@@ -394,6 +450,7 @@ class ReminderService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         notificationDetails: _habitNotificationDetails,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        payload: payload,
       );
     } else {
       await cancelNotification(weekDay.userNotificationRequestId);
@@ -507,8 +564,218 @@ class ReminderService {
     }
   }
 
-  Future<void> tryToRecoverAllUserReminders() async {
-    // Placeholder for recovering reminders after login/app restart
+  /// Stash bootstrap reminder lists for SyncGate restore (avoids `/reminder/all`).
+  void rememberBootstrapReminders(AllRemindersResponse reminders) {
+    _bootstrapReminders = reminders;
+  }
+
+  /// Drop the bootstrap stash after SyncGate restore so it is not kept in RAM.
+  void clearBootstrapReminders() {
+    _bootstrapReminders = null;
+  }
+
+  @visibleForTesting
+  AllRemindersResponse? get bootstrapRemindersForTest => _bootstrapReminders;
+
+  /// Loads account reminders, shows MAUI why-copy, requests permission once.
+  ///
+  /// Prefers bootstrap lists (same shape as GET `/reminder/all`), then falls
+  /// back to that endpoint for older servers. Always returns a schedule job
+  /// when reminders exist — even if the user denies permission — so entries
+  /// are registered on-device for when access is granted later.
+  Future<Map<String, Object?>?> prepareReminderRestore({
+    List<Task>? knownTasks,
+    List<Habit>? knownHabits,
+    Future<void> Function()? onExplainRestore,
+    AllRemindersResponse? knownReminders,
+  }) async {
+    if (kIsWeb || forceLocalOnly) return null;
+
+    try {
+      await init();
+
+      final all = await _resolveRemindersForRestore(knownReminders);
+
+      var enabledGeneral = all.generalReminders
+          .where((r) => r.isEnabled && !r.isUnset)
+          .toList();
+      var enabledHabits = all.userHabitReminders
+          .where((r) => r.isEnabled && r.daysOfWeek.isNotEmpty)
+          .toList();
+
+      // Bootstrap already hydrated SQLite — use it when remote lists are empty
+      // so MAUI RestoreReminders copy still appears before the OS sheet.
+      if (enabledGeneral.isEmpty) {
+        final cached = await _loadCached();
+        if (cached != null && cached.isEnabled && !cached.isUnset) {
+          enabledGeneral = [cached];
+        }
+      }
+      enabledHabits = _mergeHabitRemindersFromLocal(
+        enabledHabits,
+        knownHabits ?? const <Habit>[],
+      );
+
+      final tasks =
+          knownTasks ?? await _taskService?.getTasks() ?? const <Task>[];
+      final tasksWithReminders = tasks
+          .where(
+            (t) => !t.isDone && (t.reminders.isNotEmpty || t.constantReminder),
+          )
+          .toList();
+
+      // MAUI gates the restore alert on general + habit reminders.
+      final hasAccountReminders =
+          enabledGeneral.isNotEmpty || enabledHabits.isNotEmpty;
+      if (!hasAccountReminders && tasksWithReminders.isEmpty) {
+        return null;
+      }
+
+      var notificationsOn = await areNotificationsEnabled();
+      if (!notificationsOn) {
+        // Always explain why before the system permission sheet (MAUI
+        // AfterLoginWhenUserAccountHaveReminders / RestoreReminders).
+        if (onExplainRestore != null) {
+          await onExplainRestore();
+        } else {
+          await _promptRestoreReminders();
+        }
+        // One native sheet only. A second iOS requestPermissions after Allow
+        // hangs the isolate and freezes SyncGate.
+        notificationsOn = await requestAccessToSendNotifications();
+        // The system sheet backgrounds the app. Wait until Flutter is
+        // resumed before touching SQLite / continuing the gate.
+        await _waitUntilResumed();
+      }
+      if (notificationsOn) {
+        // Mark the gate so later schedule helpers never re-enter the
+        // native permission channel.
+        _permissionGate.allowed = true;
+      }
+
+      for (final reminder in enabledGeneral) {
+        await _saveCached(reminder);
+      }
+
+      // Schedule/register anyway — OS may no-op until permission is granted.
+      return buildReminderRestoreJob(
+        generalReminders: enabledGeneral,
+        habitReminders: enabledHabits,
+        tasks: tasksWithReminders,
+      );
+    } catch (e) {
+      debugPrint('Prepare reminder restore failed: $e');
+      return null;
+    }
+  }
+
+  Future<AllRemindersResponse> _resolveRemindersForRestore(
+    AllRemindersResponse? knownReminders,
+  ) async {
+    if (knownReminders != null) return knownReminders;
+    final fromBootstrap = _bootstrapReminders;
+    if (fromBootstrap != null) return fromBootstrap;
+    // Older servers: do not block SyncGate forever if /reminder/all is slow.
+    return _loadAllReminders().timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => const AllRemindersResponse(),
+    );
+  }
+
+  /// Applies [prepareReminderRestore]'s job using the already-initialized plugin.
+  Future<void> applyReminderRestoreJob(Map<String, Object?> job) async {
+    if (kIsWeb || forceLocalOnly) return;
+    try {
+      await init();
+      await executeReminderRestoreJob(
+        job,
+        plugin: _notificationsPlugin,
+        initializePlugin: false,
+      );
+    } catch (e) {
+      debugPrint('Apply reminder restore failed: $e');
+    }
+  }
+
+  Future<void> tryToRecoverAllUserReminders({
+    List<Task>? knownTasks,
+    List<Habit>? knownHabits,
+    Future<void> Function()? onExplainRestore,
+  }) async {
+    final job = await prepareReminderRestore(
+      knownTasks: knownTasks,
+      knownHabits: knownHabits,
+      onExplainRestore: onExplainRestore,
+    );
+    if (job == null) return;
+    await applyReminderRestoreJob(job);
+  }
+
+  /// Prefer API habit reminders; fill gaps from habits already in memory.
+  @visibleForTesting
+  static List<HabitReminder> mergeHabitRemindersFromLocalForTest(
+    List<HabitReminder> fromApi,
+    List<Habit> localHabits,
+  ) => _mergeHabitRemindersFromLocal(fromApi, localHabits);
+
+  static List<HabitReminder> _mergeHabitRemindersFromLocal(
+    List<HabitReminder> fromApi,
+    List<Habit> localHabits,
+  ) {
+    if (localHabits.isEmpty) return fromApi;
+    final byId = <int, HabitReminder>{
+      for (final reminder in fromApi)
+        if (reminder.id != null) reminder.id!: reminder,
+    };
+    final merged = List<HabitReminder>.from(fromApi);
+    for (final habit in localHabits) {
+      for (final reminder in habit.reminders) {
+        if (!reminder.isEnabled || reminder.daysOfWeek.isEmpty) continue;
+        final id = reminder.id ?? habit.id;
+        if (id != null && byId.containsKey(id)) continue;
+        final withMeta = HabitReminder(
+          id: id,
+          title: reminder.title.isNotEmpty
+              ? reminder.title
+              : (habit.name.isEmpty ? 'Reminder' : habit.name),
+          description: reminder.description,
+          time: reminder.time,
+          isEnabled: reminder.isEnabled,
+          daysOfWeek: reminder.daysOfWeek,
+          offsets: reminder.offsets,
+          constantReminder: reminder.constantReminder || habit.constantReminder,
+          constantNotificationRequestId: reminder.constantNotificationRequestId,
+          endTime: reminder.endTime,
+          allDay: reminder.allDay,
+        );
+        if (id != null) byId[id] = withMeta;
+        merged.add(withMeta);
+      }
+    }
+    return merged;
+  }
+
+  Future<AllRemindersResponse> _loadAllReminders() async {
+    if (!_useRemote || _apiClient == null) {
+      return const AllRemindersResponse();
+    }
+    final response = await _apiClient.get(ApiEndpoints.allReminders);
+    return AllRemindersResponse.fromJson(response.data);
+  }
+
+  Future<void> _promptRestoreReminders() async {
+    final dialogs = _dialogService;
+    if (dialogs == null) return;
+    try {
+      final l10n = dialogs.l10n;
+      await dialogs.showAlertAsync(
+        msg: l10n.afterLoginWhenUserAccountHaveReminders,
+        title: l10n.restoreReminders,
+        buttonLabel: l10n.okButton,
+      );
+    } catch (e) {
+      debugPrint('Restore-reminders prompt failed: $e');
+    }
   }
 
   Future<Reminder?> getByLocalId(int localId) async {
@@ -541,6 +808,25 @@ class ReminderService {
     );
   }
 
+  /// Server has no daily-report reminder — drop the local copy.
+  Future<void> clearFromRemote() async {
+    final local = await _loadCached();
+    if (local == null || local.isUnset) return;
+    if (local.userNotificationRequestId > 0) {
+      await cancelNotification(local.userNotificationRequestId);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(prefsKey);
+    if (_useSqlite) {
+      try {
+        final db = await _localDb!.database;
+        await db.delete('reminders');
+      } catch (e) {
+        debugPrint('Clear remote reminder failed: $e');
+      }
+    }
+  }
+
   Future<void> mergeFromBootstrap(Reminder reminder) async {
     final local = await _loadCached();
     if (local != null &&
@@ -553,8 +839,11 @@ class ReminderService {
   }
 
   Future<void> clearLocal() async {
+    await cancelAllLocally();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(prefsKey);
+    await prefs.remove(_constantTaskIdsKey);
+    await prefs.remove(_constantHabitIdsKey);
     if (_useSqlite) {
       try {
         final db = await _localDb!.database;
@@ -562,6 +851,30 @@ class ReminderService {
       } catch (e) {
         debugPrint('Clear sqlite reminders failed: $e');
       }
+    }
+  }
+
+  /// MAUI [CancelAllLocallyAsync] — drops every pending local notification.
+  Future<void> cancelAllLocally() async {
+    if (kIsWeb || forceLocalOnly) return;
+    try {
+      await init();
+      await _notificationsPlugin.cancelAll();
+    } catch (e) {
+      debugPrint('Cancel all local notifications failed: $e');
+    }
+  }
+
+  /// MAUI [ClearDeliveredLocallyAsync] / [LocalNotificationCenter.ClearAll].
+  ///
+  /// Removes notifications already shown in the system tray/center without
+  /// canceling pending schedules (habit weekly / daily report, etc.).
+  Future<void> clearDeliveredLocally() async {
+    if (kIsWeb || forceLocalOnly) return;
+    try {
+      await clearDeliveredNotifications();
+    } catch (e) {
+      debugPrint('Clear delivered local notifications failed: $e');
     }
   }
 
@@ -624,10 +937,16 @@ class ReminderService {
     await prefs.setString(prefsKey, jsonEncode(reminder.toJson()));
   }
 
-  Future<void> _scheduleDailyNotification(Reminder reminder, int id) async {
+  Future<void> _scheduleDailyNotification(
+    Reminder reminder,
+    int id, {
+    bool ensurePermission = true,
+  }) async {
     await init();
-    final allowed = await requestPermissions();
-    if (!allowed) return;
+    if (ensurePermission) {
+      final allowed = await requestPermissions();
+      if (!allowed) return;
+    }
 
     final now = DateTime.now();
     var notify = DateTime(
@@ -652,6 +971,7 @@ class ReminderService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       notificationDetails: _habitNotificationDetails,
       matchDateTimeComponents: DateTimeComponents.time,
+      payload: NotificationPayloads.habitsReport,
     );
   }
 
@@ -665,5 +985,64 @@ class ReminderService {
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
       );
+
+  Future<void> _waitUntilResumed() async {
+    final binding = WidgetsBinding.instance;
+    final state = binding.lifecycleState;
+    if (state == null || state == AppLifecycleState.resumed) {
+      await binding.endOfFrame;
+      return;
+    }
+
+    final done = Completer<void>();
+    late final WidgetsBindingObserver observer;
+    observer = _ResumeObserver(() {
+      if (!done.isCompleted) done.complete();
+    });
+    binding.addObserver(observer);
+    try {
+      await done.future.timeout(const Duration(seconds: 8), onTimeout: () {});
+    } finally {
+      binding.removeObserver(observer);
+    }
+  }
+}
+
+class _ResumeObserver with WidgetsBindingObserver {
+  _ResumeObserver(this._onResumed);
+
+  final VoidCallback _onResumed;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _onResumed();
+  }
+}
+
+/// Dedupes the OS notification permission sheet.
+///
+/// Calling `requestPermissions` again after the user taps Allow can hang
+/// the Flutter isolate on iOS/macOS (the method channel never completes).
+class NotificationPermissionGate {
+  bool allowed = false;
+  Future<bool>? _inFlight;
+
+  Future<bool> run(Future<bool> Function() request) async {
+    if (allowed) return true;
+    final existing = _inFlight;
+    if (existing != null) return existing;
+    final run = request();
+    _inFlight = run;
+    try {
+      final result = await run;
+      if (result) allowed = true;
+      return result;
+    } finally {
+      if (identical(_inFlight, run)) {
+        _inFlight = null;
+      }
+    }
+  }
 }

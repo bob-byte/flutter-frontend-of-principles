@@ -103,6 +103,16 @@ class DialogService {
     );
   }
 
+  /// MAUI [DoRetryOperationOnErrorAsync] for HTTP 404/503.
+  Future<bool> showServerTechnicalWorkRetry() {
+    return showAlertWithTwoBtnsAsync(
+      msg: l10n.serverTechnicalWorkIsInProgress,
+      title: l10n.errorTitle,
+      accept: l10n.retryButton,
+      cancel: l10n.cancelButton,
+    );
+  }
+
   Future<bool> showAlertWithTwoBtnsAsync({
     required String msg,
     required String title,

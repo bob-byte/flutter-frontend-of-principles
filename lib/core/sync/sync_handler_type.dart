@@ -7,6 +7,7 @@ class SyncHandlerType {
   static const progressOfHabit = 'ProgressOfHabit';
   static const reminder = 'Reminder';
   static const task = 'Task';
+  static const aiConversation = 'AiConversation';
 
   static const drainOrder = <String>[
     user,
@@ -15,6 +16,7 @@ class SyncHandlerType {
     progressOfHabit,
     reminder,
     task,
+    aiConversation,
   ];
 
   static int orderOf(String handlerType) {

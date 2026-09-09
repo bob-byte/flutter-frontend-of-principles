@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/config/app_config.dart';
 import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/network/network_service.dart';
+import 'package:principles_app/core/network/server_required_retry.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/sync/sync_authentication_exception.dart';
 import 'package:principles_app/core/sync/sync_orchestrator.dart';
@@ -91,8 +92,29 @@ void main() {
     final result = await orchestrator().run(SyncTrigger.startup);
     expect(result.status, SyncRunStatus.succeeded);
     expect(syncService.calls, 1);
+    expect(syncService.lastSince, isNull);
     expect(await settings.getLastSuccessfulSyncAt(), isNotNull);
     expect(await settings.getLastFailedSyncAt(), isNull);
+  });
+
+  test('startup passes stored since for incremental sync', () async {
+    final stamp = DateTime.utc(2026, 9, 1, 10);
+    await settings.setLastSuccessfulSyncAt(stamp);
+    final result = await orchestrator().run(SyncTrigger.startup);
+    expect(result.status, SyncRunStatus.succeeded);
+    expect(syncService.lastSince, stamp);
+  });
+
+  test('resume passes stored since for incremental sync', () async {
+    final stamp = DateTime.utc(2026, 9, 1, 10);
+    await settings.setLastSuccessfulSyncAt(stamp);
+    final result = await orchestrator().run(SyncTrigger.resume);
+    expect(result.status, SyncRunStatus.succeeded);
+    expect(syncService.lastSince, stamp);
+    expect(
+      await settings.getLastSuccessfulSyncAt(),
+      DateTime.utc(2026, 9, 9, 12),
+    );
   });
 
   test('coalesces concurrent runs into one sync', () async {
@@ -119,6 +141,14 @@ void main() {
     expect(result.status, SyncRunStatus.failed);
     expect(result.error, isA<StateError>());
   });
+
+  test('ping 404 becomes a failed technical-work result', () async {
+    reachability.error = const ServerTechnicalWorkException(statusCode: 404);
+    final result = await orchestrator().run(SyncTrigger.startup);
+    expect(result.status, SyncRunStatus.failed);
+    expect(isServerTechnicalWork(result.error), isTrue);
+    expect(syncService.calls, 0);
+  });
 }
 
 class _Auth extends AuthService {
@@ -138,9 +168,14 @@ class _FakeReachability extends SyncReachabilityService {
       );
 
   bool reachable = true;
+  Object? error;
 
   @override
-  Future<bool> canReachBackend() async => reachable;
+  Future<bool> canReachBackend() async {
+    final thrown = error;
+    if (thrown != null) throw thrown;
+    return reachable;
+  }
 }
 
 class _FakeSyncService extends SyncService {
@@ -165,14 +200,17 @@ class _FakeSyncService extends SyncService {
   int calls = 0;
   Duration delay = Duration.zero;
   Object? error;
+  DateTime? lastSince;
 
   @override
-  Future<void> sync() async {
+  Future<DateTime?> sync({DateTime? since}) async {
     calls++;
+    lastSince = since;
     if (delay > Duration.zero) {
       await Future<void>.delayed(delay);
     }
     final err = error;
     if (err != null) throw err;
+    return DateTime.utc(2026, 9, 9, 12);
   }
 }

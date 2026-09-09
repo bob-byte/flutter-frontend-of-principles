@@ -4,6 +4,7 @@ import '../../services/auth_service.dart';
 import '../config/app_config.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
+import '../network/server_required_retry.dart';
 import 'sync_authentication_exception.dart';
 
 class SyncReachabilityService {
@@ -22,9 +23,9 @@ class SyncReachabilityService {
     if (token == null || token.isEmpty) return false;
 
     try {
-      final response = await _apiClient.get(
-        ApiEndpoints.syncPing,
-      ).timeout(const Duration(seconds: 5));
+      final response = await _apiClient
+          .get(ApiEndpoints.syncPing)
+          .timeout(const Duration(seconds: 5));
       final status = response.statusCode ?? 0;
       if (status == 401 || status == 403) {
         throw SyncAuthenticationException();
@@ -36,6 +37,9 @@ class SyncReachabilityService {
       final status = e.response?.statusCode;
       if (status == 401 || status == 403) {
         throw SyncAuthenticationException();
+      }
+      if (isServerTechnicalWorkStatus(status)) {
+        throw ServerTechnicalWorkException(statusCode: status);
       }
       return false;
     } catch (_) {

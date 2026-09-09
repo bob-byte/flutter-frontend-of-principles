@@ -6,10 +6,11 @@ import '../config/app_config.dart';
 import '../network/network_service.dart';
 import 'sync_queue_service.dart';
 
-/// Runs [localCall] first, then syncs to the server without blocking the UI.
+/// Writes locally, durably enqueues, then tries the server without blocking UI.
 ///
-/// When [awaitRemote] is false (default), a connected device fires [remoteCall]
-/// in the background and enqueues on failure. Offline always enqueues.
+/// The queue row is created first so bootstrap merge treats the entity as
+/// pending even while a live request is in flight. Offline skips the request.
+/// A failed live request stays queued for the next sync drain.
 class LocalRemoteExecutor {
   LocalRemoteExecutor({
     required SyncQueueService queue,
@@ -33,41 +34,41 @@ class LocalRemoteExecutor {
     await localCall();
     if (AppConfig.useLocalData) return null;
 
-    Future<void> enqueue() {
-      return _queue.addToQueue(
-        handlerType: handlerType,
-        operation: operation,
-        payload: payload,
-        entityId: entityId,
-        entityLocalId: entityLocalId,
-      );
-    }
+    final queueId = await _queue.addToQueue(
+      handlerType: handlerType,
+      operation: operation,
+      payload: payload,
+      entityId: entityId,
+      entityLocalId: entityLocalId,
+    );
 
-    if (!_network.isConnected) {
-      await enqueue();
-      return null;
-    }
-
-    if (awaitRemote) {
+    Future<T?> runRemote() async {
+      final current = await _queue.getItem(queueId);
+      if (current == null || current.isProcessed) return null;
       try {
-        return await remoteCall();
+        await _queue.markAsProcessing(queueId);
+        final result = await remoteCall();
+        await _queue.markAsProcessed(queueId);
+        return result;
       } catch (e, st) {
-        debugPrint('Remote sync failed; queued ($handlerType/$operation): $e');
+        debugPrint(
+          'Remote sync failed; left queued ($handlerType/$operation): $e',
+        );
         debugPrint('$st');
-        await enqueue();
+        await _queue.releaseProcessing(queueId);
         return null;
       }
     }
 
-    unawaited(() async {
-      try {
-        await remoteCall();
-      } catch (e, st) {
-        debugPrint('Background sync failed; queued ($handlerType/$operation): $e');
-        debugPrint('$st');
-        await enqueue();
-      }
-    }());
+    if (!_network.isConnected) {
+      return null;
+    }
+
+    if (awaitRemote) {
+      return runRemote();
+    }
+
+    unawaited(runRemote());
     return null;
   }
 }

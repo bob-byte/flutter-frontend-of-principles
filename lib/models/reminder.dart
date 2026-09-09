@@ -201,3 +201,46 @@ DateTime? _asDate(dynamic value) {
   if (value is DateTime) return value.toUtc();
   return DateTime.tryParse(value.toString())?.toUtc();
 }
+
+/// Payload of GET `/reminder/all` (MAUI [AllRemindersResponse]).
+class AllRemindersResponse {
+  const AllRemindersResponse({
+    this.generalReminders = const [],
+    this.userHabitReminders = const [],
+  });
+
+  final List<Reminder> generalReminders;
+  final List<HabitReminder> userHabitReminders;
+
+  factory AllRemindersResponse.fromJson(dynamic data) {
+    if (data is! Map) return const AllRemindersResponse();
+    final map = Map<dynamic, dynamic>.from(data);
+    final generalRaw = map['generalReminders'] ?? map['GeneralReminders'];
+    final habitRaw = map['userHabitReminders'] ?? map['UserHabitReminders'];
+
+    final general = <Reminder>[];
+    if (generalRaw is List) {
+      for (final entry in generalRaw) {
+        if (entry is Map) {
+          general.add(Reminder.fromJson(Map<String, dynamic>.from(entry)));
+        }
+      }
+    }
+
+    final habits = <HabitReminder>[];
+    if (habitRaw is List) {
+      for (final entry in habitRaw) {
+        if (entry is Map) {
+          habits.add(
+            HabitReminder.fromApiJson(Map<String, dynamic>.from(entry)),
+          );
+        }
+      }
+    }
+
+    return AllRemindersResponse(
+      generalReminders: general,
+      userHabitReminders: habits,
+    );
+  }
+}

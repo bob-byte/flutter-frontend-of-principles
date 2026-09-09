@@ -34,7 +34,7 @@ class SyncOrchestrator {
       return existing;
     }
 
-    final inFlight = _runBody();
+    final inFlight = _runBody(trigger);
     _inFlight = inFlight;
     try {
       return await inFlight;
@@ -45,7 +45,7 @@ class SyncOrchestrator {
     }
   }
 
-  Future<SyncRunResult> _runBody() async {
+  Future<SyncRunResult> _runBody(SyncTrigger _) async {
     try {
       if (AppConfig.useLocalData) {
         return _result(SyncRunStatus.skippedLocalOnly);
@@ -66,10 +66,21 @@ class SyncOrchestrator {
         return _result(SyncRunStatus.skippedBackendUnavailable);
       }
 
-      await _syncService.sync();
-      await _settings.setLastSuccessfulSyncAt(DateTime.now().toUtc());
+      // Prefer /sync/changes whenever a cursor exists (cold start included).
+      // No cursor → full bootstrap. SyncService falls back to bootstrap if the
+      // server sets RequiresFullBootstrap or /changes is missing.
+      // SyncGate covers the shell only for full bootstrap or since ≥ 20 days
+      // (see sync_gate_policy.dart).
+      final since = await _settings.getLastSuccessfulSyncAt();
+
+      final serverTime = await _syncService.sync(since: since);
+      final cursor = serverTime ?? DateTime.now().toUtc();
+      await _settings.setLastSuccessfulSyncAt(cursor);
       await _settings.setLastFailedSyncAt(null);
-      return _result(SyncRunStatus.succeeded);
+      return SyncRunResult(
+        status: SyncRunStatus.succeeded,
+        lastSuccessfulSyncAt: cursor,
+      );
     } on SyncAuthenticationException catch (e) {
       await _settings.setLastFailedSyncAt(DateTime.now().toUtc());
       return _result(SyncRunStatus.failedAuthentication, e);
@@ -80,9 +91,6 @@ class SyncOrchestrator {
   }
 
   SyncRunResult _result(SyncRunStatus status, [Object? error]) {
-    return SyncRunResult(
-      status: status,
-      error: error,
-    );
+    return SyncRunResult(status: status, error: error);
   }
 }

@@ -34,7 +34,8 @@ class HabitSyncHandler implements SyncQueueHandler {
 
     if (operation == OperationKind.save) {
       final habit = await _loadHabit(item);
-      final isNew = habit.id == null ||
+      final isNew =
+          confirmedServerHabitId(habit) == null &&
           (item.entityId == null || item.entityId == 0);
       final remoteId = await _habitService.pushHabit(
         habit,

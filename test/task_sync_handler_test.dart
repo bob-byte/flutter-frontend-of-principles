@@ -68,6 +68,24 @@ void main() {
     expect(requests.single.data['isCompleted'], isTrue);
   });
 
+  test('puts existing task when serverId is set on a local id', () async {
+    await TaskSyncHandler(apiClient, taskService: tasks).handle(
+      SyncQueueItem(
+        handlerType: SyncHandlerType.task,
+        operation: OperationKind.save,
+        entityId: 0,
+        payloadJson: jsonEncode({
+          'id': 'L99',
+          'serverId': 55,
+          'title': 'Buy milk',
+          'createdAt': DateTime.utc(2026, 1, 1).toIso8601String(),
+        }),
+      ),
+    );
+    expect(requests.single.method, 'PUT');
+    expect(requests.single.path, '${ApiEndpoints.tasks}/55');
+  });
+
   test('posts new task when server id is missing', () async {
     await TaskSyncHandler(apiClient, taskService: tasks).handle(
       SyncQueueItem(

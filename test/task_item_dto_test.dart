@@ -51,7 +51,37 @@ void main() {
     expect(snapshot.goals.single.name, 'Health');
     expect(snapshot.tasks, hasLength(1));
     expect(snapshot.tasks.single.name, 'Walk');
+    expect(snapshot.tasksProvided, isTrue);
+    expect(snapshot.tasksTrustedForPrune, isTrue);
   });
+
+  test(
+    'bootstrap snapshot does not mark tasks provided when key is omitted',
+    () {
+      final snapshot = SyncBootstrapSnapshot.fromJson({
+        'goals': [
+          {'id': 1, 'name': 'Health'},
+        ],
+      });
+
+      expect(snapshot.tasks, isEmpty);
+      expect(snapshot.tasksProvided, isFalse);
+      expect(snapshot.tasksTrustedForPrune, isFalse);
+    },
+  );
+
+  test(
+    'bootstrap snapshot does not trust prune when every task fails to parse',
+    () {
+      final snapshot = SyncBootstrapSnapshot.fromJson({
+        'tasks': ['not-a-task', 3],
+      });
+
+      expect(snapshot.tasks, isEmpty);
+      expect(snapshot.tasksProvided, isTrue);
+      expect(snapshot.tasksTrustedForPrune, isFalse);
+    },
+  );
 
   test('round-trips schedule fields', () {
     final dto = TaskItemDto.fromJson({

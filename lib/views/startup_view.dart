@@ -134,29 +134,52 @@ class _StartupViewState extends State<StartupView> {
                 child: AppThemeSwitcher(),
               ),
             ),
-            // Top Section (2.5* equivalent in XAML - taking remaining space)
+            // Top Section (2.5* equivalent in XAML - taking remaining space).
+            // On macOS the Apple button shrinks this area below the fixed
+            // 320px halo; scale the hero block down instead of overflowing.
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const ThemedLottieHalo(
-                      child: ThemedLottie.fire(width: 200, height: 200),
-                    ),
-                    const SizedBox(height: 20),
-                    // Title Text
-                    Text(
-                      l10n.startupTitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: palette.textPrimary,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Title line (~46) + two 20px spacers around it.
+                  const verticalChrome = 86.0;
+                  final haloSize = (constraints.maxHeight - verticalChrome)
+                      .clamp(120.0, 320.0);
+                  final fireSize = haloSize * (200 / 320);
+
+                  return Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ThemedLottieHalo(
+                              size: haloSize,
+                              child: ThemedLottie.fire(
+                                width: fireSize,
+                                height: fireSize,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              l10n.startupTitle,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: palette.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
 

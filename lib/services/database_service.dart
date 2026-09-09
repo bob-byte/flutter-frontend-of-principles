@@ -5,9 +5,40 @@ import '../models/habit_record.dart';
 import '../models/progress_value.dart';
 import '../models/user_goal.dart';
 
+/// One progress upsert for [applyHabitRecordWrites].
+typedef HabitRecordWrite = ({
+  int habitId,
+  DateTime date,
+  int value,
+  int? existingId,
+  DateTime? lastModified,
+});
+
+const _kSqliteBindLimit = 400;
+
+List<List<int>> _idChunks(Iterable<int> ids) {
+  final list = ids.toList();
+  if (list.isEmpty) return const [];
+  return [
+    for (var i = 0; i < list.length; i += _kSqliteBindLimit)
+      list.sublist(
+        i,
+        i + _kSqliteBindLimit > list.length
+            ? list.length
+            : i + _kSqliteBindLimit,
+      ),
+  ];
+}
+
+String _inPlaceholders(int count) => List.filled(count, '?').join(',');
+
+String _habitDateKey(DateTime date) => date.toIso8601String().substring(0, 10);
+
 class DatabaseService {
   DatabaseService._(this._localDb);
 
+  /// Defaults to [LocalDb.instance]. Prefer injecting the Provider instance
+  /// so tests and the app never open a second handle to the same file.
   static final DatabaseService _instance = DatabaseService._(LocalDb.instance);
 
   factory DatabaseService({LocalDb? localDb}) {
@@ -30,18 +61,27 @@ class DatabaseService {
   }
 
   /// After the backend assigns an id, point the local row (and its records) at it.
-  Future<void> reassignHabitId(int fromId, int toId) async {
-    if (fromId == toId) return;
+  ///
+  /// Returns the new local id if a *different* local-only habit occupied [toId]
+  /// and had to be moved. Callers must repoint the sync queue in that case.
+  Future<int?> reassignHabitId(int fromId, int toId) async {
+    if (fromId == toId) return null;
     final db = await database;
-    await db.transaction((txn) async {
+    return db.transaction((txn) async {
+      final vacated = await _vacateLocalOnlyHabitAt(txn, toId);
       final conflict = await txn.query(
         'habits',
         where: 'id = ?',
         whereArgs: [toId],
       );
       if (conflict.isNotEmpty) {
+        await txn.delete(
+          'habit_records',
+          where: 'habitId = ?',
+          whereArgs: [fromId],
+        );
         await txn.delete('habits', where: 'id = ?', whereArgs: [fromId]);
-        return;
+        return vacated;
       }
       await txn.update(
         'habits',
@@ -55,35 +95,87 @@ class DatabaseService {
         where: 'habitId = ?',
         whereArgs: [fromId],
       );
+      return vacated;
     });
   }
 
-  Future<void> insertOrUpdateHabitWithBackendId(Habit habit) async {
+  /// Moves a local-only row off [id] so a server-backed habit can use that PK.
+  /// Returns the new local id, or null when nothing was moved.
+  Future<int?> vacateLocalOnlyHabitOccupyingId(int id) async {
+    final db = await database;
+    return db.transaction((txn) => _vacateLocalOnlyHabitAt(txn, id));
+  }
+
+  Future<int?> _vacateLocalOnlyHabitAt(DatabaseExecutor txn, int id) async {
+    final rows = await txn.query('habits', where: 'id = ?', whereArgs: [id]);
+    if (rows.isEmpty) return null;
+    final serverId = rows.first['serverId'] as int?;
+    if (serverId != null && serverId != 0 && serverId == id) return null;
+
+    final map = Map<String, dynamic>.from(rows.first)..remove('id');
+    map['serverId'] = null;
+    final newId = await txn.insert('habits', map);
+    await txn.update(
+      'habit_records',
+      {'habitId': newId},
+      where: 'habitId = ?',
+      whereArgs: [id],
+    );
+    await txn.delete('habits', where: 'id = ?', whereArgs: [id]);
+    return newId;
+  }
+
+  Future<void> insertOrUpdateHabitWithBackendId(
+    Habit habit, {
+    bool applyArchiveStatus = false,
+    bool replaceReminders = false,
+  }) async {
+    final backendId = habit.serverId ?? habit.id;
+    if (backendId == null) return;
     final db = await database;
     await db.transaction((txn) async {
-      final existing = await txn.query(
+      var existing = await txn.query(
         'habits',
-        where: 'id = ?',
-        whereArgs: [habit.id],
+        where: 'serverId = ?',
+        whereArgs: [backendId],
+        limit: 1,
       );
-      if (existing.isNotEmpty) {
-        final map = Map<String, dynamic>.from(habit.toMap());
-        map['serverId'] = habit.serverId ?? habit.id;
-        // In-progress sync does not include archive status; keep the local flag.
+      if (existing.isEmpty) {
+        existing = await txn.query(
+          'habits',
+          where: 'id = ?',
+          whereArgs: [backendId],
+          limit: 1,
+        );
+      }
+
+      final map = Map<String, dynamic>.from(habit.toMap());
+      map['id'] = existing.isNotEmpty ? existing.first['id'] : backendId;
+      map['serverId'] = backendId;
+      if (!applyArchiveStatus && existing.isNotEmpty) {
         map['isArchived'] = existing.first['isArchived'];
-        if (habit.targetGoalId == null) {
-          map['targetGoalId'] = existing.first['targetGoalId'];
-        }
-        if (habit.targetGoal.trim().isEmpty) {
-          map['targetGoal'] = existing.first['targetGoal'];
-        }
-        if (habit.reminders.isEmpty && existing.first['reminders'] != null) {
-          map['reminders'] = existing.first['reminders'];
-        }
-        await txn.update('habits', map, where: 'id = ?', whereArgs: [habit.id]);
+      }
+      if (habit.targetGoalId == null && existing.isNotEmpty) {
+        map['targetGoalId'] = existing.first['targetGoalId'];
+      }
+      if (habit.targetGoal.trim().isEmpty && existing.isNotEmpty) {
+        map['targetGoal'] = existing.first['targetGoal'];
+      }
+      if (!replaceReminders &&
+          habit.reminders.isEmpty &&
+          existing.isNotEmpty &&
+          existing.first['reminders'] != null) {
+        map['reminders'] = existing.first['reminders'];
+      }
+
+      if (existing.isNotEmpty) {
+        await txn.update(
+          'habits',
+          map,
+          where: 'id = ?',
+          whereArgs: [existing.first['id']],
+        );
       } else {
-        final map = Map<String, dynamic>.from(habit.toMap());
-        map['serverId'] = habit.serverId ?? habit.id;
         await txn.insert('habits', map);
       }
     });
@@ -93,37 +185,111 @@ class DatabaseService {
     required int id,
     required String name,
   }) async {
+    final existing = await getHabitById(id);
+    await upsertArchivedHabits(
+      [(id: id, name: name)],
+      existingLocalIds: {if (existing != null) id},
+    );
+  }
+
+  /// Archives many habits in one transaction. Pass known sqlite ids in
+  /// [existingLocalIds] so the batch can skip existence queries.
+  Future<void> upsertArchivedHabits(
+    List<({int id, String name})> items, {
+    required Set<int> existingLocalIds,
+  }) async {
+    if (items.isEmpty) return;
     final db = await database;
     await db.transaction((txn) async {
-      final existing = await txn.query(
-        'habits',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-      if (existing.isNotEmpty) {
-        await txn.update(
-          'habits',
-          {'isArchived': 1},
-          where: 'id = ?',
-          whereArgs: [id],
-        );
-      } else {
-        await txn.insert(
-          'habits',
-          Habit(id: id, name: name, isArchived: true, serverId: id).toMap(),
-        );
+      final batch = txn.batch();
+      for (final item in items) {
+        if (existingLocalIds.contains(item.id)) {
+          batch.update(
+            'habits',
+            {'isArchived': 1},
+            where: 'id = ?',
+            whereArgs: [item.id],
+          );
+        } else {
+          batch.insert(
+            'habits',
+            Habit(
+              id: item.id,
+              name: item.name,
+              isArchived: true,
+              serverId: item.id,
+            ).toMap(),
+          );
+        }
       }
+      await batch.commit(noResult: true);
     });
   }
 
-  Future<List<Habit>> getAllHabits({bool isArchived = false}) async {
+  /// Inserts or updates habits without a per-row existence query.
+  Future<void> upsertHabits(
+    List<Habit> habits, {
+    required Set<int> existingLocalIds,
+  }) async {
+    if (habits.isEmpty) return;
     final db = await database;
-    final maps = await db.query(
-      'habits',
-      where: 'isArchived = ?',
-      whereArgs: [isArchived ? 1 : 0],
-    );
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final habit in habits) {
+        final map = Map<String, dynamic>.from(habit.toMap());
+        final id = habit.id;
+        if (id != null && existingLocalIds.contains(id)) {
+          batch.update('habits', map, where: 'id = ?', whereArgs: [id]);
+        } else {
+          batch.insert('habits', map);
+        }
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  Future<List<Habit>> getAllHabits({bool? isArchived = false}) async {
+    final db = await database;
+    final maps = isArchived == null
+        ? await db.query('habits')
+        : await db.query(
+            'habits',
+            where: 'isArchived = ?',
+            whereArgs: [isArchived ? 1 : 0],
+          );
     return maps.map((e) => Habit.fromMap(e)).toList();
+  }
+
+  Future<List<UserGoal>> getAllGoals() async {
+    final db = await database;
+    final rows = await db.query('user_goals');
+    return rows.map((row) => UserGoal.fromJson(row)).toList();
+  }
+
+  Future<void> deleteGoalByServerId(int serverId) async {
+    await deleteGoalsByServerIds([serverId]);
+  }
+
+  Future<void> deleteGoalsByServerIds(Iterable<int> serverIds) async {
+    final unique = serverIds.where((id) => id != 0).toSet().toList();
+    if (unique.isEmpty) return;
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final chunk in _idChunks(unique)) {
+        final placeholders = _inPlaceholders(chunk.length);
+        await txn.update(
+          'habits',
+          {'targetGoalId': null},
+          where: 'targetGoalId IN ($placeholders)',
+          whereArgs: chunk,
+        );
+        await txn.delete(
+          'user_goals',
+          where: 'id IN ($placeholders)',
+          whereArgs: chunk,
+        );
+      }
+    });
   }
 
   Future<Habit?> getHabitById(int id) async {
@@ -161,13 +327,30 @@ class DatabaseService {
   }
 
   Future<int> deleteHabit(int id) async {
+    return deleteHabitsByIds([id]);
+  }
+
+  Future<int> deleteHabitsByIds(Iterable<int> ids) async {
+    final unique = ids.where((id) => id != 0).toSet().toList();
+    if (unique.isEmpty) return 0;
     final db = await database;
-    return db.transaction((txn) async {
-      // Do this explicitly instead of relying on SQLite foreign-key cascading,
-      // which is disabled by default unless PRAGMA foreign_keys is enabled.
-      await txn.delete('habit_records', where: 'habitId = ?', whereArgs: [id]);
-      return txn.delete('habits', where: 'id = ?', whereArgs: [id]);
+    var deleted = 0;
+    await db.transaction((txn) async {
+      for (final chunk in _idChunks(unique)) {
+        final placeholders = _inPlaceholders(chunk.length);
+        await txn.delete(
+          'habit_records',
+          where: 'habitId IN ($placeholders)',
+          whereArgs: chunk,
+        );
+        deleted += await txn.delete(
+          'habits',
+          where: 'id IN ($placeholders)',
+          whereArgs: chunk,
+        );
+      }
     });
+    return deleted;
   }
 
   // --- HABIT RECORDS (Відмітки) ---
@@ -184,10 +367,97 @@ class DatabaseService {
   Future<void> setHabitRecordValue(
     int habitId,
     DateTime date,
-    int value,
-  ) async {
+    int value, {
+    DateTime? lastModified,
+  }) async {
     final db = await database;
-    final dateString = date.toIso8601String().substring(0, 10);
+    await _writeHabitRecordValue(
+      db,
+      habitId,
+      date,
+      value,
+      lastModified: lastModified,
+    );
+  }
+
+  /// Writes many progress rows for one habit in a single transaction.
+  Future<void> setHabitRecordValuesBatch(
+    int habitId,
+    List<({DateTime date, int value})> entries, {
+    DateTime? lastModified,
+  }) async {
+    if (entries.isEmpty) return;
+    final existing = await getAllRecordsForHabit(habitId);
+    final byDate = <String, HabitRecord>{
+      for (final record in existing) _habitDateKey(record.date): record,
+    };
+    final writes = <HabitRecordWrite>[
+      for (final entry in entries)
+        if (byDate[_habitDateKey(entry.date)]?.value != entry.value)
+          (
+            habitId: habitId,
+            date: entry.date,
+            value: entry.value,
+            existingId: byDate[_habitDateKey(entry.date)]?.id,
+            lastModified: lastModified,
+          ),
+    ];
+    await applyHabitRecordWrites(writes);
+  }
+
+  /// Applies progress writes without a SELECT per row.
+  Future<void> applyHabitRecordWrites(List<HabitRecordWrite> writes) async {
+    if (writes.isEmpty) return;
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final write in writes) {
+        _queueHabitRecordWrite(batch, write);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  void _queueHabitRecordWrite(Batch batch, HabitRecordWrite write) {
+    final dateString = _habitDateKey(write.date);
+    if (write.value == kProgressUnknown) {
+      if (write.existingId != null) {
+        batch.delete(
+          'habit_records',
+          where: 'id = ?',
+          whereArgs: [write.existingId],
+        );
+      }
+      return;
+    }
+    final row = {
+      'habitId': write.habitId,
+      'date': dateString,
+      'status': habitStatusFromProgressValue(write.value).index,
+      'value': write.value,
+      'lastModified': (write.lastModified ?? DateTime.now().toUtc())
+          .toIso8601String(),
+    };
+    if (write.existingId != null) {
+      batch.update(
+        'habit_records',
+        row,
+        where: 'id = ?',
+        whereArgs: [write.existingId],
+      );
+    } else {
+      batch.insert('habit_records', row);
+    }
+  }
+
+  Future<void> _writeHabitRecordValue(
+    DatabaseExecutor db,
+    int habitId,
+    DateTime date,
+    int value, {
+    DateTime? lastModified,
+  }) async {
+    final dateString = _habitDateKey(date);
     final status = habitStatusFromProgressValue(value);
 
     final existing = await db.query(
@@ -207,12 +477,17 @@ class DatabaseService {
       return;
     }
 
+    if (existing.isNotEmpty && existing.first['value'] == value) {
+      return;
+    }
+
     final row = {
       'habitId': habitId,
       'date': dateString,
       'status': status.index,
       'value': value,
-      'lastModified': DateTime.now().toUtc().toIso8601String(),
+      'lastModified': (lastModified ?? DateTime.now().toUtc())
+          .toIso8601String(),
     };
 
     if (existing.isNotEmpty) {
@@ -252,13 +527,25 @@ class DatabaseService {
   }
 
   Future<List<HabitRecord>> getAllRecordsForHabit(int habitId) async {
+    return getRecordsForHabitIds([habitId]);
+  }
+
+  Future<List<HabitRecord>> getRecordsForHabitIds(
+    Iterable<int> habitIds,
+  ) async {
+    final unique = habitIds.where((id) => id != 0).toSet();
+    if (unique.isEmpty) return const [];
     final db = await database;
-    final maps = await db.query(
-      'habit_records',
-      where: 'habitId = ?',
-      whereArgs: [habitId],
-    );
-    return maps.map((e) => HabitRecord.fromMap(e)).toList();
+    final out = <HabitRecord>[];
+    for (final chunk in _idChunks(unique)) {
+      final rows = await db.query(
+        'habit_records',
+        where: 'habitId IN (${_inPlaceholders(chunk.length)})',
+        whereArgs: chunk,
+      );
+      out.addAll(rows.map(HabitRecord.fromMap));
+    }
+    return out;
   }
 
   Future<HabitRecord?> findRecord(int habitId, DateTime date) async {
@@ -275,38 +562,48 @@ class DatabaseService {
   }
 
   Future<void> upsertGoal(UserGoal goal) async {
+    await upsertGoals([goal]);
+  }
+
+  Future<void> upsertGoals(List<UserGoal> goals) async {
+    if (goals.isEmpty) return;
     final db = await database;
-    final existing = goal.id == null
-        ? <Map<String, Object?>>[]
-        : await db.query(
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final goal in goals) {
+        final existing = goal.localId != null
+            ? <Map<String, Object?>>[]
+            : goal.id == null
+            ? <Map<String, Object?>>[]
+            : await txn.query(
+                'user_goals',
+                columns: ['localId'],
+                where: 'id = ?',
+                whereArgs: [goal.id],
+                limit: 1,
+              );
+        final row = {
+          'id': goal.id,
+          'name': goal.name,
+          'isCompleted': goal.isCompleted ? 1 : 0,
+          'lastModified': goal.lastModified.toUtc().toIso8601String(),
+        };
+        final localId =
+            goal.localId ??
+            (existing.isEmpty ? null : existing.first['localId']);
+        if (localId != null) {
+          batch.update(
             'user_goals',
-            where: 'id = ?',
-            whereArgs: [goal.id],
-            limit: 1,
+            row,
+            where: 'localId = ?',
+            whereArgs: [localId],
           );
-    final row = {
-      'id': goal.id,
-      'name': goal.name,
-      'isCompleted': goal.isCompleted ? 1 : 0,
-      'lastModified': goal.lastModified.toUtc().toIso8601String(),
-    };
-    if (existing.isNotEmpty) {
-      await db.update(
-        'user_goals',
-        row,
-        where: 'localId = ?',
-        whereArgs: [existing.first['localId']],
-      );
-    } else if (goal.localId != null) {
-      await db.update(
-        'user_goals',
-        row,
-        where: 'localId = ?',
-        whereArgs: [goal.localId],
-      );
-    } else {
-      await db.insert('user_goals', row);
-    }
+        } else {
+          batch.insert('user_goals', row);
+        }
+      }
+      await batch.commit(noResult: true);
+    });
   }
 
   Future<int?> goalServerId(int localId) async {

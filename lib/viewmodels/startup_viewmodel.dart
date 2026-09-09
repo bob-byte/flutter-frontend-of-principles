@@ -2,30 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/config/app_config.dart';
-import '../core/sync/sync_service.dart';
 import '../services/app_open_tracker_service.dart';
 import '../services/auth_service.dart';
 import '../services/dialog_service.dart';
-import '../services/reminder_service.dart';
 
 enum StartupNextRoute { helper, login, appBenefits }
 
 class StartupViewModel extends ChangeNotifier {
   StartupViewModel({
     required AuthService authService,
-    required SyncService syncService,
-    required ReminderService reminderService,
     required DialogService dialogService,
     required AppOpenTrackerService appOpenTracker,
   }) : _authService = authService,
-       _syncService = syncService,
-       _reminderService = reminderService,
        _dialogService = dialogService,
        _appOpenTracker = appOpenTracker;
 
   final AuthService _authService;
-  final SyncService _syncService;
-  final ReminderService _reminderService;
   final DialogService _dialogService;
   final AppOpenTrackerService _appOpenTracker;
   bool loading = false;
@@ -85,8 +77,7 @@ class StartupViewModel extends ChangeNotifier {
       final success = await _authService.googleAuthorize();
       if (success) {
         markSignedIn();
-        await _syncService.runSyncSafely();
-        await _reminderService.tryToRecoverAllUserReminders();
+        // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
         return true;
       }
       return false;
@@ -112,8 +103,7 @@ class StartupViewModel extends ChangeNotifier {
       final success = await _authService.appleAuthorize();
       if (success) {
         markSignedIn();
-        await _syncService.runSyncSafely();
-        await _reminderService.tryToRecoverAllUserReminders();
+        // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
         return true;
       }
       return false;

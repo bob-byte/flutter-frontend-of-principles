@@ -7,8 +7,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('execute returns after local write without waiting on remote', () async {
+    final queue = SyncQueueService(memoryItems: []);
     final executor = LocalRemoteExecutor(
-      queue: SyncQueueService(memoryItems: []),
+      queue: queue,
       network: NetworkService(
         initialConnected: true,
         checkConnectivity: () async => const [],
@@ -38,10 +39,12 @@ void main() {
     expect(localDone, isTrue);
     expect(result, isNull);
     expect(remoteFinished, isFalse);
+    expect(await queue.getBlockingItems(), isNotEmpty);
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(remoteStarted, isTrue);
     await Future<void>.delayed(const Duration(milliseconds: 200));
     expect(remoteFinished, isTrue);
+    expect(await queue.getBlockingItems(), isEmpty);
   });
 
   test('execute awaits remote when awaitRemote is true', () async {

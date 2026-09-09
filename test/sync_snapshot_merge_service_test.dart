@@ -9,6 +9,7 @@ import 'package:principles_app/core/sync/sync_bootstrap_snapshot.dart';
 import 'package:principles_app/core/sync/sync_handler_type.dart';
 import 'package:principles_app/core/sync/sync_queue_service.dart';
 import 'package:principles_app/core/sync/sync_snapshot_merge_service.dart';
+import 'package:principles_app/models/habit.dart';
 import 'package:principles_app/models/task_item_dto.dart';
 import 'package:principles_app/models/user.dart';
 import 'package:principles_app/models/user_goal.dart';
@@ -185,6 +186,41 @@ void main() {
     expect(rows.single['id'], 11);
   });
 
+  test('keeps newer local goal over older remote', () async {
+    await db.upsertGoal(
+      UserGoal(id: 11, name: 'Local', lastModified: DateTime.utc(2026, 3, 1)),
+    );
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        goals: [
+          UserGoal(
+            id: 11,
+            name: 'Remote',
+            lastModified: DateTime.utc(2026, 1, 1),
+          ),
+        ],
+      ),
+    );
+
+    final rows = await localDb.database.then(
+      (database) => database.query('user_goals'),
+    );
+    expect(rows.single['name'], 'Local');
+  });
+
+  test('prunes server-backed goals missing from the snapshot', () async {
+    await db.upsertGoal(UserGoal(id: 11, name: 'Keep'));
+    await db.upsertGoal(UserGoal(id: 12, name: 'Drop'));
+
+    await merge.merge(
+      SyncBootstrapSnapshot(goals: [UserGoal(id: 11, name: 'Keep')]),
+    );
+
+    final names = (await db.getAllGoals()).map((g) => g.name).toSet();
+    expect(names, {'Keep'});
+  });
+
   test('skips remote goal with a blocking queue item', () async {
     await queue.addToQueue(
       handlerType: SyncHandlerType.userGoal,
@@ -226,6 +262,140 @@ void main() {
     expect(habits.single.targetGoal, 'Health');
   });
 
+  test('does not overwrite pending habit progress', () async {
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {
+            'id': 42,
+            'name': 'Walk',
+            'complexity': 5,
+            'type': 1,
+            'progresses': [
+              {'date': '2026-09-03', 'value': 3},
+            ],
+          },
+        ],
+      ),
+    );
+    await db.setHabitRecordValue(42, DateTime(2026, 9, 3), 2);
+    await queue.addToQueue(
+      handlerType: SyncHandlerType.progressOfHabit,
+      operation: OperationKind.save,
+      payload: {'habitId': 42, 'date': '2026-09-03', 'value': 2},
+    );
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {
+            'id': 42,
+            'name': 'Walk',
+            'complexity': 5,
+            'type': 1,
+            'progresses': [
+              {'date': '2026-09-03', 'value': 3},
+            ],
+          },
+        ],
+      ),
+    );
+
+    final record = await db.findRecord(42, DateTime(2026, 9, 3));
+    expect(record?.value, 2);
+  });
+
+  test('does not rewrite matching habit progress', () async {
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {
+            'id': 42,
+            'name': 'Walk',
+            'complexity': 5,
+            'type': 1,
+            'progresses': [
+              {
+                'date': '2026-09-03',
+                'value': 3,
+                'lastModified': '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      ),
+    );
+    final first = await db.findRecord(42, DateTime(2026, 9, 3));
+    expect(first?.value, 3);
+    expect(first?.lastModified, DateTime.utc(2026, 1, 1));
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {
+            'id': 42,
+            'name': 'Walk',
+            'complexity': 5,
+            'type': 1,
+            'progresses': [
+              {
+                'date': '2026-09-03',
+                'value': 3,
+                'lastModified': '2026-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        ],
+      ),
+    );
+
+    final second = await db.findRecord(42, DateTime(2026, 9, 3));
+    expect(second?.id, first?.id);
+    expect(second?.lastModified, DateTime.utc(2026, 1, 1));
+  });
+
+  test('prunes server-backed habits missing from the snapshot', () async {
+    await db.insertOrUpdateHabitWithBackendId(
+      Habit(id: 42, serverId: 42, name: 'Keep'),
+    );
+    await db.insertOrUpdateHabitWithBackendId(
+      Habit(id: 43, serverId: 43, name: 'Drop'),
+    );
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {'id': 42, 'name': 'Keep', 'complexity': 5, 'type': 1},
+        ],
+      ),
+    );
+
+    final names = (await db.getAllHabits(isArchived: null)).map((h) => h.name);
+    expect(names, ['Keep']);
+  });
+
+  test('skips remote habit with an archive payload in the queue', () async {
+    await db.insertOrUpdateHabitWithBackendId(
+      Habit(id: 42, serverId: 42, name: 'Local'),
+    );
+    await queue.addToQueue(
+      handlerType: SyncHandlerType.userHabit,
+      operation: OperationKind.setArchiveStatus,
+      payload: {'habitId': 42, 'isArchived': true},
+    );
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        activeHabits: [
+          {'id': 42, 'name': 'Remote', 'complexity': 5, 'type': 1},
+        ],
+      ),
+    );
+
+    final habits = await db.getAllHabits(isArchived: null);
+    expect(habits.single.name, 'Local');
+  });
+
   test('merges archived habits from bootstrap', () async {
     await merge.merge(
       const SyncBootstrapSnapshot(
@@ -248,6 +418,20 @@ void main() {
     );
 
     expect(tasks.mergedTitles, ['Inbox task']);
+  });
+
+  test('prunes local tasks missing from a tasks-provided snapshot', () async {
+    await merge.merge(
+      const SyncBootstrapSnapshot(
+        tasks: [TaskItemDto(id: 7, name: 'Keep', isCompleted: false)],
+        tasksProvided: true,
+        tasksTrustedForPrune: true,
+      ),
+    );
+
+    expect(tasks.mergedTitles, ['Keep']);
+    expect(tasks.discardedRemoteIds, {7});
+    expect(tasks.retainedServerIds, isEmpty);
   });
 
   test('skips remote task that has a pending delete in the queue', () async {
@@ -274,9 +458,20 @@ class _FakeTaskService extends TaskService {
   _FakeTaskService(ApiClient apiClient) : super(apiClient: apiClient);
 
   final mergedTitles = <String>[];
+  Set<int> discardedRemoteIds = {};
+  Set<int> retainedServerIds = {};
 
   @override
   Future<void> mergeRemoteTask(TaskItemDto dto) async {
     mergedTitles.add(dto.name);
+  }
+
+  @override
+  Future<void> discardLocalTasksAbsentFromRemote(
+    Set<int> remoteServerIds, {
+    Set<int> retainServerIds = const {},
+  }) async {
+    discardedRemoteIds = remoteServerIds;
+    retainedServerIds = retainServerIds;
   }
 }

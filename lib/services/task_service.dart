@@ -28,7 +28,19 @@ class TaskService {
 
   bool get _useRemote => !AppConfig.useLocalData;
 
-  Future<List<Task>> getTasks() => _local.getTasks();
+  Future<List<Task>> getTasks({bool? isDone}) => _local.getTasks(isDone: isDone);
+
+  Future<List<Task>> getSessionTasks({
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+    required DateTime today,
+  }) => _local.getSessionTasks(
+    rangeStart: rangeStart,
+    rangeEnd: rangeEnd,
+    today: today,
+  );
+
+  Future<List<Task>> getCompletedTasks() => _local.getTasks(isDone: true);
 
   Future<Task?> getTask(String id) => _local.getTask(id);
 
@@ -47,12 +59,13 @@ class TaskService {
     }
 
     await _local.saveTask(stored, isNew: isNew);
-    if (!_useRemote) return stored;
-
     final persisted = await _local.getTask(stored.id) ?? stored;
+    if (!_useRemote) return persisted;
+
     Future<Task> remote() async {
-      final dto = TaskItemDto.fromTask(persisted);
-      final serverId = persisted.serverId ?? int.tryParse(persisted.id) ?? 0;
+      final latest = await _local.getTask(persisted.id) ?? persisted;
+      final dto = TaskItemDto.fromTask(latest);
+      final serverId = latest.serverId ?? int.tryParse(latest.id) ?? 0;
       if (isNew || serverId == 0) {
         final response = await _apiClient.post(
           ApiEndpoints.tasks,
@@ -63,7 +76,7 @@ class TaskService {
         );
         // Keep the stable local id so in-memory list rows stay editable
         // while background sync assigns serverId.
-        final mapped = persisted.copyWith(serverId: created.id);
+        final mapped = latest.copyWith(serverId: created.id);
         await _local.saveTask(mapped, isNew: false);
         return mapped;
       }
@@ -71,7 +84,7 @@ class TaskService {
         '${ApiEndpoints.tasks}/$serverId',
         data: dto.toJson(),
       );
-      return persisted;
+      return latest;
     }
 
     if (_executor != null) {
@@ -101,12 +114,17 @@ class TaskService {
     await _local.updateTaskStatus(id, isDone);
     if (!_useRemote) return;
     final task = await _local.getTask(id);
-    final serverId = task?.serverId ?? int.tryParse(id) ?? 0;
-    if (serverId == 0) return;
+    if (task == null) return;
+    final serverId = task.serverId ?? int.tryParse(task.id) ?? 0;
 
     Future<void> remote() async {
+      final latest = await _local.getTask(id) ?? task;
+      final sid = latest.serverId ?? int.tryParse(latest.id) ?? 0;
+      if (sid == 0) {
+        throw StateError('Task has no server id yet');
+      }
       await _apiClient.put(
-        '${ApiEndpoints.tasks}/$serverId/status',
+        '${ApiEndpoints.tasks}/$sid/status',
         data: {'isCompleted': isDone},
       );
     }
@@ -117,9 +135,13 @@ class TaskService {
         remoteCall: remote,
         handlerType: 'Task',
         operation: OperationKind.updateStatus,
-        payload: {'id': serverId, 'isCompleted': isDone},
-        entityId: serverId,
-        entityLocalId: task?.localId,
+        payload: {
+          'id': serverId == 0 ? null : serverId,
+          'isCompleted': isDone,
+          'clientId': task.id,
+        },
+        entityId: serverId == 0 ? null : serverId,
+        entityLocalId: task.localId,
       );
       return;
     }
@@ -136,9 +158,9 @@ class TaskService {
     await _local.deleteTask(id);
     if (!_useRemote) return;
     final serverId = existing?.serverId ?? int.tryParse(id) ?? 0;
-    if (serverId == 0) return;
 
     Future<void> remote() async {
+      if (serverId == 0) return;
       await _apiClient.delete('${ApiEndpoints.tasks}/$serverId');
     }
 
@@ -148,13 +170,14 @@ class TaskService {
         remoteCall: remote,
         handlerType: 'Task',
         operation: OperationKind.delete,
-        payload: {'id': serverId},
-        entityId: serverId,
+        payload: {'id': serverId, 'clientId': existing?.id ?? id},
+        entityId: serverId == 0 ? null : serverId,
         entityLocalId: existing?.localId,
       );
       return;
     }
 
+    if (serverId == 0) return;
     unawaited(() async {
       try {
         await remote();
@@ -183,6 +206,32 @@ class TaskService {
           lastModified: DateTime.now().toUtc(),
         );
     await _local.saveTask(merged, isNew: existing == null);
+
+    // Collapse L… + "2" pairs left by older create/bootstrap races.
+    await _local.deleteTasksByServerId(dto.id, exceptId: merged.id);
+  }
+
+  /// Drops local copies of server tasks that another device deleted.
+  ///
+  /// Rows with no [Task.serverId] (still uploading) are kept. [retainServerIds]
+  /// covers in-flight local edits/deletes so bootstrap cannot clobber them.
+  Future<void> discardLocalTasksAbsentFromRemote(
+    Set<int> remoteServerIds, {
+    Set<int> retainServerIds = const {},
+  }) async {
+    for (final task in await _local.getTasks()) {
+      final serverId = task.serverId ?? int.tryParse(task.id) ?? 0;
+      if (serverId == 0) continue;
+      if (remoteServerIds.contains(serverId)) continue;
+      if (retainServerIds.contains(serverId)) continue;
+      await _local.deleteTask(task.id);
+    }
+  }
+
+  /// Applies a single remote delete from GET `/sync/changes` tombstones.
+  Future<void> discardRemoteDeletedTask(int serverId) async {
+    if (serverId == 0) return;
+    await _local.deleteTasksByServerId(serverId);
   }
 
   Future<Map<String, int>> getThemeColors() => _local.getThemeColors();

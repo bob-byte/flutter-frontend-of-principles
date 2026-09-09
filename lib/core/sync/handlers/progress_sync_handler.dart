@@ -28,7 +28,7 @@ class ProgressSyncHandler implements SyncQueueHandler {
     final payload = _decode(item.payloadJson);
     final habitId = readJsonInt(payload['habitId']) ?? 0;
     if (habitId == 0) {
-      return;
+      throw StateError('Queued progress has no habit id yet.');
     }
 
     final date = progressDateFromApi(payload['date']);

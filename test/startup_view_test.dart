@@ -1,22 +1,13 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
-import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
-import 'package:principles_app/core/sync/sync_queue_service.dart';
-import 'package:principles_app/core/sync/sync_service.dart';
-import 'package:principles_app/core/sync/sync_snapshot_merge_service.dart';
 import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/services/app_open_tracker_service.dart';
 import 'package:principles_app/services/auth_service.dart';
-import 'package:principles_app/services/database_service.dart';
 import 'package:principles_app/services/dialog_service.dart';
-import 'package:principles_app/services/reminder_service.dart';
-import 'package:principles_app/services/task_service.dart';
-import 'package:principles_app/services/user_service.dart';
 import 'package:principles_app/viewmodels/startup_viewmodel.dart';
 import 'package:principles_app/views/startup_view.dart';
 import 'package:provider/provider.dart';
@@ -24,8 +15,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _build() {
   final auth = AuthService(SecureStore());
-  final api = ApiClient(SecureStore(), dio: Dio());
-  final queue = SyncQueueService(memoryItems: []);
   return LiquidGlassWidgets.wrap(
     brightnessResolver: Theme.maybeBrightnessOf,
     child: MultiProvider(
@@ -36,21 +25,6 @@ Widget _build() {
         ChangeNotifierProvider(
           create: (_) => StartupViewModel(
             authService: auth,
-            syncService: SyncService(
-              queue: queue,
-              authService: auth,
-              apiClient: api,
-              mergeService: SyncSnapshotMergeService(
-                queue: queue,
-                databaseService: DatabaseService(),
-                userService: UserService(forceLocalOnly: true),
-                reminderService: ReminderService(forceLocalOnly: true),
-                taskService: TaskService(apiClient: api),
-              ),
-              databaseService: DatabaseService(),
-              handlers: const [],
-            ),
-            reminderService: ReminderService(forceLocalOnly: true),
             dialogService: DialogService(),
             appOpenTracker: AppOpenTrackerService(),
           ),

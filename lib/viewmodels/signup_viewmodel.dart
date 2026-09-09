@@ -1,12 +1,9 @@
 import 'package:flutter/foundation.dart';
-import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 
 class SignupViewModel extends ChangeNotifier {
-  SignupViewModel(this._authService, {SyncService? syncService})
-      : _syncService = syncService;
+  SignupViewModel(this._authService);
   final AuthService _authService;
-  final SyncService? _syncService;
 
   bool _isBusy = false;
   String? _error;
@@ -40,9 +37,8 @@ class SignupViewModel extends ChangeNotifier {
       );
       if (!success) {
         _error = genericError;
-      } else {
-        await _syncService?.runSyncSafely();
       }
+      // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
       return success;
     } catch (e) {
       // Extract specific backend error if it's an Exception

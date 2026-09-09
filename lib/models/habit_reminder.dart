@@ -8,6 +8,10 @@ import 'schedule_reminder_offset.dart';
 /// the only value that differs from [DayOfWeek].
 int toDotNetDayOfWeek(int storedType) => storedType % 7;
 
+/// Converts .NET [DayOfWeek] (Sunday = 0 … Saturday = 6) to [DateTime.weekday].
+int fromDotNetDayOfWeek(int dayOfWeek) =>
+    dayOfWeek == 0 ? DateTime.sunday : dayOfWeek;
+
 String toTimeOnlyString(TimeOfDay time) {
   final hour = time.hour.toString().padLeft(2, '0');
   final minute = time.minute.toString().padLeft(2, '0');
@@ -18,10 +22,7 @@ class WeekDay {
   final int type; // DateTime.weekday (1=Mon…7=Sun) or DayOfWeek (0=Sun…6=Sat)
   final int userNotificationRequestId;
 
-  WeekDay({
-    required this.type,
-    required this.userNotificationRequestId,
-  });
+  WeekDay({required this.type, required this.userNotificationRequestId});
 
   Map<String, dynamic> toMap() {
     return {
@@ -143,7 +144,8 @@ class HabitReminder {
         minute: map['time_minute'] as int? ?? 0,
       ),
       isEnabled: (map['isEnabled'] as int? ?? 1) == 1,
-      daysOfWeek: (map['daysOfWeek'] as List<dynamic>?)
+      daysOfWeek:
+          (map['daysOfWeek'] as List<dynamic>?)
               ?.map((e) => WeekDay.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -155,4 +157,126 @@ class HabitReminder {
       allDay: (map['allDay'] as int? ?? 0) == 1,
     );
   }
+
+  /// Parses [UserHabitReminderDto] from `/reminder/all`.
+  factory HabitReminder.fromApiJson(Map<String, dynamic> json) {
+    final daysRaw = json['daysOfWeek'] ?? json['DaysOfWeek'];
+    final days = <WeekDay>[];
+    if (daysRaw is List) {
+      for (final entry in daysRaw) {
+        if (entry is! Map) continue;
+        final map = Map<String, dynamic>.from(entry);
+        final type = _dayOfWeekFromApi(map['type'] ?? map['Type']);
+        final notifId = _readInt(
+          map['userNotificationRequestId'] ?? map['UserNotificationRequestId'],
+        );
+        if (type == null || notifId == null || notifId <= 0) continue;
+        days.add(WeekDay(type: type, userNotificationRequestId: notifId));
+      }
+    }
+
+    final offsetsRaw = json['offsets'] ?? json['Offsets'];
+    final offsets = <ScheduleReminderOffset>[];
+    if (offsetsRaw is List) {
+      for (final entry in offsetsRaw) {
+        if (entry is Map) {
+          offsets.add(
+            ScheduleReminderOffset.fromJson(Map<String, dynamic>.from(entry)),
+          );
+        }
+      }
+    }
+
+    final endRaw = json['endTime'] ?? json['EndTime'];
+    TimeOfDay? endTime;
+    if (endRaw != null) {
+      endTime = _timeOfDayFromApi(endRaw);
+    }
+
+    return HabitReminder(
+      id: _readInt(json['id'] ?? json['Id']),
+      title: '${json['title'] ?? json['Title'] ?? ''}'.trim(),
+      description: '${json['description'] ?? json['Description'] ?? ''}'.trim(),
+      time: _timeOfDayFromApi(json['time'] ?? json['Time']),
+      isEnabled:
+          json['isEnabled'] == true ||
+          json['IsEnabled'] == true ||
+          json['isEnabled'] == 1,
+      daysOfWeek: days,
+      offsets: offsets,
+      constantReminder:
+          json['constantReminder'] == true ||
+          json['ConstantReminder'] == true ||
+          json['constantReminder'] == 1,
+      constantNotificationRequestId: _readInt(
+        json['constantNotificationRequestId'] ??
+            json['ConstantNotificationRequestId'],
+      ),
+      endTime: endTime,
+      allDay:
+          json['allDay'] == true ||
+          json['AllDay'] == true ||
+          json['allDay'] == 1,
+    );
+  }
+}
+
+int? _readInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '');
+}
+
+TimeOfDay _timeOfDayFromApi(dynamic raw) {
+  if (raw is TimeOfDay) return raw;
+  if (raw is DateTime) {
+    return TimeOfDay(hour: raw.hour, minute: raw.minute);
+  }
+  if (raw is String) {
+    final match = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(raw.trim());
+    if (match != null) {
+      final hour = int.tryParse(match.group(1)!) ?? 0;
+      final minute = int.tryParse(match.group(2)!) ?? 0;
+      return TimeOfDay(hour: hour.clamp(0, 23), minute: minute.clamp(0, 59));
+    }
+  }
+  if (raw is Map) {
+    final map = Map<dynamic, dynamic>.from(raw);
+    final hour =
+        _readInt(map['hour'] ?? map['Hour'] ?? map['hours'] ?? map['Hours']) ??
+        0;
+    final minute =
+        _readInt(
+          map['minute'] ?? map['Minute'] ?? map['minutes'] ?? map['Minutes'],
+        ) ??
+        0;
+    return TimeOfDay(hour: hour.clamp(0, 23), minute: minute.clamp(0, 59));
+  }
+  return const TimeOfDay(hour: 8, minute: 0);
+}
+
+int? _dayOfWeekFromApi(dynamic raw) {
+  if (raw is int) return fromDotNetDayOfWeek(raw);
+  if (raw is num) return fromDotNetDayOfWeek(raw.toInt());
+  if (raw is String) {
+    final asInt = int.tryParse(raw.trim());
+    if (asInt != null) return fromDotNetDayOfWeek(asInt);
+    switch (raw.trim().toLowerCase()) {
+      case 'sunday':
+        return DateTime.sunday;
+      case 'monday':
+        return DateTime.monday;
+      case 'tuesday':
+        return DateTime.tuesday;
+      case 'wednesday':
+        return DateTime.wednesday;
+      case 'thursday':
+        return DateTime.thursday;
+      case 'friday':
+        return DateTime.friday;
+      case 'saturday':
+        return DateTime.saturday;
+    }
+  }
+  return null;
 }

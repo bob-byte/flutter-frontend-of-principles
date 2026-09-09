@@ -1,19 +1,16 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
-import '../core/sync/sync_service.dart';
 import '../services/auth_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthService _authService;
-  final SyncService? _syncService;
 
-  LoginViewModel(this._authService, {SyncService? syncService})
-      : _syncService = syncService;
+  LoginViewModel(this._authService);
 
   bool _isBusy = false;
   String? _error;
-  
+
   // Lockout logic variables
   int _failedAttempts = 0;
   bool _isTimerVisible = false;
@@ -55,14 +52,12 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   Future<bool> login(
-    String email, 
-    String password, 
-    {
-      required String genericError,
-      required String invalidCredentialsError,
-      required String Function(int) formatTimerMessage,
-    }
-  ) async {
+    String email,
+    String password, {
+    required String genericError,
+    required String invalidCredentialsError,
+    required String Function(int) formatTimerMessage,
+  }) async {
     if (!isLoginEnable) return false;
 
     _isBusy = true;
@@ -78,7 +73,7 @@ class LoginViewModel extends ChangeNotifier {
         }
       } else {
         _failedAttempts = 0; // Reset on success
-        await _syncService?.runSyncSafely();
+        // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
       }
       return success;
     } catch (e) {

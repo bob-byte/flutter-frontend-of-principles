@@ -95,10 +95,22 @@ class SyncQueueService {
   }
 
   Future<SyncQueueItem?> getItem(int localId) async {
-    for (final item in await _loadAll()) {
-      if (item.localId == localId) return item;
+    if (_useMemory) {
+      await _ensureMemoryLoaded();
+      for (final item in _memory) {
+        if (item.localId == localId) return item;
+      }
+      return null;
     }
-    return null;
+    final db = await _localDb!.database;
+    final rows = await db.query(
+      'SyncQueueItem',
+      where: 'localId = ?',
+      whereArgs: [localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return SyncQueueItem.fromMap(rows.first);
   }
 
   Future<List<SyncQueueItem>> getStuckItems({DateTime? now}) async {
@@ -120,9 +132,36 @@ class SyncQueueService {
     int? entityId,
     int? entityLocalId,
   }) async {
-    final items = await getBlockingItems(handlerType: handlerType);
     final filterByLocal = entityLocalId != null && entityLocalId != 0;
     final filterByEntity = entityId != null && entityId != 0;
+
+    if (!_useMemory) {
+      final db = await _localDb!.database;
+      final where = <String>['isProcessed = 0', 'handlerType = ?'];
+      final args = <Object?>[handlerType];
+      if (filterByLocal && filterByEntity) {
+        where.add('(entityLocalId = ? OR entityId = ?)');
+        args
+          ..add(entityLocalId)
+          ..add(entityId);
+      } else if (filterByLocal) {
+        where.add('entityLocalId = ?');
+        args.add(entityLocalId);
+      } else if (filterByEntity) {
+        where.add('entityId = ?');
+        args.add(entityId);
+      }
+      final rows = await db.query(
+        'SyncQueueItem',
+        columns: ['localId'],
+        where: where.join(' AND '),
+        whereArgs: args,
+        limit: 1,
+      );
+      return rows.isNotEmpty;
+    }
+
+    final items = await getBlockingItems(handlerType: handlerType);
     if (!filterByLocal && !filterByEntity) {
       return items.isNotEmpty;
     }
@@ -178,66 +217,123 @@ class SyncQueueService {
   }
 
   Future<void> markAsProcessed(int id, {DateTime? now}) async {
+    await remove(id);
+  }
+
+  /// Leaves the item pending after a live remote attempt so sync can retry.
+  Future<void> releaseProcessing(int id, {DateTime? now}) async {
     await _update(
       id,
       (item) => item.copyWith(
         isProcessing: false,
-        isProcessed: true,
         isFailed: false,
-        processedAt: now ?? DateTime.now().toUtc(),
-        clearErrorMessage: true,
+        nextRetryAt: now ?? DateTime.now().toUtc(),
       ),
     );
   }
 
   Future<void> remove(int id) async {
+    await removeMany([id]);
+  }
+
+  Future<void> removeMany(Iterable<int> ids) async {
+    final unique = ids.where((id) => id != 0).toSet().toList();
+    if (unique.isEmpty) return;
     if (_useMemory) {
       await _ensureMemoryLoaded();
-      _memory.removeWhere((item) => item.localId == id);
+      _memory.removeWhere((item) => unique.contains(item.localId));
       await _persistMemory();
       return;
     }
     final db = await _localDb!.database;
-    await db.delete('SyncQueueItem', where: 'localId = ?', whereArgs: [id]);
+    for (var i = 0; i < unique.length; i += 400) {
+      final chunk = unique.sublist(
+        i,
+        i + 400 > unique.length ? unique.length : i + 400,
+      );
+      await db.delete(
+        'SyncQueueItem',
+        where: 'localId IN (${List.filled(chunk.length, '?').join(',')})',
+        whereArgs: chunk,
+      );
+    }
+  }
+
+  Future<void> removeProcessedItems() async {
+    if (_useMemory) {
+      await _ensureMemoryLoaded();
+      _memory.removeWhere((item) => item.isProcessed);
+      await _persistMemory();
+      return;
+    }
+    final db = await _localDb!.database;
+    await db.delete('SyncQueueItem', where: 'isProcessed = 1');
   }
 
   Future<void> resetStuckItems() async {
-    final items = await _loadAll();
-    for (final item in items.where((item) => item.isProcessing)) {
-      await _update(
-        item.localId!,
-        (current) => current.copyWith(
-          isProcessing: false,
-          nextRetryAt: DateTime.now().toUtc(),
-        ),
-      );
+    if (_useMemory) {
+      final items = await _loadAll();
+      for (final item in items.where((item) => item.isProcessing)) {
+        await _update(
+          item.localId!,
+          (current) => current.copyWith(
+            isProcessing: false,
+            nextRetryAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+      return;
     }
+    final db = await _localDb!.database;
+    await db.update('SyncQueueItem', {
+      'isProcessing': 0,
+      'nextRetryAt': DateTime.now().toUtc().toIso8601String(),
+    }, where: 'isProcessing = 1');
   }
 
   Future<void> resetFailedItems() async {
-    for (final item in await getFailedItems()) {
-      await _update(
-        item.localId!,
-        (current) => current.copyWith(
-          isFailed: false,
-          isProcessed: false,
-          isProcessing: false,
-          nextRetryAt: DateTime.now().toUtc(),
-        ),
-      );
+    if (_useMemory) {
+      for (final item in await getFailedItems()) {
+        await _update(
+          item.localId!,
+          (current) => current.copyWith(
+            isFailed: false,
+            isProcessed: false,
+            isProcessing: false,
+            nextRetryAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+      return;
     }
+    final db = await _localDb!.database;
+    await db.update('SyncQueueItem', {
+      'isFailed': 0,
+      'isProcessed': 0,
+      'isProcessing': 0,
+      'nextRetryAt': DateTime.now().toUtc().toIso8601String(),
+    }, where: 'isFailed = 1');
   }
 
   Future<void> resetDeferredItems() async {
-    final items = await _loadUnprocessed();
-    for (final item in items.where(
-      (item) => !item.isFailed && !item.isProcessing,
-    )) {
-      await _update(
-        item.localId!,
-        (current) => current.copyWith(nextRetryAt: DateTime.now().toUtc()),
-      );
+    if (_useMemory) {
+      final items = await _loadUnprocessed();
+      for (final item in items.where(
+        (item) => !item.isFailed && !item.isProcessing,
+      )) {
+        await _update(
+          item.localId!,
+          (current) => current.copyWith(nextRetryAt: DateTime.now().toUtc()),
+        );
+      }
+      return;
     }
+    final db = await _localDb!.database;
+    await db.update(
+      'SyncQueueItem',
+      {'nextRetryAt': DateTime.now().toUtc().toIso8601String()},
+      where: 'isProcessed = 0 AND isFailed = 0 AND isProcessing = 0',
+    );
   }
 
   Future<void> compactQueue() async {
@@ -246,9 +342,7 @@ class SyncQueueService {
       items,
       localEntityMissing: (item) => false,
     );
-    for (final id in ids) {
-      await remove(id);
-    }
+    await removeMany(ids);
   }
 
   Future<void> compactQueueCheckingLocal(
@@ -263,9 +357,7 @@ class SyncQueueService {
       items,
       localEntityMissing: (item) => missing[item.localId] == true,
     );
-    for (final id in ids) {
-      await remove(id);
-    }
+    await removeMany(ids);
   }
 
   Future<void> rewriteProgressHabitId({
@@ -297,6 +389,19 @@ class SyncQueueService {
     required int toLocalId,
     int? toEntityId,
   }) async {
+    if (!_useMemory) {
+      final db = await _localDb!.database;
+      await db.update(
+        'SyncQueueItem',
+        {
+          'entityLocalId': toLocalId,
+          if (toEntityId != null) 'entityId': toEntityId,
+        },
+        where: 'handlerType = ? AND entityLocalId = ?',
+        whereArgs: [handlerType, fromLocalId],
+      );
+      return;
+    }
     final items = await _loadAll();
     for (final item in items) {
       if (item.handlerType != handlerType ||
@@ -314,19 +419,17 @@ class SyncQueueService {
   }
 
   Future<void> cleanupOldProcessedItems(Duration ageThreshold) async {
-    final cutoff = DateTime.now().toUtc().subtract(ageThreshold);
-    final items = await _loadAll();
-    for (final item in items) {
-      if (item.isProcessed &&
-          item.processedAt != null &&
-          item.processedAt!.isBefore(cutoff)) {
-        await remove(item.localId!);
-      }
-    }
+    if (ageThreshold.isNegative) return;
+    await removeProcessedItems();
   }
 
   Future<List<SyncQueueItem>> _loadUnprocessed() async {
-    return (await _loadAll()).where((item) => !item.isProcessed).toList();
+    if (_useMemory) {
+      return (await _loadAll()).where((item) => !item.isProcessed).toList();
+    }
+    final db = await _localDb!.database;
+    final rows = await db.query('SyncQueueItem', where: 'isProcessed = 0');
+    return rows.map(SyncQueueItem.fromMap).toList();
   }
 
   Future<List<SyncQueueItem>> _loadAll() async {

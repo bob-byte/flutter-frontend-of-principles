@@ -8,14 +8,16 @@ import 'package:sqflite/sqflite.dart';
 class LocalDb {
   LocalDb({this.pathOverride});
 
+  /// Shared app connection. Do not `LocalDb()` another handle to [fileName].
   static final LocalDb instance = LocalDb();
 
   static const fileName = 'principles.db';
-  static const schemaVersion = 7;
+  static const schemaVersion = 10;
   static const _legacyMigratedKey = 'local_db_legacy_migrated_v2';
 
   final String? pathOverride;
   Database? _db;
+  Future<Database>? _opening;
   bool _migratingLegacy = false;
 
   Future<Database> get database async {
@@ -23,9 +25,24 @@ class LocalDb {
       throw UnsupportedError('SQLite LocalDb is not available on web.');
     }
     if (_db != null) return _db!;
-    _db = await _open();
+    final opening = _opening;
+    if (opening != null) return opening;
+    final run = _openAndMigrate();
+    _opening = run;
+    try {
+      return await run;
+    } finally {
+      if (identical(_opening, run)) {
+        _opening = null;
+      }
+    }
+  }
+
+  Future<Database> _openAndMigrate() async {
+    final opened = await _open();
+    _db = opened;
     await _migrateLegacyStores();
-    return _db!;
+    return opened;
   }
 
   Future<Database?> get databaseOrNull async {
@@ -77,7 +94,41 @@ class LocalDb {
         if (oldVersion < 7) {
           await _createTaskSubtasksTable(db);
         }
+        if (oldVersion < 8) {
+          await _createAiConversationTables(db);
+        }
+        if (oldVersion < 9) {
+          await _createPerfIndexes(db);
+        }
+        if (oldVersion < 10) {
+          await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_habits_serverId ON habits (serverId)',
+          );
+        }
       },
+    );
+  }
+
+  Future<void> _createPerfIndexes(DatabaseExecutor db) async {
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_habit_records_habitId_date '
+      'ON habit_records (habitId, date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_isDone ON tasks (isDone)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_serverId ON tasks (serverId)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_dueDate ON tasks (dueDate)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_queue_unprocessed '
+      'ON SyncQueueItem (isProcessed, handlerType)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_habits_serverId ON habits (serverId)',
     );
   }
 
@@ -148,6 +199,10 @@ class LocalDb {
         isFailed INTEGER DEFAULT 0
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_queue_unprocessed '
+      'ON SyncQueueItem (isProcessed, handlerType)',
+    );
   }
 
   Future<void> _upgradeQueueTable(DatabaseExecutor db) async {
@@ -201,6 +256,9 @@ class LocalDb {
         constantReminder INTEGER NOT NULL DEFAULT 0
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_habits_serverId ON habits (serverId)',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS habit_records (
@@ -215,6 +273,10 @@ class LocalDb {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_habit_records_date ON habit_records (date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_habit_records_habitId_date '
+      'ON habit_records (habitId, date)',
     );
 
     await db.execute('''
@@ -253,6 +315,15 @@ class LocalDb {
         isDeleted INTEGER NOT NULL DEFAULT 0
       )
     ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_isDone ON tasks (isDone)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_serverId ON tasks (serverId)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_tasks_dueDate ON tasks (dueDate)',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS task_themes (
@@ -261,6 +332,7 @@ class LocalDb {
       )
     ''');
     await _createTaskSubtasksTable(db);
+    await _createAiConversationTables(db);
   }
 
   Future<void> _createTaskSubtasksTable(DatabaseExecutor db) async {
@@ -275,6 +347,39 @@ class LocalDb {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_task_subtasks_taskId ON task_subtasks (taskId)',
+    );
+  }
+
+  Future<void> _createAiConversationTables(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ai_conversations (
+        id TEXT PRIMARY KEY,
+        serverId INTEGER,
+        title TEXT NOT NULL DEFAULT '',
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        lastModified TEXT,
+        isDeleted INTEGER NOT NULL DEFAULT 0,
+        hasAiTitle INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_ai_conversations_updatedAt '
+      'ON ai_conversations (updatedAt)',
+    );
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ai_messages (
+        id TEXT PRIMARY KEY,
+        conversationId TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        sortOrder INTEGER NOT NULL DEFAULT 0,
+        createdAt TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_ai_messages_conversationId '
+      'ON ai_messages (conversationId)',
     );
   }
 
@@ -486,6 +591,7 @@ class LocalDb {
       'tasks_module_themes_v1',
       'tasks_module_ui_theme_v1',
       'tasks_module_meta_v1',
+      'ai_conversations_v1',
       'sync_queue_v1',
       'LastOpenDate',
       'LastMissedDate',
@@ -507,6 +613,9 @@ class LocalDb {
           'user_goals',
           'reminders',
           'tasks',
+          'task_subtasks',
+          'ai_messages',
+          'ai_conversations',
           'users',
           'SyncQueueItem',
         ]) {

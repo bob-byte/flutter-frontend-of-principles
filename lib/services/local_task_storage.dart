@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import '../core/storage/local_db.dart';
 import '../core/storage/task_db.dart';
 import '../core/theme/task_theme_palette.dart';
+import '../core/utils/date_helpers.dart';
 import '../models/task.dart';
 import '../models/task_subtask.dart';
 
@@ -28,29 +29,113 @@ class LocalTaskStorage {
     return _db!.database;
   }
 
-  Future<List<Task>> getTasks() async {
+  Future<List<Task>> getTasks({bool? isDone}) async {
     if (_useWebStorage) {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_tasksPrefsKey);
       if (raw == null) return [];
       final list = jsonDecode(raw) as List<dynamic>;
-      return list
+      var tasks = list
           .map((e) => Task.fromMap(Map<String, Object?>.from(e as Map)))
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          .toList();
+      if (isDone != null) {
+        tasks = tasks.where((t) => t.isDone == isDone).toList();
+      }
+      tasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return tasks;
     }
 
     final database = await _database;
+    final where = <String>[];
+    final args = <Object?>[];
+    if (localDb != null) {
+      where.add('(isDeleted = 0 OR isDeleted IS NULL)');
+    }
+    if (isDone != null) {
+      where.add('isDone = ?');
+      args.add(isDone ? 1 : 0);
+    }
     final rows = await database.query(
       'tasks',
-      where: localDb != null ? 'isDeleted = 0 OR isDeleted IS NULL' : null,
+      where: where.isEmpty ? null : where.join(' AND '),
+      whereArgs: args.isEmpty ? null : args,
       orderBy: 'createdAt DESC',
     );
-    final grouped = await _loadSubtasksGrouped(database);
+    final ids = [for (final row in rows) row['id'] as String];
+    final grouped = await _loadSubtasksGrouped(database, taskIds: ids);
     return [
       for (final row in rows)
         _taskFromRow(row, grouped[row['id'] as String] ?? const []),
     ];
+  }
+
+  /// Incomplete tasks plus completed ones that still matter for Today / calendar.
+  Future<List<Task>> getSessionTasks({
+    required DateTime rangeStart,
+    required DateTime rangeEnd,
+    required DateTime today,
+  }) async {
+    if (_useWebStorage) {
+      final all = await getTasks();
+      final start = dateOnly(rangeStart);
+      final end = dateOnly(rangeEnd);
+      final day = dateOnly(today);
+      return [
+        for (final task in all)
+          if (!task.isDone ||
+              _taskOverlapsRange(task, start, end) ||
+              _completedOnDay(task, day))
+            task,
+      ];
+    }
+
+    final database = await _database;
+    final startKey = dateOnly(rangeStart).toIso8601String().substring(0, 10);
+    final endKey = dateOnly(rangeEnd).toIso8601String().substring(0, 10);
+    final todayKey = dateOnly(today).toIso8601String().substring(0, 10);
+    final where = <String>[
+      if (localDb != null) '(isDeleted = 0 OR isDeleted IS NULL)',
+      '''(
+        isDone = 0
+        OR (
+          dueDate IS NOT NULL
+          AND substr(dueDate, 1, 10) <= ?
+          AND substr(COALESCE(endDate, dueDate), 1, 10) >= ?
+        )
+        OR (
+          completedAt IS NOT NULL
+          AND substr(completedAt, 1, 10) = ?
+        )
+      )''',
+    ];
+    final rows = await database.query(
+      'tasks',
+      where: where.join(' AND '),
+      whereArgs: [endKey, startKey, todayKey],
+      orderBy: 'createdAt DESC',
+    );
+    final ids = [for (final row in rows) row['id'] as String];
+    final grouped = await _loadSubtasksGrouped(database, taskIds: ids);
+    return [
+      for (final row in rows)
+        _taskFromRow(row, grouped[row['id'] as String] ?? const []),
+    ];
+  }
+
+  static bool _taskOverlapsRange(Task task, DateTime start, DateTime end) {
+    final due = task.dueDate;
+    if (due == null) return false;
+    final from = dateOnly(due);
+    var to = task.endDate == null ? from : dateOnly(task.endDate!);
+    if (to.isBefore(from)) to = from;
+    return !to.isBefore(start) && !from.isAfter(end);
+  }
+
+  static bool _completedOnDay(Task task, DateTime day) {
+    if (!task.isDone) return false;
+    final doneAt = task.completedAt;
+    if (doneAt != null) return isSameDay(doneAt, day);
+    return task.dueDate != null && isSameDay(task.dueDate, day);
   }
 
   Future<Task?> getTask(String id) async {
@@ -184,11 +269,22 @@ class LocalTaskStorage {
   Future<Map<String, List<TaskSubtask>>> _loadSubtasksGrouped(
     DatabaseExecutor database, {
     String? taskId,
+    List<String>? taskIds,
   }) async {
+    if (taskIds != null && taskIds.isEmpty) return {};
+    String? where;
+    List<Object?>? whereArgs;
+    if (taskId != null) {
+      where = 'taskId = ?';
+      whereArgs = [taskId];
+    } else if (taskIds != null) {
+      where = 'taskId IN (${List.filled(taskIds.length, '?').join(',')})';
+      whereArgs = taskIds;
+    }
     final rows = await database.query(
       'task_subtasks',
-      where: taskId == null ? null : 'taskId = ?',
-      whereArgs: taskId == null ? null : [taskId],
+      where: where,
+      whereArgs: whereArgs,
       orderBy: 'sortOrder ASC',
     );
     final grouped = <String, List<TaskSubtask>>{};
@@ -255,6 +351,45 @@ class LocalTaskStorage {
     await database.transaction((txn) async {
       await txn.delete('task_subtasks', where: 'taskId = ?', whereArgs: [id]);
       await txn.delete('tasks', where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
+  /// Deletes every local row for [serverId] (by `serverId` or string `id`).
+  ///
+  /// When [exceptId] is set, that local row is kept (used after merge upsert).
+  Future<void> deleteTasksByServerId(int serverId, {String? exceptId}) async {
+    if (serverId == 0) return;
+    if (_useWebStorage) {
+      final tasks = await getTasks()
+        ..removeWhere((t) {
+          if (exceptId != null && t.id == exceptId) return false;
+          final id = t.serverId ?? int.tryParse(t.id) ?? 0;
+          return id == serverId;
+        });
+      await _persistWebTasks(tasks);
+      return;
+    }
+
+    final database = await _database;
+    final where = StringBuffer('(serverId = ? OR id = ?)');
+    final args = <Object?>[serverId, '$serverId'];
+    if (exceptId != null) {
+      where.write(' AND id != ?');
+      args.add(exceptId);
+    }
+    final rows = await database.query(
+      'tasks',
+      columns: ['id'],
+      where: where.toString(),
+      whereArgs: args,
+    );
+    if (rows.isEmpty) return;
+    await database.transaction((txn) async {
+      for (final row in rows) {
+        final id = row['id'] as String;
+        await txn.delete('task_subtasks', where: 'taskId = ?', whereArgs: [id]);
+        await txn.delete('tasks', where: 'id = ?', whereArgs: [id]);
+      }
     });
   }
 

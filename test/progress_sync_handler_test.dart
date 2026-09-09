@@ -49,14 +49,21 @@ void main() {
     expect(jsonDecode(fresh!.payloadJson!)['habitId'], 142);
   });
 
-  test('queued progress with no habitId is dropped', () async {
+  test('queued progress with no habitId is retried', () async {
     final habits = _FakeHabitService();
-    await ProgressSyncHandler(habits).handle(
-      SyncQueueItem(
-        handlerType: SyncHandlerType.progressOfHabit,
-        operation: OperationKind.save,
-        payloadJson: jsonEncode({'habitId': 0, 'date': '2026-09-03', 'value': 2}),
+    expect(
+      () => ProgressSyncHandler(habits).handle(
+        SyncQueueItem(
+          handlerType: SyncHandlerType.progressOfHabit,
+          operation: OperationKind.save,
+          payloadJson: jsonEncode({
+            'habitId': 0,
+            'date': '2026-09-03',
+            'value': 2,
+          }),
+        ),
       ),
+      throwsStateError,
     );
     expect(habits.pushCalls, isEmpty);
   });
@@ -73,21 +80,24 @@ void main() {
     expect(habits.pushCalls, isEmpty);
   });
 
-  test('server 400 for queued progress is dropped instead of retried', () async {
-    final habits = _FakeHabitService()..drop = true;
-    await ProgressSyncHandler(habits).handle(
-      SyncQueueItem(
-        handlerType: SyncHandlerType.progressOfHabit,
-        operation: OperationKind.save,
-        payloadJson: jsonEncode({
-          'habitId': 5,
-          'date': '2026-09-03',
-          'value': kProgressYesManual,
-        }),
-      ),
-    );
-    expect(habits.pushCalls, hasLength(1));
-  });
+  test(
+    'server 400 for queued progress is dropped instead of retried',
+    () async {
+      final habits = _FakeHabitService()..drop = true;
+      await ProgressSyncHandler(habits).handle(
+        SyncQueueItem(
+          handlerType: SyncHandlerType.progressOfHabit,
+          operation: OperationKind.save,
+          payloadJson: jsonEncode({
+            'habitId': 5,
+            'date': '2026-09-03',
+            'value': kProgressYesManual,
+          }),
+        ),
+      );
+      expect(habits.pushCalls, hasLength(1));
+    },
+  );
 
   test('pushes queued progress with the payload habit id and date', () async {
     final habits = _FakeHabitService();
@@ -138,7 +148,9 @@ class _PushCall {
 
 class _FakeHabitService extends HabitService {
   _FakeHabitService()
-    : super(AuthService(_TokenStore(), dio: Dio()..httpClientAdapter = _Noop()));
+    : super(
+        AuthService(_TokenStore(), dio: Dio()..httpClientAdapter = _Noop()),
+      );
 
   final pushCalls = <_PushCall>[];
   bool ok = true;

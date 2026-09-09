@@ -23,7 +23,7 @@ class TaskSyncHandler implements SyncQueueHandler {
   Future<void> handle(SyncQueueItem item) async {
     final operation = OperationKind.normalize(item.operation);
     if (operation == OperationKind.delete) {
-      final id = item.entityId ?? 0;
+      final id = await _resolveServerId(item);
       if (id != 0) {
         await _apiClient.delete('${ApiEndpoints.tasks}/$id');
       }
@@ -32,8 +32,13 @@ class TaskSyncHandler implements SyncQueueHandler {
 
     if (operation == OperationKind.updateStatus) {
       final payload = _decode(item.payloadJson);
-      final id = payload['id'] as int? ?? item.entityId ?? 0;
-      if (id == 0) return;
+      var id = _asInt(payload['id']) ?? item.entityId ?? 0;
+      if (id == 0) {
+        id = await _resolveServerId(item);
+      }
+      if (id == 0) {
+        throw StateError('Queued task status has no server id yet.');
+      }
       await _apiClient.put(
         '${ApiEndpoints.tasks}/$id/status',
         data: {'isCompleted': payload['isCompleted'] == true},
@@ -44,7 +49,8 @@ class TaskSyncHandler implements SyncQueueHandler {
     if (operation == OperationKind.save) {
       final task = await _loadTask(item);
       final dto = TaskItemDto.fromTask(task);
-      final serverId = int.tryParse(task.id) ?? item.entityId ?? 0;
+      final serverId =
+          task.serverId ?? int.tryParse(task.id) ?? item.entityId ?? 0;
       if (serverId == 0) {
         final response = await _apiClient.post(
           ApiEndpoints.tasks,
@@ -78,6 +84,21 @@ class TaskSyncHandler implements SyncQueueHandler {
       return Task.fromMap(payload.cast<String, Object?>());
     }
     return TaskItemDto.fromJson(payload).toTask();
+  }
+
+  Future<int> _resolveServerId(SyncQueueItem item) async {
+    try {
+      final task = await _loadTask(item);
+      return task.serverId ?? int.tryParse(task.id) ?? 0;
+    } catch (_) {
+      return item.entityId ?? 0;
+    }
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
   }
 
   Map<String, dynamic> _decode(String? payloadJson) {
