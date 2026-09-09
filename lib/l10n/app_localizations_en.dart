@@ -119,6 +119,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingLabel => 'Loading';
 
   @override
+  String get loadingContent => 'Loading content...';
+
+  @override
   String get openHabitDetailsButton => 'Open habit details';
 
   @override
@@ -345,6 +348,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get helperEmptyDescription =>
       'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"';
+
+  @override
+  String get copyMessage => 'Copy';
+
+  @override
+  String get successfulCopy => 'Text successfully copied';
+
+  @override
+  String get helperChatsTitle => 'Chats';
+
+  @override
+  String get helperNewChat => 'New chat';
+
+  @override
+  String get helperSearchChatsHint => 'Search chats';
+
+  @override
+  String get helperNoChats => 'No chats yet';
+
+  @override
+  String get helperUntitledChat => 'New chat';
+
+  @override
+  String get helperOpenChats => 'Open chats';
 
   @override
   String get tabChat => 'Chat';
@@ -667,6 +694,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorTitle => 'Error';
 
   @override
+  String get retryButton => 'Retry';
+
+  @override
+  String get serverTechnicalWorkIsInProgress =>
+      'Technical work on our server is in progress. Please try again later.';
+
+  @override
   String get okButton => 'OK';
 
   @override
@@ -821,6 +855,42 @@ class AppLocalizationsEn extends AppLocalizations {
       'Shows how many days in a row you opened the app and completed habits. If you skip even one day, the streak resets.';
 
   @override
+  String get habitFiltersTooltip => 'Filters';
+
+  @override
+  String get habitFilters => 'Filters';
+
+  @override
+  String get habitFilterDayStatus => 'Day status';
+
+  @override
+  String get habitFilterDue => 'On this day';
+
+  @override
+  String get habitFilterGoal => 'Goal';
+
+  @override
+  String get habitFilterAll => 'All';
+
+  @override
+  String get habitFilterNotDone => 'Not done';
+
+  @override
+  String get habitFilterDone => 'Done';
+
+  @override
+  String get habitFilterDueOnly => 'Due';
+
+  @override
+  String get habitFilterNotDue => 'Not due';
+
+  @override
+  String get habitClearFilters => 'Clear';
+
+  @override
+  String get habitFiltersEmpty => 'No habits match the filters.';
+
+  @override
   String get archiveHabitQuestion => 'Move habit to archive?';
 
   @override
@@ -847,15 +917,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get doneButton => 'Done';
 
   @override
-  String get habitsReportReminderTitleText => 'Remember today\'s habits';
+  String get habitsReportReminderSheetTitle => 'Daily reminder';
+
+  @override
+  String get habitsReportReminderSubtitle =>
+      'A daily nudge to review your goals, habits, and tasks';
+
+  @override
+  String get habitsReportReminderCustomize => 'Customize message';
+
+  @override
+  String habitsReportReminderSavedOn(String time) {
+    return 'Daily reminder on · $time';
+  }
+
+  @override
+  String get habitsReportReminderSavedOff => 'Daily reminder off';
+
+  @override
+  String get habitsReportReminderTitleText => 'Remember your day';
 
   @override
   String get habitsReportReminderDescriptionText =>
-      'time to note what habits were accomplished yesterday and remind yourself of habits and goals';
+      'time to review your goals, habits, and tasks';
+
+  @override
+  String habitsReportReminderOnTooltip(String time) {
+    return 'Daily reminder on · $time';
+  }
+
+  @override
+  String get habitsReportReminderOffTooltip => 'Daily reminder off';
+
+  @override
+  String get habitsReportReminderMenuHint =>
+      'Remind me to check goals, habits, and tasks';
+
+  @override
+  String get notificationTargetNotFound =>
+      'This reminder is no longer available';
 
   @override
   String get deviceDoesNotSupportNotifications =>
       'Oops.. It looks like your operating system doesn\'t support notifications. Please try updating it.';
+
+  @override
+  String get afterLoginWhenUserAccountHaveReminders =>
+      'Your account has motivating reminders. They can be restore on your device.';
+
+  @override
+  String get restoreReminders => 'Restore reminders';
 
   @override
   String get notificationsDisabledTitle => 'Notifications are off';
@@ -893,6 +1004,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleConstantReminder => 'Constant Reminder';
+
+  @override
+  String get scheduleConstantReminderExplanation =>
+      'Keeps reminding you until you mark this as done.';
 
   @override
   String get scheduleAllDay => 'All Day';
@@ -1023,7 +1138,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roadGuideChatTabBody =>
-      'The Helper is here for support — questions about habits, goals, time management, and building a plan.';
+      'The Helper is here for support — questions about habits, goals, time management, and building a plan. The AI Helper can also answer other kinds of questions.';
 
   @override
   String get roadGuideChatInputTitle => 'Ask anything about your plan';
@@ -1037,7 +1152,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roadGuideSettingsTabBody =>
-      'Profile, theme, language, password, and support live here. Slogan and mission also help AI recommend habits.';
+      'Profile, theme, language, home-screen calendar, password, and support live here. Slogan and mission also help AI recommend habits.';
 
   @override
   String get roadGuideSettingsProfileTitle => 'Profile fuels recommendations';
@@ -1051,5 +1166,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roadGuideSettingsReplayBody =>
-      'You can run this road guide again from Settings → About. Theme and language are just above.';
+      'You can run this road guide again from Settings → About. Theme, language, and the calendar widget are just above.';
+
+  @override
+  String get calendarWidgetToday => 'Today';
+
+  @override
+  String get calendarWidgetAdd => 'Add';
+
+  @override
+  String get calendarWidgetEmpty => 'No tasks or habits';
+
+  @override
+  String get calendarWidgetSettingsSection => 'Home screen';
+
+  @override
+  String get calendarWidgetSettingsTitle => 'Calendar widget';
+
+  @override
+  String get calendarWidgetSettingsSubtitle =>
+      'Show tasks and habits on the Home Screen';
+
+  @override
+  String get calendarWidgetHowToIos =>
+      '1. Long-press the Home Screen\n2. Tap +\n3. Search Principles\n4. Choose Month, Week, or Today';
+
+  @override
+  String get calendarWidgetHowToAndroid =>
+      '1. Long-press the Home Screen\n2. Open Widgets\n3. Find Principles\n4. Choose Month, Week, or Today';
+
+  @override
+  String get calendarWidgetAddToHome => 'Add to Home Screen';
+
+  @override
+  String get roadGuideSettingsCalendarTitle => 'Calendar on your Home Screen';
+
+  @override
+  String get roadGuideSettingsCalendarBody =>
+      'Add a month, week, or today widget from here so tasks and habits stay visible without opening the app.';
 }

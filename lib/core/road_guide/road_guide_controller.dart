@@ -68,8 +68,10 @@ class RoadGuideController extends ChangeNotifier {
     _isActive = true;
     _applyEnsureTab(steps.first);
     notifyListeners();
-    // Allow IndexedStack / demo tiles to mount before measuring targets.
-    await Future<void>.delayed(const Duration(milliseconds: 80));
+    // Allow IndexedStack / demo tiles / tab bar to mount and lay out before
+    // the overlay measures spotlight holes (auto-start after SyncGate is the
+    // heavy case — shell just appeared).
+    await Future<void>.delayed(const Duration(milliseconds: 280));
     notifyListeners();
     if (markAsReplay) {
       // Replay does not change completion flags until finished/skipped.

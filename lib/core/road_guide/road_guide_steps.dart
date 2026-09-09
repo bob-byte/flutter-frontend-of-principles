@@ -4,6 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import '../../models/habit.dart';
 import '../../models/task.dart';
 import '../../models/user_goal.dart';
+import '../home_widget/home_widget_add_prompt.dart';
 import 'main_shell_controller.dart';
 
 /// Stable negative ids so tour demo rows never collide with real entities.
@@ -51,6 +52,7 @@ enum RoadGuideStepId {
   chatInput,
   settingsTab,
   settingsProfile,
+  settingsCalendarWidget,
   settingsReplay,
 }
 
@@ -108,6 +110,9 @@ class RoadGuideKeys {
   final tasksHabits = GlobalKey(debugLabel: 'roadGuideTasksHabits');
   final chatInput = GlobalKey(debugLabel: 'roadGuideChatInput');
   final settingsProfile = GlobalKey(debugLabel: 'roadGuideSettingsProfile');
+  final settingsCalendarWidget = GlobalKey(
+    debugLabel: 'roadGuideSettingsCalendarWidget',
+  );
   final settingsReplay = GlobalKey(debugLabel: 'roadGuideSettingsReplay');
 
   static const tabCount = 5;
@@ -249,6 +254,14 @@ class RoadGuideKeys {
         body: (l) => l.roadGuideSettingsProfileBody,
         ensureTabOnShow: MainShellTab.settings,
       ),
+      if (showHomeCalendarWidgetSettingsEntry())
+        RoadGuideStep(
+          id: RoadGuideStepId.settingsCalendarWidget,
+          targetKey: settingsCalendarWidget,
+          title: (l) => l.roadGuideSettingsCalendarTitle,
+          body: (l) => l.roadGuideSettingsCalendarBody,
+          ensureTabOnShow: MainShellTab.settings,
+        ),
       RoadGuideStep(
         id: RoadGuideStepId.settingsReplay,
         targetKey: settingsReplay,

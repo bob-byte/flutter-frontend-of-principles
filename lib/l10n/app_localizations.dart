@@ -302,6 +302,12 @@ abstract class AppLocalizations {
   /// **'Loading'**
   String get loadingLabel;
 
+  /// Post-sign-in SyncGate label while bootstrap sync runs (MAUI LoadingContent)
+  ///
+  /// In en, this message translates to:
+  /// **'Loading content...'**
+  String get loadingContent;
+
   /// No description provided for @openHabitDetailsButton.
   ///
   /// In en, this message translates to:
@@ -697,6 +703,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"'**
   String get helperEmptyDescription;
+
+  /// Tooltip / semantics for copying an AI helper message
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyMessage;
+
+  /// Toast after copying an AI helper message to the clipboard
+  ///
+  /// In en, this message translates to:
+  /// **'Text successfully copied'**
+  String get successfulCopy;
+
+  /// Title of the AI helper chat history sidebar
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get helperChatsTitle;
+
+  /// Button that starts a blank AI helper conversation
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get helperNewChat;
+
+  /// Search field placeholder in the AI helper chat sidebar
+  ///
+  /// In en, this message translates to:
+  /// **'Search chats'**
+  String get helperSearchChatsHint;
+
+  /// Empty state in the AI helper chat sidebar
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet'**
+  String get helperNoChats;
+
+  /// Fallback title when a chat has no title yet
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get helperUntitledChat;
+
+  /// Semantics for the hamburger that opens chat history
+  ///
+  /// In en, this message translates to:
+  /// **'Open chats'**
+  String get helperOpenChats;
 
   /// Bottom tab label for the AI chat screen
   ///
@@ -1292,6 +1346,18 @@ abstract class AppLocalizations {
   /// **'Error'**
   String get errorTitle;
 
+  /// Retry button on the server-down dialog (MAUI Retry)
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryButton;
+
+  /// MAUI ServerTechnicalWorkIsInProgress — HTTP 404/503 on server-required actions
+  ///
+  /// In en, this message translates to:
+  /// **'Technical work on our server is in progress. Please try again later.'**
+  String get serverTechnicalWorkIsInProgress;
+
   /// Dismiss button label on alert dialogs
   ///
   /// In en, this message translates to:
@@ -1562,6 +1628,78 @@ abstract class AppLocalizations {
   /// **'Shows how many days in a row you opened the app and completed habits. If you skip even one day, the streak resets.'**
   String get habitStreakExplanation;
 
+  /// Tooltip for the habits-tab header filter button
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get habitFiltersTooltip;
+
+  /// Heading for the habits-tab filter panel
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get habitFilters;
+
+  /// Habits filter section for completion status on the selected day
+  ///
+  /// In en, this message translates to:
+  /// **'Day status'**
+  String get habitFilterDayStatus;
+
+  /// Habits filter section for whether the habit applies on the selected day
+  ///
+  /// In en, this message translates to:
+  /// **'On this day'**
+  String get habitFilterDue;
+
+  /// Habits filter section for the linked goal
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get habitFilterGoal;
+
+  /// Show every habit in a habits-tab filter dimension
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get habitFilterAll;
+
+  /// Habits day-status filter for habits not completed or skipped
+  ///
+  /// In en, this message translates to:
+  /// **'Not done'**
+  String get habitFilterNotDone;
+
+  /// Habits day-status filter for completed habits
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get habitFilterDone;
+
+  /// Show only habits that apply on the selected day
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get habitFilterDueOnly;
+
+  /// Show only habits that do not apply on the selected day
+  ///
+  /// In en, this message translates to:
+  /// **'Not due'**
+  String get habitFilterNotDue;
+
+  /// Reset habits-tab filters to defaults
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get habitClearFilters;
+
+  /// Empty-state when habits exist but filters hide them all
+  ///
+  /// In en, this message translates to:
+  /// **'No habits match the filters.'**
+  String get habitFiltersEmpty;
+
   /// Title of the archive confirmation dialog
   ///
   /// In en, this message translates to:
@@ -1580,25 +1718,25 @@ abstract class AppLocalizations {
   /// **'You can\'t mark a habit as done for future days'**
   String get cannotCompleteHabitInTheFuture;
 
-  /// Label for the habits-report reminder title field
+  /// Label for the daily progress-reminder title field
   ///
   /// In en, this message translates to:
   /// **'Title'**
   String get reminderTitleLabel;
 
-  /// Label for the habits-report reminder description field
+  /// Label for the daily progress-reminder description field
   ///
   /// In en, this message translates to:
   /// **'Description'**
   String get reminderDescriptionLabel;
 
-  /// Label for the habits-report reminder time field
+  /// Label for the daily progress-reminder time field
   ///
   /// In en, this message translates to:
   /// **'Time'**
   String get reminderTimeLabel;
 
-  /// Toggle label to enable the habits-report reminder
+  /// Toggle label to enable the daily progress reminder
   ///
   /// In en, this message translates to:
   /// **'Enable'**
@@ -1610,23 +1748,89 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get doneButton;
 
-  /// Default title for the daily habits-report reminder when the server has none
+  /// Sheet title and Tasks app-bar tooltip for the daily goals/habits/tasks check-in reminder
   ///
   /// In en, this message translates to:
-  /// **'Remember today\'s habits'**
+  /// **'Daily reminder'**
+  String get habitsReportReminderSheetTitle;
+
+  /// Short explanation under the daily reminder sheet title
+  ///
+  /// In en, this message translates to:
+  /// **'A daily nudge to review your goals, habits, and tasks'**
+  String get habitsReportReminderSubtitle;
+
+  /// Expands title/description fields on the daily reminder sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Customize message'**
+  String get habitsReportReminderCustomize;
+
+  /// SnackBar after enabling the daily reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder on · {time}'**
+  String habitsReportReminderSavedOn(String time);
+
+  /// SnackBar after disabling the daily reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder off'**
+  String get habitsReportReminderSavedOff;
+
+  /// Default notification title for the daily progress reminder when the server has none
+  ///
+  /// In en, this message translates to:
+  /// **'Remember your day'**
   String get habitsReportReminderTitleText;
 
-  /// Default description body for the daily habits-report reminder. Prefixed with the user name when set.
+  /// Default notification body for the daily progress reminder. Prefixed with the user name when set.
   ///
   /// In en, this message translates to:
-  /// **'time to note what habits were accomplished yesterday and remind yourself of habits and goals'**
+  /// **'time to review your goals, habits, and tasks'**
   String get habitsReportReminderDescriptionText;
+
+  /// Tasks app-bar tooltip when the daily reminder is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder on · {time}'**
+  String habitsReportReminderOnTooltip(String time);
+
+  /// Tasks app-bar tooltip when the daily reminder is disabled or unset
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reminder off'**
+  String get habitsReportReminderOffTooltip;
+
+  /// Subtitle on the Tasks list-menu row for the daily reminder
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me to check goals, habits, and tasks'**
+  String get habitsReportReminderMenuHint;
+
+  /// SnackBar when a notification tap targets a deleted task or habit
+  ///
+  /// In en, this message translates to:
+  /// **'This reminder is no longer available'**
+  String get notificationTargetNotFound;
 
   /// Shown when enabling a reminder but the device cannot send notifications
   ///
   /// In en, this message translates to:
   /// **'Oops.. It looks like your operating system doesn\'t support notifications. Please try updating it.'**
   String get deviceDoesNotSupportNotifications;
+
+  /// SyncGate body when the account has reminders but notification permission is off (MAUI AfterLoginWhenUserAccountHaveReminders)
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has motivating reminders. They can be restore on your device.'**
+  String get afterLoginWhenUserAccountHaveReminders;
+
+  /// SyncGate title while explaining reminder restore (MAUI RestoreReminders)
+  ///
+  /// In en, this message translates to:
+  /// **'Restore reminders'**
+  String get restoreReminders;
 
   /// Title when notification permission is denied
   ///
@@ -1699,6 +1903,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Constant Reminder'**
   String get scheduleConstantReminder;
+
+  /// Popover explaining Constant Reminder on the reminder picker
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps reminding you until you mark this as done.'**
+  String get scheduleConstantReminderExplanation;
 
   /// No description provided for @scheduleAllDay.
   ///
@@ -1931,7 +2141,7 @@ abstract class AppLocalizations {
   /// No description provided for @roadGuideChatTabBody.
   ///
   /// In en, this message translates to:
-  /// **'The Helper is here for support — questions about habits, goals, time management, and building a plan.'**
+  /// **'The Helper is here for support — questions about habits, goals, time management, and building a plan. The AI Helper can also answer other kinds of questions.'**
   String get roadGuideChatTabBody;
 
   /// No description provided for @roadGuideChatInputTitle.
@@ -1955,7 +2165,7 @@ abstract class AppLocalizations {
   /// No description provided for @roadGuideSettingsTabBody.
   ///
   /// In en, this message translates to:
-  /// **'Profile, theme, language, password, and support live here. Slogan and mission also help AI recommend habits.'**
+  /// **'Profile, theme, language, home-screen calendar, password, and support live here. Slogan and mission also help AI recommend habits.'**
   String get roadGuideSettingsTabBody;
 
   /// No description provided for @roadGuideSettingsProfileTitle.
@@ -1979,8 +2189,74 @@ abstract class AppLocalizations {
   /// No description provided for @roadGuideSettingsReplayBody.
   ///
   /// In en, this message translates to:
-  /// **'You can run this road guide again from Settings → About. Theme and language are just above.'**
+  /// **'You can run this road guide again from Settings → About. Theme, language, and the calendar widget are just above.'**
   String get roadGuideSettingsReplayBody;
+
+  /// Home-screen calendar widget Today control
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarWidgetToday;
+
+  /// Home-screen calendar widget add-task control
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get calendarWidgetAdd;
+
+  /// No description provided for @calendarWidgetEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks or habits'**
+  String get calendarWidgetEmpty;
+
+  /// Settings section for home-screen widgets
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen'**
+  String get calendarWidgetSettingsSection;
+
+  /// Settings row to add the calendar home-screen widget
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar widget'**
+  String get calendarWidgetSettingsTitle;
+
+  /// Subtitle for the calendar widget Settings row
+  ///
+  /// In en, this message translates to:
+  /// **'Show tasks and habits on the Home Screen'**
+  String get calendarWidgetSettingsSubtitle;
+
+  /// Steps to add the calendar widget on iOS
+  ///
+  /// In en, this message translates to:
+  /// **'1. Long-press the Home Screen\n2. Tap +\n3. Search Principles\n4. Choose Month, Week, or Today'**
+  String get calendarWidgetHowToIos;
+
+  /// Steps to add the calendar widget on Android
+  ///
+  /// In en, this message translates to:
+  /// **'1. Long-press the Home Screen\n2. Open Widgets\n3. Find Principles\n4. Choose Month, Week, or Today'**
+  String get calendarWidgetHowToAndroid;
+
+  /// Android pin-widget button in the how-to dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Home Screen'**
+  String get calendarWidgetAddToHome;
+
+  /// Road guide step title for the calendar widget Settings row
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar on your Home Screen'**
+  String get roadGuideSettingsCalendarTitle;
+
+  /// No description provided for @roadGuideSettingsCalendarBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a month, week, or today widget from here so tasks and habits stay visible without opening the app.'**
+  String get roadGuideSettingsCalendarBody;
 }
 
 class _AppLocalizationsDelegate

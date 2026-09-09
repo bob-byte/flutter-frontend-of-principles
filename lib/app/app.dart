@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,6 +7,11 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/day_change_notifier.dart';
+import '../core/deep_link/deep_link_binder.dart';
+import '../core/deep_link/deep_link_controller.dart';
+import '../core/delivered_notification_clearer.dart';
+import '../core/home_widget/home_widget_binder.dart';
 import '../core/input/android_hardware_text_input.dart';
 import '../core/launch_data_loader.dart';
 import '../core/locale/locale_controller.dart';
@@ -15,6 +22,7 @@ import '../core/road_guide/road_guide_controller.dart';
 import '../core/storage/local_db.dart';
 import '../core/storage/secure_store.dart';
 import '../core/storage/task_db.dart';
+import '../core/sync/handlers/ai_conversation_sync_handler.dart';
 import '../core/sync/handlers/goal_sync_handler.dart';
 import '../core/sync/handlers/habit_sync_handler.dart';
 import '../core/sync/handlers/progress_sync_handler.dart';
@@ -31,9 +39,11 @@ import '../core/sync/sync_snapshot_merge_service.dart';
 import '../core/sync/sync_trigger.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/ai_chat_service.dart';
+import '../services/ai_conversation_service.dart';
 import '../services/ai_recommendation_service.dart';
 import '../services/app_open_tracker_service.dart';
 import '../services/auth_service.dart';
+import '../services/completion_feedback.dart';
 import '../services/database_service.dart';
 import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
@@ -86,7 +96,9 @@ class PrinciplesApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider(create: (_) => SecureStore()),
-        Provider(create: (_) => LocalDb()),
+        // One connection to principles.db. A second LocalDb() opens the same
+        // file again and sqflite warns "database has been locked" during merge.
+        Provider(create: (_) => LocalDb.instance),
         Provider(create: (ctx) => SettingsService(ctx.read<SecureStore>())),
         ChangeNotifierProvider(
           create: (ctx) {
@@ -98,7 +110,16 @@ class PrinciplesApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => LocaleController()),
+        ChangeNotifierProvider(create: (_) => DayChangeNotifier()),
+        ChangeNotifierProvider(create: (_) => DeepLinkController()),
         Provider(create: (_) => DialogService()),
+        Provider(
+          create: (_) {
+            final feedback = CompletionFeedback.instance;
+            unawaited(feedback.preload());
+            return feedback;
+          },
+        ),
         Provider(create: (ctx) => ApiClient(ctx.read<SecureStore>())),
         Provider(create: (ctx) => AuthService(ctx.read<SecureStore>())),
         Provider(
@@ -139,17 +160,6 @@ class PrinciplesApp extends StatelessWidget {
           ),
         ),
         Provider(create: (_) => ProgressService()),
-        Provider(
-          create: (ctx) => ReminderService(
-            apiClient: ctx.read<ApiClient>(),
-            localDb: ctx.read<LocalDb>(),
-            executor: ctx.read<LocalRemoteExecutor>(),
-          ),
-        ),
-        Provider(create: (ctx) => AiChatService(ctx.read<ApiClient>())),
-        Provider(
-          create: (ctx) => AiRecommendationService(ctx.read<ApiClient>()),
-        ),
         Provider(create: (_) => kIsWeb ? null : TaskDb()),
         Provider(
           create: (ctx) => TaskService(
@@ -160,6 +170,26 @@ class PrinciplesApp extends StatelessWidget {
           ),
         ),
         Provider(
+          create: (ctx) => ReminderService(
+            apiClient: ctx.read<ApiClient>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+            dialogService: ctx.read<DialogService>(),
+            taskService: ctx.read<TaskService>(),
+          ),
+        ),
+        Provider(create: (ctx) => AiChatService(ctx.read<ApiClient>())),
+        Provider(
+          create: (ctx) => AiConversationService(
+            apiClient: ctx.read<ApiClient>(),
+            localDb: ctx.read<LocalDb>(),
+            executor: ctx.read<LocalRemoteExecutor>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => AiRecommendationService(ctx.read<ApiClient>()),
+        ),
+        Provider(
           create: (ctx) {
             final queue = ctx.read<SyncQueueService>();
             final apiClient = ctx.read<ApiClient>();
@@ -167,6 +197,7 @@ class PrinciplesApp extends StatelessWidget {
             final habitService = ctx.read<HabitService>();
             final reminderService = ctx.read<ReminderService>();
             final taskService = ctx.read<TaskService>();
+            final conversationService = ctx.read<AiConversationService>();
             return SyncService(
               queue: queue,
               authService: ctx.read<AuthService>(),
@@ -177,6 +208,7 @@ class PrinciplesApp extends StatelessWidget {
                 userService: ctx.read<UserService>(),
                 reminderService: reminderService,
                 taskService: taskService,
+                conversationService: conversationService,
               ),
               databaseService: ctx.read<DatabaseService>(),
               handlers: [
@@ -189,6 +221,10 @@ class PrinciplesApp extends StatelessWidget {
                   reminderService: reminderService,
                 ),
                 TaskSyncHandler(apiClient, taskService: taskService),
+                AiConversationSyncHandler(
+                  apiClient,
+                  conversationService: conversationService,
+                ),
               ],
             );
           },
@@ -228,23 +264,15 @@ class PrinciplesApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (ctx) => StartupViewModel(
             authService: ctx.read<AuthService>(),
-            syncService: ctx.read<SyncService>(),
-            reminderService: ctx.read<ReminderService>(),
             dialogService: ctx.read<DialogService>(),
             appOpenTracker: ctx.read<AppOpenTrackerService>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => LoginViewModel(
-            ctx.read<AuthService>(),
-            syncService: ctx.read<SyncService>(),
-          ),
+          create: (ctx) => LoginViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => SignupViewModel(
-            ctx.read<AuthService>(),
-            syncService: ctx.read<SyncService>(),
-          ),
+          create: (ctx) => SignupViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
           create: (ctx) => AppBenefitsViewModel(ctx.read<AuthService>()),
@@ -253,7 +281,10 @@ class PrinciplesApp extends StatelessWidget {
           create: (ctx) => ForgetPasswordViewModel(ctx.read<AuthService>()),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => HelperViewModel(ctx.read<AiChatService>()),
+          create: (ctx) => HelperViewModel(
+            ctx.read<AiChatService>(),
+            ctx.read<AiConversationService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => EditHabitViewModel(
@@ -262,6 +293,7 @@ class PrinciplesApp extends StatelessWidget {
             ctx.read<GoalService>(),
             ctx.read<AiRecommendationService>(),
             ctx.read<UserService>(),
+            dbService: ctx.read<DatabaseService>(),
           ),
         ),
         ChangeNotifierProvider(
@@ -274,11 +306,15 @@ class PrinciplesApp extends StatelessWidget {
           create: (ctx) => HabitProgressViewModel(
             ctx.read<HabitService>(),
             appOpenTracker: ctx.read<AppOpenTrackerService>(),
+            dbService: ctx.read<DatabaseService>(),
+            dayChange: ctx.read<DayChangeNotifier>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) =>
-              HabitDetailViewModel(habitService: ctx.read<HabitService>()),
+          create: (ctx) => HabitDetailViewModel(
+            habitService: ctx.read<HabitService>(),
+            dbService: ctx.read<DatabaseService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => SettingsViewModel(
@@ -300,6 +336,7 @@ class PrinciplesApp extends StatelessWidget {
             ctx.read<TaskService>(),
             ctx.read<ThemeController>(),
             reminderService: ctx.read<ReminderService>(),
+            dayChange: ctx.read<DayChangeNotifier>(),
           ),
         ),
         ChangeNotifierProvider(
@@ -316,6 +353,7 @@ class PrinciplesApp extends StatelessWidget {
             tasks: ctx.read<TasksViewModel>(),
             habits: ctx.read<HabitProgressViewModel>(),
             settings: ctx.read<SettingsViewModel>(),
+            helper: ctx.read<HelperViewModel>(),
           ),
         ),
       ],
@@ -327,11 +365,19 @@ class PrinciplesApp extends StatelessWidget {
             child: MaterialApp(
               navigatorKey: context.read<DialogService>().navigatorKey,
               builder: (context, child) => AndroidHardwareTextInput(
-                child: VideoSplashOverlay(
-                  key: _videoSplashKey,
-                  child: AppUpdateAlert(
-                    navigatorKey: context.read<DialogService>().navigatorKey,
-                    child: child ?? const SizedBox.shrink(),
+                child: DeepLinkBinder(
+                  child: HomeWidgetBinder(
+                    child: DeliveredNotificationClearer(
+                      child: VideoSplashOverlay(
+                        key: _videoSplashKey,
+                        child: AppUpdateAlert(
+                          navigatorKey: context
+                              .read<DialogService>()
+                              .navigatorKey,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

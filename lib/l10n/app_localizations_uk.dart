@@ -119,6 +119,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get loadingLabel => 'Завантаження';
 
   @override
+  String get loadingContent => 'Завантаження змісту...';
+
+  @override
   String get openHabitDetailsButton => 'Відкрити деталі звички';
 
   @override
@@ -347,6 +350,30 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get helperEmptyDescription =>
       'Я - ШІ-асистент зі саморозвитку. Ви можете звертатися до мене стосовно різних питань. Наприклад, \"Як моя особистість впливає на моє життя?\"';
+
+  @override
+  String get copyMessage => 'Копіювати';
+
+  @override
+  String get successfulCopy => 'Текст успішно скопійовано';
+
+  @override
+  String get helperChatsTitle => 'Чати';
+
+  @override
+  String get helperNewChat => 'Новий чат';
+
+  @override
+  String get helperSearchChatsHint => 'Пошук чатів';
+
+  @override
+  String get helperNoChats => 'Чатів ще немає';
+
+  @override
+  String get helperUntitledChat => 'Новий чат';
+
+  @override
+  String get helperOpenChats => 'Відкрити чати';
 
   @override
   String get tabChat => 'Чат';
@@ -671,6 +698,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get errorTitle => 'Помилка';
 
   @override
+  String get retryButton => 'Повторити';
+
+  @override
+  String get serverTechnicalWorkIsInProgress =>
+      'Ведуться технічні роботи над сервером. Спробуйте, будь ласка, пізніше.';
+
+  @override
   String get okButton => 'ОК';
 
   @override
@@ -825,6 +859,42 @@ class AppLocalizationsUk extends AppLocalizations {
       'Показує кількість днів поспіль, коли ви відкривали додаток і виконували звички. Якщо пропустити хоча б один день — серія обнуляється.';
 
   @override
+  String get habitFiltersTooltip => 'Фільтри';
+
+  @override
+  String get habitFilters => 'Фільтри';
+
+  @override
+  String get habitFilterDayStatus => 'Статус дня';
+
+  @override
+  String get habitFilterDue => 'На обраний день';
+
+  @override
+  String get habitFilterGoal => 'Ціль';
+
+  @override
+  String get habitFilterAll => 'Усі';
+
+  @override
+  String get habitFilterNotDone => 'Не виконані';
+
+  @override
+  String get habitFilterDone => 'Виконані';
+
+  @override
+  String get habitFilterDueOnly => 'На цей день';
+
+  @override
+  String get habitFilterNotDue => 'Не на цей день';
+
+  @override
+  String get habitClearFilters => 'Скинути';
+
+  @override
+  String get habitFiltersEmpty => 'Немає звичок за цими фільтрами.';
+
+  @override
   String get archiveHabitQuestion => 'Перемістити звичку в архів?';
 
   @override
@@ -851,15 +921,55 @@ class AppLocalizationsUk extends AppLocalizations {
   String get doneButton => 'Готово';
 
   @override
-  String get habitsReportReminderTitleText => 'Нагадайте сьогоднішні звички';
+  String get habitsReportReminderSheetTitle => 'Щоденне нагадування';
+
+  @override
+  String get habitsReportReminderSubtitle =>
+      'Щодня нагадує переглянути цілі, звички та завдання';
+
+  @override
+  String get habitsReportReminderCustomize => 'Налаштувати текст';
+
+  @override
+  String habitsReportReminderSavedOn(String time) {
+    return 'Щоденне нагадування увімкнено · $time';
+  }
+
+  @override
+  String get habitsReportReminderSavedOff => 'Щоденне нагадування вимкнено';
+
+  @override
+  String get habitsReportReminderTitleText => 'Нагадайте про свій день';
 
   @override
   String get habitsReportReminderDescriptionText =>
-      'час відзначити, які звички було виконано вчора, і нагадати про свої звички та цілі';
+      'час переглянути цілі, звички та завдання';
+
+  @override
+  String habitsReportReminderOnTooltip(String time) {
+    return 'Щоденне нагадування увімкнено · $time';
+  }
+
+  @override
+  String get habitsReportReminderOffTooltip => 'Щоденне нагадування вимкнено';
+
+  @override
+  String get habitsReportReminderMenuHint =>
+      'Нагадати перевірити цілі, звички та завдання';
+
+  @override
+  String get notificationTargetNotFound => 'Це нагадування більше недоступне';
 
   @override
   String get deviceDoesNotSupportNotifications =>
       'Отакої.. Схоже, що ваша операційна система не підтримує сповіщення. Будь ласка, спробуйте оновити її.';
+
+  @override
+  String get afterLoginWhenUserAccountHaveReminders =>
+      'У вашого акаунта є мотивуючі нагадування. Вони можуть бути відновленні на вашому пристрої.';
+
+  @override
+  String get restoreReminders => 'Відновлення нагадувань';
 
   @override
   String get notificationsDisabledTitle => 'Сповіщення вимкнено';
@@ -897,6 +1007,10 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get scheduleConstantReminder => 'Постійне нагадування';
+
+  @override
+  String get scheduleConstantReminderExplanation =>
+      'Продовжує нагадувати, доки ви не позначите це як виконане.';
 
   @override
   String get scheduleAllDay => 'Весь день';
@@ -1027,7 +1141,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get roadGuideChatTabBody =>
-      'Помічник — це підтримка: відповіді про звички, цілі, тайм-менеджмент і створення плану.';
+      'Помічник — це підтримка: відповіді про звички, цілі, тайм-менеджмент і створення плану. AI-помічник також може відповідати на інші різноманітні питання.';
 
   @override
   String get roadGuideChatInputTitle => 'Запитайте про свій план';
@@ -1041,7 +1155,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get roadGuideSettingsTabBody =>
-      'Тут профіль, тема, мова, пароль і підтримка. Гасло та місія також допомагають ШІ рекомендувати звички.';
+      'Тут профіль, тема, мова, віджет календаря на головному екрані, пароль і підтримка. Гасло та місія також допомагають ШІ рекомендувати звички.';
 
   @override
   String get roadGuideSettingsProfileTitle => 'Профіль для рекомендацій';
@@ -1055,5 +1169,42 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get roadGuideSettingsReplayBody =>
-      'Цей гід можна пройти знову в Налаштуваннях → Про застосунок. Тема й мова — трохи вище.';
+      'Цей гід можна пройти знову в Налаштуваннях → Про застосунок. Тема, мова й віджет календаря — трохи вище.';
+
+  @override
+  String get calendarWidgetToday => 'Сьогодні';
+
+  @override
+  String get calendarWidgetAdd => 'Додати';
+
+  @override
+  String get calendarWidgetEmpty => 'Немає завдань і звичок';
+
+  @override
+  String get calendarWidgetSettingsSection => 'Головний екран';
+
+  @override
+  String get calendarWidgetSettingsTitle => 'Віджет календаря';
+
+  @override
+  String get calendarWidgetSettingsSubtitle =>
+      'Показуйте завдання і звички на головному екрані';
+
+  @override
+  String get calendarWidgetHowToIos =>
+      '1. Утримуйте головний екран\n2. Натисніть +\n3. Знайдіть Principles\n4. Оберіть Місяць, Тиждень або Сьогодні';
+
+  @override
+  String get calendarWidgetHowToAndroid =>
+      '1. Утримуйте головний екран\n2. Відкрийте Віджети\n3. Знайдіть Principles\n4. Оберіть Місяць, Тиждень або Сьогодні';
+
+  @override
+  String get calendarWidgetAddToHome => 'Додати на головний екран';
+
+  @override
+  String get roadGuideSettingsCalendarTitle => 'Календар на головному екрані';
+
+  @override
+  String get roadGuideSettingsCalendarBody =>
+      'Додайте віджет місяця, тижня або сьогодні тут — завдання і звички будуть видно без відкриття застосунку.';
 }
