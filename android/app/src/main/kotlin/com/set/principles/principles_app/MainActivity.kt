@@ -1,17 +1,27 @@
 package com.set.principles
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.os.LocaleListCompat
+import com.set.principles.calendar.CalendarMonthWidgetProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Українська як мова додатку — щоб IME пропонував укр. розкладку.
         AppCompatDelegate.setApplicationLocales(
@@ -26,11 +36,39 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             "com.set.principles/app_settings",
         ).setMethodCallHandler { call, result ->
-            if (call.method == "openNotificationSettings") {
-                result.success(openNotificationSettings())
-            } else {
-                result.notImplemented()
+            when (call.method) {
+                "openNotificationSettings" ->
+                    result.success(openNotificationSettings())
+                "clearDeliveredNotifications" -> {
+                    // Status bar only — does not cancel AlarmManager schedules.
+                    NotificationManagerCompat.from(this).cancelAll()
+                    result.success(null)
+                }
+                "requestPinCalendarWidget" ->
+                    result.success(requestPinCalendarWidget())
+                else -> result.notImplemented()
             }
+        }
+    }
+
+    /** Pins the month calendar with a filled static preview (not the empty runtime shell). */
+    private fun requestPinCalendarWidget(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        val manager = AppWidgetManager.getInstance(this)
+        if (!manager.isRequestPinAppWidgetSupported) return false
+        val provider = ComponentName(this, CalendarMonthWidgetProvider::class.java)
+        val extras =
+            Bundle().apply {
+                putParcelable(
+                    AppWidgetManager.EXTRA_APPWIDGET_PREVIEW,
+                    RemoteViews(packageName, R.layout.calendar_widget_month_preview),
+                )
+            }
+        return try {
+            manager.requestPinAppWidget(provider, extras, null)
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

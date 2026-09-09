@@ -1,6 +1,7 @@
 import AVFoundation
 import Cocoa
 import FlutterMacOS
+import UserNotifications
 
 class MainFlutterWindow: NSWindow {
   private let splashAudio = SplashAudioPlayer()
@@ -57,17 +58,22 @@ class MainFlutterWindow: NSWindow {
       binaryMessenger: messenger
     )
     channel.setMethodCallHandler { call, result in
-      guard call.method == "openNotificationSettings" else {
+      switch call.method {
+      case "openNotificationSettings":
+        let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")
+          ?? URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
+        guard let url else {
+          result(false)
+          return
+        }
+        result(NSWorkspace.shared.open(url))
+      case "clearDeliveredNotifications":
+        // Delivered Notification Center only — pending schedules stay.
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        result(nil)
+      default:
         result(FlutterMethodNotImplemented)
-        return
       }
-      let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")
-        ?? URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-      guard let url else {
-        result(false)
-        return
-      }
-      result(NSWorkspace.shared.open(url))
     }
   }
 }

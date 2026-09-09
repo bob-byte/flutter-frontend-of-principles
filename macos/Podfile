@@ -38,5 +38,20 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    target.build_configurations.each do |config|
+      deployment = config.build_settings['MACOSX_DEPLOYMENT_TARGET']
+      if deployment.nil? || deployment.to_f < 11.0
+        config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
+      end
+    end
+    # PrivacyInfo.xcprivacy must not be compiled as a source file.
+    target.build_phases.each do |phase|
+      next unless phase.respond_to?(:files)
+      phase.files.to_a.each do |build_file|
+        path = build_file.file_ref&.path
+        next unless path&.end_with?('PrivacyInfo.xcprivacy')
+        phase.remove_build_file(build_file) if phase.is_a?(Xcodeproj::Project::Object::PBXSourcesBuildPhase)
+      end
+    end
   end
 end

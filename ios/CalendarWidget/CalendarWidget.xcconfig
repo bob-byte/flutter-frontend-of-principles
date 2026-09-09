@@ -1,0 +1,3 @@
+// Flutter version vars (FLUTTER_BUILD_NAME / FLUTTER_BUILD_NUMBER) for Info.plist.
+// Do not include Pods-Runner — that xcconfig is for the host app only.
+#include "../Flutter/Generated.xcconfig"

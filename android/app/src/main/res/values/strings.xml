@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_widget_month_name">Principles Calendar</string>
+    <string name="calendar_widget_week_name">Principles Week</string>
+    <string name="calendar_widget_today_name">Principles Today</string>
+    <string name="calendar_widget_month_description">Month of tasks and habits</string>
+    <string name="calendar_widget_week_description">This week’s tasks and habits</string>
+    <string name="calendar_widget_today_description">Today’s next tasks and habits</string>
+</resources>

@@ -7,6 +7,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import 'app/app.dart';
 import 'core/logging/app_log.dart';
+import 'services/home_calendar_widget_service.dart';
 import 'core/logging/logger_to_server.dart';
 import 'core/storage/secure_store.dart';
 import 'models/frequency_config.dart';
@@ -67,5 +68,8 @@ Future<void> main() async {
   await LiquidGlassWidgets.initialize();
   await ReminderService().init();
   _setupDialogService();
+  if (!kIsWeb) {
+    await HomeCalendarWidgetService.ensureInitialized();
+  }
   runApp(const PrinciplesApp());
 }

@@ -2,6 +2,7 @@ import AudioToolbox
 import AVFoundation
 import Flutter
 import UIKit
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -39,24 +40,29 @@ enum AppSettingsChannel {
       binaryMessenger: messenger
     )
     channel.setMethodCallHandler { call, result in
-      guard call.method == "openNotificationSettings" else {
+      switch call.method {
+      case "openNotificationSettings":
+        DispatchQueue.main.async {
+          let url: URL?
+          if #available(iOS 16.0, *) {
+            url = URL(string: UIApplication.openNotificationSettingsURLString)
+          } else {
+            url = URL(string: UIApplication.openSettingsURLString)
+          }
+          guard let url else {
+            result(false)
+            return
+          }
+          UIApplication.shared.open(url, options: [:]) { success in
+            result(success)
+          }
+        }
+      case "clearDeliveredNotifications":
+        // Delivered tray only — pending schedules stay (MAUI ClearAll).
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        result(nil)
+      default:
         result(FlutterMethodNotImplemented)
-        return
-      }
-      DispatchQueue.main.async {
-        let url: URL?
-        if #available(iOS 16.0, *) {
-          url = URL(string: UIApplication.openNotificationSettingsURLString)
-        } else {
-          url = URL(string: UIApplication.openSettingsURLString)
-        }
-        guard let url else {
-          result(false)
-          return
-        }
-        UIApplication.shared.open(url, options: [:]) { success in
-          result(success)
-        }
       }
     }
   }

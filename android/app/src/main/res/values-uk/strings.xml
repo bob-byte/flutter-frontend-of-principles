@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_widget_month_name">Календар Principles</string>
+    <string name="calendar_widget_week_name">Тиждень Principles</string>
+    <string name="calendar_widget_today_name">Сьогодні Principles</string>
+    <string name="calendar_widget_month_description">Місяць завдань і звичок</string>
+    <string name="calendar_widget_week_description">Завдання і звички цього тижня</string>
+    <string name="calendar_widget_today_description">Найближчі завдання і звички на сьогодні</string>
+</resources>

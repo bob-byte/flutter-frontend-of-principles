@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CalendarPreviewWeekday">
+        <item name="android:gravity">center</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textColor">#80FFFFFF</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="CalendarPreviewWeekdaySunday" parent="CalendarPreviewWeekday">
+        <item name="android:textColor">#FFFF6B00</item>
+    </style>
+    <style name="CalendarPreviewDayText">
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:padding">1dp</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="CalendarPreviewDayMutedText" parent="CalendarPreviewDayText">
+        <item name="android:textColor">#80FFFFFF</item>
+    </style>
+    <style name="CalendarPreviewDaySundayText" parent="CalendarPreviewDayText">
+        <item name="android:textColor">#FFFF6B00</item>
+    </style>
+    <style name="CalendarPreviewEventChip">
+        <item name="android:layout_marginTop">1dp</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingStart">2dp</item>
+        <item name="android:paddingEnd">2dp</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:textSize">8sp</item>
+    </style>
+</resources>

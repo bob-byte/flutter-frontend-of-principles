@@ -10,5 +10,8 @@ PRODUCT_NAME = Principles
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = com.set.principles
 
+// Required for entitlements (Sign in with Apple). Same team as ios/Runner.
+DEVELOPMENT_TEAM = CHVN5SL89P
+
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.set.principles. All rights reserved.

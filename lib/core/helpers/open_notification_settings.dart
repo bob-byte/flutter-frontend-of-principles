@@ -19,3 +19,21 @@ Future<bool> openNotificationSettings() async {
     return false;
   }
 }
+
+/// Dismisses notifications already shown in the system tray/center.
+///
+/// Does **not** cancel pending schedules (unlike
+/// [FlutterLocalNotificationsPlugin.cancelAll]). Matches MAUI
+/// `LocalNotificationCenter.Current.ClearAll()`.
+Future<void> clearDeliveredNotifications() async {
+  if (kIsWeb) return;
+  try {
+    await notificationSettingsChannel.invokeMethod<void>(
+      'clearDeliveredNotifications',
+    );
+  } on MissingPluginException {
+    // Tests / unsupported embeds.
+  } on PlatformException {
+    // Best-effort; opening the app should not fail if clear fails.
+  }
+}
