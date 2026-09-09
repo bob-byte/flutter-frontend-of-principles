@@ -24,3 +24,4 @@ Flutter rewrite of the Principles habit/goal app (install: https://principles.to
 - Pre-login: App Benefits carousel
 - Post-login: spotlight road guide once per device; replay from Settings → About
 - After login/signup, navigate to `HelperView` / `MainShell` so the road guide can run
+- Daily progress reminder (Tasks app bar; API still `habitsreport`): check-in for goals, habits, and tasks; notification opens Tasks today

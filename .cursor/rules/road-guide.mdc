@@ -9,6 +9,7 @@ alwaysApply: false
 - `RoadGuideController` + `RoadGuideKeys` + `RoadGuideOverlay` as `OverlayEntry`
 - Demo entities: negative goal/habit ids, string task id
 - Persistence: SharedPreferences device flag + `User.HasSeenRoadGuide` on the backend
+- Auto-start after SyncGate: wait for the shell’s first layout (~320ms + guide start settle) before the overlay; defer first-sync Retry/Cancel, deep links, and session remesh until the tour is inactive so they do not freeze the spotlight. Bulk reminder scheduling stays on SyncGate (before the tour).
 - Do **not** wrap `GlassScaffold` in `Stack` or `OverlayPortal`.
 - Do **not** put `GlobalKey`s on `GlassTabBar` / tab icons; tab holes use `RoadGuideKeys.tabHole`.
 - Spotlight targets need full-width keys (`SizedBox(width: double.infinity)` or the real button).

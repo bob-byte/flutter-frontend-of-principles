@@ -24,6 +24,8 @@ Flutter always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stac
 
 Backend always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `api-controllers.mdc`, `ef-data.mdc`.
 
+Workflow skills: `flutter-feature`, `commit-changes` (phrase: “Commit backend/Flutter changes”; split by kind; never add agent as contributor).
+
 ## How
 
 1. Identify which rule or skill the change belongs to (one concern per file).

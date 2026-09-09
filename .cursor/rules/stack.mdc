@@ -9,4 +9,5 @@ alwaysApply: true
 - l10n: edit `lib/l10n/app_en.arb` and `lib/l10n/app_uk.arb`, then `flutter gen-l10n`
 - Backend: .NET 8 (`SET.WebAPI` in `backend/`); conventions in `backend/.cursor/rules/`; EF migrations in `SET.DAL/Migrations`
 - AI chat/task assist: backend `POST /api/ai/chat` and `POST /api/ai/parse-task` (`AI_API_KEY` on the server only)
+- Home-screen calendar: `home_widget` plus native Android App Widgets / iOS WidgetKit (`group.com.set.principles`)
 - Prefer MCP `user-dart` tools (analyze, format, tests, hot reload) over shell `dart`/`flutter` when available
