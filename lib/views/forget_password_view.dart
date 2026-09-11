@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../app/post_auth_navigation.dart';
+import '../core/helpers/password_validation.dart';
 import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/app_alert_dialog.dart';
-import 'helper_view.dart';
 
 class ForgetPasswordView extends StatefulWidget {
   final String? initialEmail;
@@ -157,7 +158,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
       try {
         context.read<LaunchDataLoader>().reset();
       } catch (_) {}
-      navigator.pushReplacementNamed(HelperView.routeName);
+      openPostAuthShell(navigator);
     }
   }
 
@@ -230,9 +231,12 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                   obscureText: _obscurePassword,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return l10n.fieldRequired;
-                    if (value.length < 6) return l10n.passwordMinLength;
+                    }
+                    if (!PasswordValidation.isValidNewPassword(value)) {
+                      return l10n.newPasswordIsIncorrect;
+                    }
                     return null;
                   },
                   decoration:

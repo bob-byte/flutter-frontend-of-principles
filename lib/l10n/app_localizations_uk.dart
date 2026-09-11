@@ -660,7 +660,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get invalidEmailFormat => 'Невірний формат пошти';
 
   @override
-  String get passwordMinLength => 'Мінімум 6 символів';
+  String get newPasswordIsIncorrect =>
+      'Пароль повинен мати 8-20 символів і містити принаймні одну малу літеру та одну цифру.';
 
   @override
   String get forgotPasswordTitle => 'Відновлення пароля';

@@ -655,7 +655,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidEmailFormat => 'Invalid email format';
 
   @override
-  String get passwordMinLength => 'Minimum 6 characters';
+  String get newPasswordIsIncorrect =>
+      'Password must be 8-20 characters long and contain at least one lowercase letter and one digit.';
 
   @override
   String get forgotPasswordTitle => 'Reset Password';

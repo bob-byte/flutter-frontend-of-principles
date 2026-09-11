@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../app/post_auth_navigation.dart';
 import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
@@ -10,7 +11,6 @@ import '../widgets/app_loading_indicator.dart';
 import '../widgets/themed_lottie.dart';
 import '../widgets/ui_theme_switcher.dart';
 import 'app_benefits_view.dart';
-import 'helper_view.dart';
 import 'login_view.dart';
 import 'signup_view.dart';
 
@@ -49,7 +49,7 @@ class _StartupViewState extends State<StartupView> {
         if (!mounted) return;
         switch (nextRoute) {
           case StartupNextRoute.helper:
-            Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+            openPostAuthShell(Navigator.of(context));
             break;
           case StartupNextRoute.appBenefits:
             Navigator.of(
@@ -91,7 +91,7 @@ class _StartupViewState extends State<StartupView> {
 
     if (success) {
       _resetLaunchDataForPostAuth();
-      Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+      openPostAuthShell(Navigator.of(context));
     }
   }
 
@@ -102,7 +102,7 @@ class _StartupViewState extends State<StartupView> {
 
     if (success) {
       _resetLaunchDataForPostAuth();
-      Navigator.of(context).pushReplacementNamed(HelperView.routeName);
+      openPostAuthShell(Navigator.of(context));
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app/post_auth_navigation.dart';
 import '../core/helpers/linked_text.dart';
 import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
@@ -11,7 +12,6 @@ import '../viewmodels/login_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../widgets/ui_theme_switcher.dart';
 import 'forget_password_view.dart';
-import 'helper_view.dart';
 import 'signup_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -68,7 +68,7 @@ class _LoginViewState extends State<LoginView> {
       try {
         context.read<LaunchDataLoader>().reset();
       } catch (_) {}
-      navigator.pushReplacementNamed(HelperView.routeName);
+      openPostAuthShell(navigator);
     }
   }
 

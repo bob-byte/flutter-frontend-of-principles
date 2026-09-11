@@ -1274,11 +1274,11 @@ abstract class AppLocalizations {
   /// **'Invalid email format'**
   String get invalidEmailFormat;
 
-  /// Validation message when password is shorter than 6 characters
+  /// Validation when new password fails MAUI NewPassword rule (8-20 chars, letter, digit)
   ///
   /// In en, this message translates to:
-  /// **'Minimum 6 characters'**
-  String get passwordMinLength;
+  /// **'Password must be 8-20 characters long and contain at least one lowercase letter and one digit.'**
+  String get newPasswordIsIncorrect;
 
   /// No description provided for @forgotPasswordTitle.
   ///
@@ -1820,13 +1820,13 @@ abstract class AppLocalizations {
   /// **'Oops.. It looks like your operating system doesn\'t support notifications. Please try updating it.'**
   String get deviceDoesNotSupportNotifications;
 
-  /// SyncGate body when the account has reminders but notification permission is off (MAUI AfterLoginWhenUserAccountHaveReminders)
+  /// AppAlertDialog body when the account has reminders but notification permission is off (MAUI AfterLoginWhenUserAccountHaveReminders)
   ///
   /// In en, this message translates to:
   /// **'Your account has motivating reminders. They can be restore on your device.'**
   String get afterLoginWhenUserAccountHaveReminders;
 
-  /// SyncGate title while explaining reminder restore (MAUI RestoreReminders)
+  /// AppAlertDialog title before restoring reminders (MAUI RestoreReminders)
   ///
   /// In en, this message translates to:
   /// **'Restore reminders'**
