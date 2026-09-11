@@ -10,6 +10,7 @@ import '../core/deep_link/deep_link_action.dart';
 import '../core/deep_link/deep_link_controller.dart';
 import '../core/launch_data_loader.dart';
 import '../core/road_guide/main_shell_controller.dart';
+import '../core/road_guide/main_shell_metrics.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_overlay.dart';
 import '../core/road_guide/road_guide_steps.dart';
@@ -53,10 +54,6 @@ class _MainShellState extends State<MainShell> {
 
   /// False until post-auth hydrate (and reminder restore) finishes.
   bool _sessionReady = false;
-
-  /// SyncGate shows MAUI restore copy + OK instead of a ticker-stopping dialog.
-  bool _askingRestore = false;
-  Completer<void>? _restoreAck;
 
   /// Null until prefs say whether SyncGate should cover this cold start.
   bool? _showSyncGate;
@@ -317,9 +314,10 @@ class _MainShellState extends State<MainShell> {
 
     // Full bootstrap (no since) or since ≥ 20 days → cover shell with SyncGate.
     // Recent incremental catch-up paints the shell and syncs underneath.
-    final showGate =
-        !loader.isSyncGateComplete &&
-        requiresSyncGate(await settings.getLastSuccessfulSyncAt());
+    // Capture before ensureLoaded — sync may write lastSuccessfulSyncAt.
+    final since = await settings.getLastSuccessfulSyncAt();
+    final isFirstBootstrap = since == null;
+    final showGate = !loader.isSyncGateComplete && requiresSyncGate(since);
     if (!mounted) return;
     if (_showSyncGate != showGate) {
       setState(() => _showSyncGate = showGate);
@@ -352,17 +350,9 @@ class _MainShellState extends State<MainShell> {
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
 
-    // Reminder restore: on SyncGate when shown; otherwise dialog explain if needed.
+    // Reminder restore: why-copy AppAlertDialog only on first bootstrap.
     if (!loader.hasCompletedReminderRestore) {
-      final job = showGate
-          ? await _prepareRemindersOnGate()
-          : await _prepareRemindersWithoutGate();
-      if (!mounted) return;
-      // Back to "Loading content..." for the schedule pass.
-      if (_askingRestore && mounted) {
-        setState(() => _askingRestore = false);
-        await WidgetsBinding.instance.endOfFrame;
-      }
+      final job = await _prepareReminders(explainRestore: isFirstBootstrap);
       if (!mounted) return;
       if (job != null) {
         final reminders = context.read<ReminderService>();
@@ -374,10 +364,7 @@ class _MainShellState extends State<MainShell> {
     }
 
     if (!_sessionReady) {
-      setState(() {
-        _sessionReady = true;
-        _askingRestore = false;
-      });
+      setState(() => _sessionReady = true);
     }
 
     // Let GlassScaffold / IndexedStack / tab bar finish their first layout
@@ -405,8 +392,10 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  /// Same restore job as the gate, but MAUI explain uses the service dialog.
-  Future<Map<String, Object?>?> _prepareRemindersWithoutGate() async {
+  /// Builds the restore schedule job; why-copy only when [explainRestore].
+  Future<Map<String, Object?>?> _prepareReminders({
+    required bool explainRestore,
+  }) async {
     final reminders = context.read<ReminderService>();
     final tasks = context.read<TasksViewModel>().tasks;
     final habits = context.read<HabitProgressViewModel>().habits;
@@ -414,6 +403,7 @@ class _MainShellState extends State<MainShell> {
       return await reminders.prepareReminderRestore(
         knownTasks: tasks,
         knownHabits: habits,
+        explainRestore: explainRestore,
       );
     } catch (_) {
       return null;
@@ -452,43 +442,6 @@ class _MainShellState extends State<MainShell> {
     await context.read<LaunchDataLoader>().retryStartupSyncIfServerDown();
   }
 
-  /// MAUI-style explain + permission on SyncGate; returns schedule job (or null).
-  Future<Map<String, Object?>?> _prepareRemindersOnGate() async {
-    final reminders = context.read<ReminderService>();
-    final tasks = context.read<TasksViewModel>().tasks;
-    final habits = context.read<HabitProgressViewModel>().habits;
-    try {
-      return await reminders.prepareReminderRestore(
-        knownTasks: tasks,
-        knownHabits: habits,
-        onExplainRestore: _explainRestoreOnGate,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _explainRestoreOnGate() async {
-    final ack = Completer<void>();
-    _restoreAck = ack;
-    if (!mounted) return;
-    setState(() => _askingRestore = true);
-    // Paint MAUI RestoreReminders copy before waiting on OK.
-    await WidgetsBinding.instance.endOfFrame;
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) {
-      if (!ack.isCompleted) ack.complete();
-      return;
-    }
-    await ack.future;
-  }
-
-  void _ackRestore() {
-    final ack = _restoreAck;
-    if (ack != null && !ack.isCompleted) ack.complete();
-    if (mounted) setState(() => _askingRestore = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_sessionReady) {
@@ -497,10 +450,7 @@ class _MainShellState extends State<MainShell> {
         final palette = context.watch<ThemeController>().palette;
         return Scaffold(backgroundColor: palette.pageBg);
       }
-      return SyncGateView(
-        restore: _askingRestore,
-        onRestoreAck: _askingRestore ? _ackRestore : null,
-      );
+      return const SyncGateView();
     }
 
     final l10n = AppLocalizations.of(context)!;
@@ -576,7 +526,9 @@ class _MainShellState extends State<MainShell> {
             children: [
               HelperView(
                 embedded: true,
-                bottomBarClearance: keyboardOpen || sidebarOpen ? 0 : 80,
+                bottomBarClearance: keyboardOpen || sidebarOpen
+                    ? 0
+                    : mainShellEmbeddedBottomClearance(context),
               ),
               const GoalsView(embedded: true),
               TasksView(embedded: true, isActive: index == MainShellTab.tasks),

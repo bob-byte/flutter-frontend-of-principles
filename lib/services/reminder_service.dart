@@ -42,6 +42,8 @@ class ReminderService {
        _taskService = taskService;
 
   static const prefsKey = 'habits_report_reminder_v1';
+  static const hasSeenRestoreRemindersExplainKey =
+      'has_seen_restore_reminders_explain';
 
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -577,15 +579,20 @@ class ReminderService {
   @visibleForTesting
   AllRemindersResponse? get bootstrapRemindersForTest => _bootstrapReminders;
 
-  /// Loads account reminders, shows MAUI why-copy, requests permission once.
+  /// Loads account reminders, optionally shows MAUI why-copy, requests permission.
   ///
   /// Prefers bootstrap lists (same shape as GET `/reminder/all`), then falls
   /// back to that endpoint for older servers. Always returns a schedule job
   /// when reminders exist — even if the user denies permission — so entries
   /// are registered on-device for when access is granted later.
+  ///
+  /// [explainRestore] is true only for the device's first full bootstrap
+  /// (`since` null). The why-copy [AppAlertDialog] is shown at most once
+  /// (SharedPreferences), matching "only once in first bootstrap".
   Future<Map<String, Object?>?> prepareReminderRestore({
     List<Task>? knownTasks,
     List<Habit>? knownHabits,
+    bool explainRestore = false,
     Future<void> Function()? onExplainRestore,
     AllRemindersResponse? knownReminders,
   }) async {
@@ -633,12 +640,20 @@ class ReminderService {
 
       var notificationsOn = await areNotificationsEnabled();
       if (!notificationsOn) {
-        // Always explain why before the system permission sheet (MAUI
-        // AfterLoginWhenUserAccountHaveReminders / RestoreReminders).
-        if (onExplainRestore != null) {
-          await onExplainRestore();
-        } else {
-          await _promptRestoreReminders();
+        final hasSeen = await _hasSeenRestoreRemindersExplain();
+        if (shouldExplainRestoreReminders(
+          explainRestore: explainRestore,
+          hasSeenExplain: hasSeen,
+          notificationsEnabled: notificationsOn,
+        )) {
+          // First bootstrap only: AfterLoginWhenUserAccountHaveReminders /
+          // RestoreReminders via DialogService AppAlertDialog.
+          if (onExplainRestore != null) {
+            await onExplainRestore();
+          } else {
+            await _promptRestoreReminders();
+          }
+          await _markSeenRestoreRemindersExplain();
         }
         // One native sheet only. A second iOS requestPermissions after Allow
         // hangs the isolate and freezes SyncGate.
@@ -700,16 +715,46 @@ class ReminderService {
   Future<void> tryToRecoverAllUserReminders({
     List<Task>? knownTasks,
     List<Habit>? knownHabits,
+    bool explainRestore = false,
     Future<void> Function()? onExplainRestore,
   }) async {
     final job = await prepareReminderRestore(
       knownTasks: knownTasks,
       knownHabits: knownHabits,
+      explainRestore: explainRestore,
       onExplainRestore: onExplainRestore,
     );
     if (job == null) return;
     await applyReminderRestoreJob(job);
   }
+
+  Future<bool> _hasSeenRestoreRemindersExplain() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(hasSeenRestoreRemindersExplainKey) ?? false;
+  }
+
+  Future<void> _markSeenRestoreRemindersExplain() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(hasSeenRestoreRemindersExplainKey, true);
+  }
+
+  /// Whether to show the MAUI restore why-copy before the OS permission sheet.
+  @visibleForTesting
+  static bool shouldExplainRestoreReminders({
+    required bool explainRestore,
+    required bool hasSeenExplain,
+    required bool notificationsEnabled,
+  }) {
+    return explainRestore && !hasSeenExplain && !notificationsEnabled;
+  }
+
+  @visibleForTesting
+  Future<bool> hasSeenRestoreRemindersExplainForTest() =>
+      _hasSeenRestoreRemindersExplain();
+
+  @visibleForTesting
+  Future<void> markSeenRestoreRemindersExplainForTest() =>
+      _markSeenRestoreRemindersExplain();
 
   /// Prefer API habit reminders; fill gaps from habits already in memory.
   @visibleForTesting

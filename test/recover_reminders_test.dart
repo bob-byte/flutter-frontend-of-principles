@@ -167,9 +167,7 @@ void main() {
     test('clearBootstrapReminders drops the stash', () {
       final service = ReminderService(forceLocalOnly: true);
       service.rememberBootstrapReminders(
-        const AllRemindersResponse(
-          generalReminders: [],
-        ),
+        const AllRemindersResponse(generalReminders: []),
       );
       service.clearBootstrapReminders();
       expect(service.bootstrapRemindersForTest, isNull);
@@ -221,9 +219,54 @@ void main() {
       final service = ReminderService(forceLocalOnly: true);
       await service.tryToRecoverAllUserReminders(
         knownTasks: const [],
+        explainRestore: true,
         onExplainRestore: () async => explained = true,
       );
       expect(explained, isFalse);
+    });
+  });
+
+  group('ReminderService restore explain once', () {
+    test('shouldExplainRestoreReminders only on first bootstrap', () {
+      expect(
+        ReminderService.shouldExplainRestoreReminders(
+          explainRestore: true,
+          hasSeenExplain: false,
+          notificationsEnabled: false,
+        ),
+        isTrue,
+      );
+      expect(
+        ReminderService.shouldExplainRestoreReminders(
+          explainRestore: false,
+          hasSeenExplain: false,
+          notificationsEnabled: false,
+        ),
+        isFalse,
+      );
+      expect(
+        ReminderService.shouldExplainRestoreReminders(
+          explainRestore: true,
+          hasSeenExplain: true,
+          notificationsEnabled: false,
+        ),
+        isFalse,
+      );
+      expect(
+        ReminderService.shouldExplainRestoreReminders(
+          explainRestore: true,
+          hasSeenExplain: false,
+          notificationsEnabled: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('prefs flag persists after mark', () async {
+      final service = ReminderService(forceLocalOnly: true);
+      expect(await service.hasSeenRestoreRemindersExplainForTest(), isFalse);
+      await service.markSeenRestoreRemindersExplainForTest();
+      expect(await service.hasSeenRestoreRemindersExplainForTest(), isTrue);
     });
   });
 
