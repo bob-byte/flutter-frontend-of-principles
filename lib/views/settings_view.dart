@@ -5,6 +5,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/home_widget/home_widget_add_prompt.dart';
+import '../core/input/keyboard.dart';
 import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../viewmodels/goals_viewmodel.dart';
@@ -485,6 +486,7 @@ class _SettingsBody extends StatelessWidget {
     SettingsViewModel vm,
     AppLocalizations l10n,
   ) async {
+    hideSoftKeyboard();
     final result = await showDialog<int>(
       context: context,
       builder: (dialogContext) => _GenderEditDialog(
@@ -557,6 +559,7 @@ class _SettingsBody extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
   ) {
+    hideSoftKeyboard();
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AppAlertDialog.message(
@@ -575,6 +578,7 @@ class _SettingsBody extends StatelessWidget {
   ) async {
     final launched = await vm.openContactEmail();
     if (launched || !context.mounted) return;
+    hideSoftKeyboard();
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AppAlertDialog.message(
@@ -623,6 +627,7 @@ class _SettingsBody extends StatelessWidget {
     SettingsViewModel vm,
     AppLocalizations l10n,
   ) async {
+    hideSoftKeyboard();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AppAlertDialog.confirm(
@@ -664,6 +669,7 @@ Future<String?> _showProfileEditor({
   String? requiredMessage,
   String? explanation,
 }) {
+  hideSoftKeyboard();
   return showDialog<String>(
     context: context,
     builder: (dialogContext) => _ProfileEditDialog(

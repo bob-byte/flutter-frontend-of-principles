@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/input/keyboard.dart';
 import '../../../core/theme/task_theme_palette.dart';
 import '../../../l10n/schedule_strings.dart';
 import '../../../models/task_repeat_config.dart';
@@ -12,6 +13,7 @@ Future<TaskRepeatConfig?> showRepeatPickerSheet(
   required TaskRepeatConfig selected,
   required DateTime selectedDay,
 }) {
+  hideSoftKeyboard();
   return showModalBottomSheet<TaskRepeatConfig>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -43,7 +45,8 @@ class _RepeatPickerSheet extends StatelessWidget {
     final weekday = TaskRepeatConfig.everyWeekday();
 
     Widget row(String label, TaskRepeatConfig value) {
-      final isOn = selected.preset == value.preset &&
+      final isOn =
+          selected.preset == value.preset &&
           value.preset != TaskRepeatPreset.custom;
       return ListTile(
         dense: true,
@@ -54,7 +57,9 @@ class _RepeatPickerSheet extends StatelessWidget {
             fontWeight: isOn ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
-        trailing: isOn ? Icon(Icons.check, color: palette.primary, size: 20) : null,
+        trailing: isOn
+            ? Icon(Icons.check, color: palette.primary, size: 20)
+            : null,
         onTap: () => Navigator.pop(context, value),
       );
     }
@@ -75,10 +80,7 @@ class _RepeatPickerSheet extends StatelessWidget {
                 '${strings.weekly} (${weekdayShort(selectedDay.weekday)})',
                 weekly,
               ),
-              row(
-                '${strings.monthly} (${selectedDay.day})',
-                monthly,
-              ),
+              row('${strings.monthly} (${selectedDay.day})', monthly),
               row(
                 '${strings.yearly} (${selectedDay.day} ${monthShort(selectedDay.month)})',
                 yearly,

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/input/keyboard.dart';
 import '../../../core/theme/task_theme_palette.dart';
 import '../../../l10n/schedule_strings.dart';
 import 'schedule_format.dart';
@@ -13,6 +14,7 @@ Future<int?> showCustomReminderDialog(
   int initialHours = 0,
   int initialMinutes = 15,
 }) {
+  hideSoftKeyboard();
   return showDialog<int>(
     context: context,
     builder: (ctx) => _CustomReminderDialog(
@@ -185,13 +187,19 @@ class _Wheel extends StatelessWidget {
                   Center(
                     child: Text(
                       '$i',
-                      style: TextStyle(color: palette.textPrimary, fontSize: 18),
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
-          Text(suffix, style: TextStyle(color: palette.textMuted, fontSize: 12)),
+          Text(
+            suffix,
+            style: TextStyle(color: palette.textMuted, fontSize: 12),
+          ),
         ],
       ),
     );

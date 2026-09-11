@@ -4,6 +4,8 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/input/keyboard.dart';
+import '../core/road_guide/main_shell_metrics.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/dialog_service.dart';
@@ -18,7 +20,7 @@ class HelperView extends StatefulWidget {
   const HelperView({
     super.key,
     this.embedded = false,
-    this.bottomBarClearance = 80,
+    this.bottomBarClearance = kMainShellTabBarPreferredHeight,
   });
 
   static const routeName = '/helper';
@@ -46,6 +48,7 @@ class _HelperViewState extends State<HelperView> {
   }
 
   Future<void> _showHelperInfo(AppLocalizations l10n) {
+    hideSoftKeyboard();
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AppAlertDialog.message(

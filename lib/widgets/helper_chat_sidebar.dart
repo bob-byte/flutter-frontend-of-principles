@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/input/keyboard.dart';
 import '../models/ai_conversation.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import 'app_alert_dialog.dart';
@@ -109,6 +110,7 @@ class HelperChatSidebar extends StatelessWidget {
     final title = chat.title.trim().isEmpty
         ? l10n.helperUntitledChat
         : chat.title;
+    hideSoftKeyboard();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AppAlertDialog.confirm(

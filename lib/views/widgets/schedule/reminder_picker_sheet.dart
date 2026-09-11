@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:super_tooltip/super_tooltip.dart';
 
+import '../../../core/input/keyboard.dart';
 import '../../../core/theme/task_theme_palette.dart';
 import '../../../l10n/schedule_strings.dart';
 import '../../../models/schedule_reminder_offset.dart';
@@ -31,6 +32,7 @@ Future<ReminderPickerResult?> showReminderPickerSheet(
     offsets: List<ScheduleReminderOffset>.from(selected),
     constantReminder: constantReminder,
   );
+  hideSoftKeyboard();
   final result = await showModalBottomSheet<ReminderPickerResult>(
     context: context,
     isScrollControlled: true,

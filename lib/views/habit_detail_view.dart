@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/input/keyboard.dart';
 import '../core/road_guide/road_guide_controller.dart';
 import '../core/road_guide/road_guide_steps.dart';
 import '../core/theme/task_theme_palette.dart';
@@ -888,11 +889,13 @@ class _StabilityChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
+              reservedSize: 48,
               interval: 20,
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}%',
+                  maxLines: 1,
+                  softWrap: false,
                   style: TextStyle(fontSize: 11, color: palette.textMuted),
                 );
               },
@@ -1071,6 +1074,7 @@ class _HabitCalendar extends StatelessWidget {
       return;
     }
     final l10n = AppLocalizations.of(context)!;
+    hideSoftKeyboard();
     await showDialog<void>(
       context: context,
       builder: (ctx) => AppAlertDialog.message(

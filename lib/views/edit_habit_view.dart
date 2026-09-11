@@ -256,6 +256,7 @@ class _EditHabitViewState extends State<EditHabitView> {
                           controller: _nameTooltipController,
                           message: l10n.habitNameInfo,
                           okLabel: l10n.okButton,
+                          direction: TooltipDirection.down,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -691,11 +692,13 @@ class _InfoTooltip extends StatelessWidget {
     required this.controller,
     required this.message,
     required this.okLabel,
+    this.direction = TooltipDirection.up,
   });
 
   final SuperTooltipController controller;
   final String message;
   final String okLabel;
+  final TooltipDirection direction;
 
   @override
   Widget build(BuildContext context) {
@@ -707,6 +710,7 @@ class _InfoTooltip extends StatelessWidget {
         controller: controller,
         message: message,
         okLabel: okLabel,
+        direction: direction,
         child: IconButton(
           icon: Icon(Icons.info_outline, color: scheme.onSurfaceVariant),
           onPressed: () => controller.showTooltip(),

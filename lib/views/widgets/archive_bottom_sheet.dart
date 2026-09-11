@@ -37,14 +37,11 @@ class _ArchiveBottomSheetShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
+    return ExpandableSheetFrame(
       initialChildSize: 0.6,
       minChildSize: 0.4,
       maxChildSize: ExpandableSheetDefaults.maxChildSize,
-      snap: true,
       snapSizes: const [0.6, ExpandableSheetDefaults.maxChildSize],
-      shouldCloseOnMinExtent: true,
       builder: (context, scrollController) {
         return _ArchiveBottomSheetContent(scrollController: scrollController);
       },

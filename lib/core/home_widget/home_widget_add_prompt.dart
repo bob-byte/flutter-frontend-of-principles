@@ -6,6 +6,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 
 import '../../widgets/app_alert_dialog.dart';
 import '../helpers/open_notification_settings.dart';
+import '../input/keyboard.dart';
 import 'home_calendar_constants.dart';
 
 /// Opens how-to instructions, and on supported Android launchers offers pin.
@@ -21,6 +22,7 @@ Future<void> showAddHomeCalendarWidgetPrompt(BuildContext context) async {
       ? l10n.calendarWidgetHowToIos
       : l10n.calendarWidgetHowToAndroid;
 
+  hideSoftKeyboard();
   await showDialog<void>(
     context: context,
     builder: (dialogContext) {

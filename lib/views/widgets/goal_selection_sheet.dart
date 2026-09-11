@@ -39,14 +39,11 @@ class _GoalSelectionSheetShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
+    return ExpandableSheetFrame(
       initialChildSize: 0.72,
       minChildSize: 0.4,
       maxChildSize: ExpandableSheetDefaults.maxChildSize,
-      snap: true,
       snapSizes: const [0.72, ExpandableSheetDefaults.maxChildSize],
-      shouldCloseOnMinExtent: true,
       builder: (context, scrollController) {
         return _GoalSelectionSheetContent(scrollController: scrollController);
       },

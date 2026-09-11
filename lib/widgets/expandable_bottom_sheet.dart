@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/input/keyboard.dart';
+
 typedef ExpandableSheetBuilder =
     Widget Function(BuildContext context, ScrollController scrollController);
 
@@ -10,9 +12,39 @@ abstract final class ExpandableSheetDefaults {
   static const double maxChildSize = 0.94;
 }
 
+/// Provides the [DraggableScrollableController] so [BottomSheetDragHandle]
+/// can expand / collapse the sheet when the grabber sits outside a scrollable.
+class ExpandableSheetScope extends InheritedWidget {
+  const ExpandableSheetScope({
+    super.key,
+    required this.controller,
+    required this.minChildSize,
+    required this.maxChildSize,
+    required this.snapSizes,
+    required super.child,
+  });
+
+  final DraggableScrollableController controller;
+  final double minChildSize;
+  final double maxChildSize;
+  final List<double> snapSizes;
+
+  static ExpandableSheetScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ExpandableSheetScope>();
+  }
+
+  @override
+  bool updateShouldNotify(ExpandableSheetScope oldWidget) {
+    return controller != oldWidget.controller ||
+        minChildSize != oldWidget.minChildSize ||
+        maxChildSize != oldWidget.maxChildSize ||
+        snapSizes != oldWidget.snapSizes;
+  }
+}
+
 /// Modal bottom sheet that can be dragged between [minChildSize] and
 /// [maxChildSize] (snap). Pass [scrollController] to the primary scrollable
-/// so the grabber / list drag expands and collapses the sheet.
+/// so list drag expands and collapses the sheet. The grabber also swipes.
 Future<T?> showExpandableModalBottomSheet<T>({
   required BuildContext context,
   required ExpandableSheetBuilder builder,
@@ -25,6 +57,8 @@ Future<T?> showExpandableModalBottomSheet<T>({
 }) {
   assert(minChildSize > 0 && minChildSize <= initialChildSize);
   assert(initialChildSize <= maxChildSize && maxChildSize <= 1);
+
+  hideSoftKeyboard();
 
   final resolvedSnaps = _resolveSnapSizes(
     minChildSize: minChildSize,
@@ -39,22 +73,150 @@ Future<T?> showExpandableModalBottomSheet<T>({
     backgroundColor: backgroundColor ?? Colors.transparent,
     useRootNavigator: useRootNavigator,
     builder: (sheetContext) {
-      final bottomInset = MediaQuery.viewInsetsOf(sheetContext).bottom;
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: initialChildSize,
-          minChildSize: minChildSize,
-          maxChildSize: maxChildSize,
-          snap: true,
-          snapSizes: resolvedSnaps,
-          shouldCloseOnMinExtent: true,
-          builder: builder,
-        ),
+      return _ExpandableSheetHost(
+        initialChildSize: initialChildSize,
+        minChildSize: minChildSize,
+        maxChildSize: maxChildSize,
+        snapSizes: resolvedSnaps,
+        builder: builder,
       );
     },
   );
+}
+
+class _ExpandableSheetHost extends StatefulWidget {
+  const _ExpandableSheetHost({
+    required this.initialChildSize,
+    required this.minChildSize,
+    required this.maxChildSize,
+    required this.snapSizes,
+    required this.builder,
+  });
+
+  final double initialChildSize;
+  final double minChildSize;
+  final double maxChildSize;
+  final List<double>? snapSizes;
+  final ExpandableSheetBuilder builder;
+
+  @override
+  State<_ExpandableSheetHost> createState() => _ExpandableSheetHostState();
+}
+
+class _ExpandableSheetHostState extends State<_ExpandableSheetHost> {
+  late final DraggableScrollableController _sheetController;
+
+  @override
+  void initState() {
+    super.initState();
+    _sheetController = DraggableScrollableController();
+  }
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final snaps =
+        widget.snapSizes ??
+        <double>[widget.initialChildSize, widget.maxChildSize];
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: ExpandableSheetScope(
+        controller: _sheetController,
+        minChildSize: widget.minChildSize,
+        maxChildSize: widget.maxChildSize,
+        snapSizes: snaps,
+        child: DraggableScrollableSheet(
+          controller: _sheetController,
+          expand: false,
+          initialChildSize: widget.initialChildSize,
+          minChildSize: widget.minChildSize,
+          maxChildSize: widget.maxChildSize,
+          snap: true,
+          snapSizes: widget.snapSizes,
+          shouldCloseOnMinExtent: true,
+          builder: widget.builder,
+        ),
+      ),
+    );
+  }
+}
+
+/// Wraps an existing [DraggableScrollableSheet] subtree (e.g. archive / goals)
+/// so [BottomSheetDragHandle] can swipe-expand when the grabber is outside
+/// the primary scrollable.
+class ExpandableSheetFrame extends StatefulWidget {
+  const ExpandableSheetFrame({
+    super.key,
+    required this.initialChildSize,
+    required this.minChildSize,
+    required this.maxChildSize,
+    required this.builder,
+    this.snapSizes,
+  });
+
+  final double initialChildSize;
+  final double minChildSize;
+  final double maxChildSize;
+  final List<double>? snapSizes;
+  final Widget Function(BuildContext context, ScrollController scrollController)
+  builder;
+
+  @override
+  State<ExpandableSheetFrame> createState() => _ExpandableSheetFrameState();
+}
+
+class _ExpandableSheetFrameState extends State<ExpandableSheetFrame> {
+  late final DraggableScrollableController _sheetController;
+
+  @override
+  void initState() {
+    super.initState();
+    _sheetController = DraggableScrollableController();
+  }
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final snaps =
+        widget.snapSizes ??
+        _resolveSnapSizes(
+          minChildSize: widget.minChildSize,
+          initialChildSize: widget.initialChildSize,
+          maxChildSize: widget.maxChildSize,
+          snapSizes: null,
+        ) ??
+        <double>[widget.maxChildSize];
+
+    return ExpandableSheetScope(
+      controller: _sheetController,
+      minChildSize: widget.minChildSize,
+      maxChildSize: widget.maxChildSize,
+      snapSizes: snaps,
+      child: DraggableScrollableSheet(
+        controller: _sheetController,
+        expand: false,
+        initialChildSize: widget.initialChildSize,
+        minChildSize: widget.minChildSize,
+        maxChildSize: widget.maxChildSize,
+        snap: true,
+        snapSizes: snaps,
+        shouldCloseOnMinExtent: true,
+        builder: widget.builder,
+      ),
+    );
+  }
 }
 
 List<double>? _resolveSnapSizes({
@@ -77,7 +239,8 @@ List<double>? _resolveSnapSizes({
   return sizes.toList()..sort();
 }
 
-/// Standard grabber shown at the top of expandable sheets.
+/// Grabber at the top of expandable sheets. Swipe up to expand, down to
+/// collapse (and dismiss past the minimum when the sheet allows it).
 class BottomSheetDragHandle extends StatelessWidget {
   const BottomSheetDragHandle({
     super.key,
@@ -96,7 +259,8 @@ class BottomSheetDragHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final scope = ExpandableSheetScope.maybeOf(context);
+    final handle = Padding(
       padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
       child: Center(
         child: Container(
@@ -109,5 +273,82 @@ class BottomSheetDragHandle extends StatelessWidget {
         ),
       ),
     );
+
+    if (scope == null) return handle;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (details) {
+        final controller = scope.controller;
+        if (!controller.isAttached) return;
+        final screenHeight = MediaQuery.sizeOf(context).height;
+        if (screenHeight <= 0) return;
+        final next = (controller.size - details.delta.dy / screenHeight).clamp(
+          scope.minChildSize,
+          scope.maxChildSize,
+        );
+        controller.jumpTo(next);
+      },
+      onVerticalDragEnd: (details) {
+        final controller = scope.controller;
+        if (!controller.isAttached) return;
+        final velocity = details.primaryVelocity ?? 0;
+        final target = _snapTarget(
+          current: controller.size,
+          velocity: velocity,
+          minChildSize: scope.minChildSize,
+          maxChildSize: scope.maxChildSize,
+          snapSizes: scope.snapSizes,
+        );
+        controller.animateTo(
+          target,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+        // Dragging firmly past the floor dismisses the modal sheet.
+        if (velocity > 900 && controller.size <= scope.minChildSize + 0.02) {
+          final navigator = Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            navigator.pop();
+          }
+        }
+      },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: 28,
+          minWidth: double.infinity,
+        ),
+        child: handle,
+      ),
+    );
   }
+}
+
+double _snapTarget({
+  required double current,
+  required double velocity,
+  required double minChildSize,
+  required double maxChildSize,
+  required List<double> snapSizes,
+}) {
+  final candidates = <double>{minChildSize, ...snapSizes, maxChildSize}.toList()
+    ..sort();
+
+  // Negative primaryVelocity = finger moved up = expand.
+  if (velocity < -400) {
+    for (final size in candidates) {
+      if (size > current + 0.01) return size;
+    }
+    return maxChildSize;
+  }
+  if (velocity > 400) {
+    for (final size in candidates.reversed) {
+      if (size < current - 0.01) return size;
+    }
+    return minChildSize;
+  }
+
+  return candidates.reduce(
+    (a, b) => (a - current).abs() <= (b - current).abs() ? a : b,
+  );
 }

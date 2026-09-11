@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/input/keyboard.dart';
 import '../../../core/theme/task_theme_palette.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/utils/date_helpers.dart';
@@ -34,7 +35,7 @@ Future<ScheduleDraft?> showScheduleBottomSheet(
     context: context,
     initialChildSize: 0.62,
     minChildSize: 0.4,
-    maxChildSize: 0.94,
+    maxChildSize: ExpandableSheetDefaults.maxChildSize,
     builder: (ctx, scrollController) {
       return ChangeNotifierProvider<ScheduleDraft>.value(
         value: draft,
@@ -402,6 +403,7 @@ class _HabitTimeSlotBlock extends StatelessWidget {
             ],
           ),
           onTap: () async {
+            hideSoftKeyboard();
             final picked = await showTimePicker(
               context: context,
               initialTime: slot.time,
@@ -593,6 +595,7 @@ class _DurationTab extends StatelessWidget {
     required bool isStart,
     required DateTime initial,
   }) async {
+    hideSoftKeyboard();
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -873,6 +876,7 @@ class _TimeRow extends StatelessWidget {
         ],
       ),
       onTap: () async {
+        hideSoftKeyboard();
         final initial = draft.hasTime && draft.dueDate != null
             ? TimeOfDay.fromDateTime(draft.dueDate!)
             : TimeOfDay.fromDateTime(nearestNextHour());

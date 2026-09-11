@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/input/keyboard.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../services/dialog_service.dart';
 import '../../services/reminder_service.dart';
@@ -92,6 +93,7 @@ class _GlobalReminderSheetContentState
   }
 
   Future<void> _selectTime(GlobalReminderViewModel vm) async {
+    hideSoftKeyboard();
     final l10n = AppLocalizations.of(context)!;
     final palette = context.read<ThemeController>().palette;
     await showModalBottomSheet<void>(

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/input/keyboard.dart';
 import '../../../core/theme/task_theme_palette.dart';
 import '../../../l10n/schedule_strings.dart';
 import '../../../models/task_repeat_config.dart';
@@ -12,6 +13,7 @@ Future<TaskRepeatConfig?> showCustomRepeatSheet(
   required TaskRepeatConfig initial,
   required DateTime selectedDay,
 }) {
+  hideSoftKeyboard();
   return showModalBottomSheet<TaskRepeatConfig>(
     context: context,
     isScrollControlled: true,
@@ -64,9 +66,7 @@ class _CustomRepeatSheetState extends State<_CustomRepeatSheet> {
       case TaskRepeatUnit.day:
         return '${strings.every} $_interval ${strings.dayUnit.toLowerCase()}';
       case TaskRepeatUnit.week:
-        final days = (_weekdays.toList()..sort())
-            .map(weekdayShort)
-            .join(', ');
+        final days = (_weekdays.toList()..sort()).map(weekdayShort).join(', ');
         return '${strings.every} $_interval ${strings.weekUnit.toLowerCase()} ($days)';
       case TaskRepeatUnit.month:
         return '${strings.every} $_interval ${strings.monthUnit.toLowerCase()}';
@@ -208,9 +208,8 @@ class _CustomRepeatSheetState extends State<_CustomRepeatSheet> {
                           scrollController: FixedExtentScrollController(
                             initialItem: TaskRepeatUnit.values.indexOf(_unit),
                           ),
-                          onSelectedItemChanged: (i) => setState(
-                            () => _unit = TaskRepeatUnit.values[i],
-                          ),
+                          onSelectedItemChanged: (i) =>
+                              setState(() => _unit = TaskRepeatUnit.values[i]),
                           children: [
                             Center(
                               child: Text(

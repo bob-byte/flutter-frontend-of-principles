@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../core/input/keyboard.dart';
 import '../core/theme/task_theme_palette.dart';
 import 'app_alert_dialog.dart';
 
@@ -34,6 +35,7 @@ class ContextMenuOverlay extends StatefulWidget {
     )
     builder,
   }) {
+    hideSoftKeyboard();
     Feedback.forLongPress(context);
     return showGeneralDialog<T>(
       context: context,

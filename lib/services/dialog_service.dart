@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 
 import '../core/helpers/open_notification_settings.dart';
+import '../core/input/keyboard.dart';
 import '../widgets/app_alert_dialog.dart';
 
 enum DialogType { frequencyConfig, addEditGoal }
@@ -81,6 +82,7 @@ class DialogService {
     try {
       final context = _context;
       if (!context.mounted) return;
+      hideSoftKeyboard();
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AppAlertDialog.message(
@@ -123,6 +125,7 @@ class DialogService {
     try {
       final context = _context;
       if (!context.mounted) return false;
+      hideSoftKeyboard();
       final result = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AppAlertDialog.confirm(
@@ -171,6 +174,7 @@ class DialogService {
     try {
       final context = _context;
       if (!context.mounted) return null;
+      hideSoftKeyboard();
       return await showDialog<T>(
         context: context,
         barrierDismissible: barrierDismissible,
@@ -204,6 +208,7 @@ class DialogService {
 
     isPopupOpen = true;
     try {
+      hideSoftKeyboard();
       return await showDialog<DialogResponse>(
         context: context,
         barrierDismissible: barrierDismissible,
@@ -234,6 +239,7 @@ class DialogService {
       throw Exception('Sheet builder for variant $variant is not registered.');
     }
 
+    hideSoftKeyboard();
     return await showModalBottomSheet<SheetResponse>(
       context: context,
       isScrollControlled: isScrollControlled,
@@ -251,6 +257,7 @@ class DialogService {
 
   /// Shows a short toast above dialogs and sheets.
   void showToast(String message) {
+    hideSoftKeyboard();
     hideToast();
     final overlay = navigatorKey.currentState?.overlay;
     if (overlay == null) return;

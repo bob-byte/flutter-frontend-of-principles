@@ -5,6 +5,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/core/config/app_config.dart';
 import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/road_guide/main_shell_controller.dart';
+import 'package:principles_app/core/road_guide/main_shell_metrics.dart';
 import 'package:principles_app/core/road_guide/road_guide_controller.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/theme/theme_controller.dart';
@@ -17,7 +18,7 @@ import 'package:principles_app/views/helper_view.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _buildApp() {
+Widget _buildApp({required bool android}) {
   final apiClient = ApiClient(SecureStore());
   return LiquidGlassWidgets.wrap(
     brightnessResolver: Theme.maybeBrightnessOf,
@@ -43,6 +44,9 @@ Widget _buildApp() {
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        theme: ThemeData(
+          platform: android ? TargetPlatform.android : TargetPlatform.iOS,
+        ),
         home: Builder(
           builder: (context) {
             final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -51,7 +55,9 @@ Widget _buildApp() {
               extendBody: true,
               body: HelperView(
                 embedded: true,
-                bottomBarClearance: keyboardOpen ? 0 : 80,
+                bottomBarClearance: keyboardOpen
+                    ? 0
+                    : mainShellEmbeddedBottomClearance(context),
               ),
             );
           },
@@ -75,6 +81,44 @@ void main() {
   });
 
   testWidgets(
+    'embedded chat input clears the shell tab bar when the keyboard is closed',
+    (tester) async {
+      const dpr = 3.0;
+      const systemBottom = 48.0;
+      tester.view.devicePixelRatio = dpr;
+      tester.view.physicalSize = const Size(390, 844) * dpr;
+      tester.view.padding = FakeViewPadding(
+        top: 24 * dpr,
+        bottom: systemBottom * dpr,
+      );
+      tester.view.viewPadding = FakeViewPadding(
+        top: 24 * dpr,
+        bottom: systemBottom * dpr,
+      );
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
+
+      await tester.pumpWidget(_buildApp(android: true));
+      await tester.pump();
+
+      final field = find.byType(GlassTextField);
+      expect(field, findsOneWidget);
+
+      final helperBottom = tester.getRect(find.byType(HelperView)).bottom;
+      final fieldBottom = tester.getRect(field).bottom;
+      // Pill top sits at systemBottom + verticalPad + pillHeight from the
+      // screen bottom; input must stay above that.
+      const pillTopFromBottom =
+          systemBottom +
+          kMainShellTabBarVerticalPadding +
+          kMainShellTabPillHeight;
+      expect(helperBottom - fieldBottom, greaterThan(pillTopFromBottom));
+    },
+  );
+
+  testWidgets(
     'embedded chat input drops tab-bar clearance when the keyboard is open',
     (tester) async {
       const dpr = 3.0;
@@ -94,7 +138,7 @@ void main() {
       addTearDown(tester.view.resetViewPadding);
       addTearDown(tester.view.resetViewInsets);
 
-      await tester.pumpWidget(_buildApp());
+      await tester.pumpWidget(_buildApp(android: true));
       await tester.pump();
 
       final field = find.byType(GlassTextField);

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/input/keyboard.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../models/habit_reminder.dart';
 import '../../services/dialog_service.dart';
@@ -82,6 +83,7 @@ class _ReminderBottomSheetState extends State<ReminderBottomSheet> {
   }
 
   Future<void> _selectTime() async {
+    hideSoftKeyboard();
     final palette = context.read<ThemeController>().palette;
     await showModalBottomSheet(
       context: context,
