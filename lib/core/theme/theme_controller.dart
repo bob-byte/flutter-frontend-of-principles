@@ -52,9 +52,11 @@ class ThemeController extends ChangeNotifier {
       }
 
       final legacy = await _settingsService?.getThemeMode();
+      // Pre-palette builds only stored light/dark. Map both to orange so the
+      // product default (dark orange + primary orange icon) is preserved.
       final migrated = switch (legacy) {
-        'light' => TasksUiTheme.lightBlue,
-        'dark' => TasksUiTheme.darkBlue,
+        'light' => TasksUiTheme.lightOrange,
+        'dark' => TasksUiTheme.darkOrange,
         _ => TasksUiTheme.darkOrange,
       };
       _setTheme(migrated, persist: true);

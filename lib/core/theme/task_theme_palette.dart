@@ -47,7 +47,8 @@ enum TasksUiTheme {
     'darkBlue' => darkBlue,
     'lightOrange' => lightOrange,
     'lightBlue' => lightBlue,
-    _ => darkOrange,
+    'light' => lightOrange, // legacy theme_mode
+    _ => darkOrange, // darkOrange, 'dark', null, empty, unknown
   };
 
   String label(TaskStrings strings) => switch (this) {
