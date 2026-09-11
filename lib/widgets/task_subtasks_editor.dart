@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme/task_theme_palette.dart';
 import '../l10n/task_strings.dart';
@@ -25,9 +26,8 @@ class TaskSubtasksEditor extends StatefulWidget {
 class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
   final _controllers = <String, TextEditingController>{};
   final _focusNodes = <String, FocusNode>{};
-  // Don't steal focus from title/description/subtask fields (keeps IME up).
-  final _addButtonFocus = FocusNode(canRequestFocus: false);
   Set<String> _knownIds = {};
+  String? _autofocusId;
 
   static const _borderless = InputDecoration(
     border: InputBorder.none,
@@ -53,12 +53,8 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
     _syncControllers(widget.vm.subtasks);
     for (final item in widget.vm.subtasks) {
       if (_knownIds.contains(item.id) || item.title.isNotEmpty) continue;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final node = _focusNodes[item.id];
-        if (node == null || !node.canRequestFocus) return;
-        node.requestFocus();
-      });
+      _autofocusId = item.id;
+      _queueKeyboardFocus(item.id);
     }
     _knownIds = {for (final item in widget.vm.subtasks) item.id};
   }
@@ -84,9 +80,30 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
     }
   }
 
+  void _queueKeyboardFocus(String id) {
+    void focus() {
+      if (!mounted) return;
+      final node = _focusNodes[id];
+      if (node == null || !node.canRequestFocus) return;
+      node.requestFocus();
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+    }
+
+    // Run before and after the frame so iOS never sees a focus gap long
+    // enough to animate the keyboard away.
+    focus();
+    WidgetsBinding.instance.addPostFrameCallback((_) => focus());
+  }
+
+  void _onAddSubtask() {
+    if (widget.vm.isSaving) return;
+    // Show IME immediately in case focus briefly drops on the tap itself.
+    SystemChannels.textInput.invokeMethod('TextInput.show');
+    widget.vm.addSubtask();
+  }
+
   @override
   void dispose() {
-    _addButtonFocus.dispose();
     for (final controller in _controllers.values) {
       controller.dispose();
     }
@@ -111,6 +128,7 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
             key: ValueKey(items[i].id),
             item: items[i],
             isLast: i == items.length - 1,
+            autofocus: items[i].id == _autofocusId,
             controller: _controllers[items[i].id]!,
             focusNode: _focusNodes[items[i].id]!,
             palette: palette,
@@ -121,25 +139,35 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
             onSubmitted: () {
               if (i == items.length - 1 &&
                   _controllers[items[i].id]!.text.trim().isNotEmpty) {
-                vm.addSubtask();
+                _onAddSubtask();
               }
             },
             onRemove: () => vm.removeSubtask(items[i].id),
           ),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            focusNode: _addButtonFocus,
-            onPressed: vm.isSaving ? null : vm.addSubtask,
-            style: TextButton.styleFrom(
-              foregroundColor: palette.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              minimumSize: const Size(0, 36),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
+          // No Material/Focus widget: TextButton steals focus and hides IME.
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: vm.isSaving ? null : _onAddSubtask,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 18, color: palette.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    strings.taskAddSubtask,
+                    style: TextStyle(
+                      color: palette.primary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(strings.taskAddSubtask),
           ),
         ),
       ],
@@ -152,6 +180,7 @@ class _SubtaskRow extends StatelessWidget {
     super.key,
     required this.item,
     required this.isLast,
+    required this.autofocus,
     required this.controller,
     required this.focusNode,
     required this.palette,
@@ -165,6 +194,7 @@ class _SubtaskRow extends StatelessWidget {
 
   final TaskSubtask item;
   final bool isLast;
+  final bool autofocus;
   final TextEditingController controller;
   final FocusNode focusNode;
   final TasksUiPalette palette;
@@ -198,6 +228,8 @@ class _SubtaskRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              autofocus: autofocus,
+              onTapOutside: (_) {},
               textCapitalization: TextCapitalization.sentences,
               textInputAction: isLast
                   ? TextInputAction.done
@@ -219,14 +251,16 @@ class _SubtaskRow extends StatelessWidget {
               onSubmitted: (_) => onSubmitted(),
             ),
           ),
-          IconButton(
-            tooltip: strings.taskRemoveSubtask,
-            onPressed: onRemove,
-            visualDensity: VisualDensity.compact,
-            icon: Icon(
-              Icons.close_rounded,
-              size: 18,
-              color: palette.textMuted.withValues(alpha: 0.8),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onRemove,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: palette.textMuted.withValues(alpha: 0.8),
+              ),
             ),
           ),
         ],

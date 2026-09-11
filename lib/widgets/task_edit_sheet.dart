@@ -30,9 +30,10 @@ Future<Task?> showTaskEditSheet(
   final tasksVm = context.read<TasksViewModel>();
   final editVm = context.read<EditTaskViewModel>();
   final seed = taskId == null ? null : tasksVm.taskById(taskId);
+  final isEdit = taskId != null;
 
   // Create opens immediately; edit uses in-memory seed then refreshes in bg.
-  if (taskId == null) {
+  if (!isEdit) {
     editVm.prepareCreate(aiDraft: aiDraft);
     unawaited(editVm.ensureThemesLoaded());
   } else {
@@ -41,7 +42,7 @@ Future<Task?> showTaskEditSheet(
   if (!context.mounted) return null;
 
   // Для нового завдання без дати від AI — підставити дату з режиму списку.
-  if (taskId == null && (aiDraft == null || !aiDraft.hasDueDate)) {
+  if (!isEdit && (aiDraft == null || !aiDraft.hasDueDate)) {
     switch (tasksVm.listMode) {
       case TasksListMode.inbox:
         editVm.setHasDueDate(false);
@@ -58,23 +59,108 @@ Future<Task?> showTaskEditSheet(
     }
   }
 
-  return showExpandableModalBottomSheet<Task>(
-    context: context,
-    initialChildSize: 0.72,
-    minChildSize: 0.4,
-    maxChildSize: 0.94,
-    builder: (sheetContext, scrollController) => Theme(
-      data: tasksVm.themeData,
-      child: TaskEditSheet(taskId: taskId, scrollController: scrollController),
-    ),
-  );
+  if (isEdit) {
+    editVm.onAutosaved = (task) {
+      unawaited(tasksVm.upsertTask(task));
+    };
+  }
+
+  // Content-sized composer (pixel height), not screen-fraction detents.
+  Task? result;
+  try {
+    result = await showModalBottomSheet<Task>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return _TaskEditSheetHost(taskId: taskId, theme: tasksVm.themeData);
+      },
+    );
+  } finally {
+    if (isEdit) {
+      final flushed = await editVm.flushAutosave();
+      result ??= flushed ?? editVm.lastAutosaved;
+      editVm.onAutosaved = null;
+      editVm.liveSave = false;
+    }
+  }
+
+  return result;
+}
+
+/// Holds keyboard inset across brief focus transfers (e.g. add subtask) so
+/// the sheet does not jump when iOS momentarily reports viewInsets = 0.
+class _TaskEditSheetHost extends StatefulWidget {
+  const _TaskEditSheetHost({required this.taskId, required this.theme});
+
+  final String? taskId;
+  final ThemeData theme;
+
+  @override
+  State<_TaskEditSheetHost> createState() => _TaskEditSheetHostState();
+}
+
+class _TaskEditSheetHostState extends State<_TaskEditSheetHost> {
+  double _heldInset = 0;
+  Timer? _clearInsetTimer;
+
+  bool _focusIsInsideHost() {
+    final primary = FocusManager.instance.primaryFocus;
+    final ctx = primary?.context;
+    if (ctx == null) return false;
+    return ctx.findAncestorStateOfType<_TaskEditSheetHostState>() != null;
+  }
+
+  void _scheduleClearHeldInset() {
+    _clearInsetTimer?.cancel();
+    _clearInsetTimer = Timer(const Duration(milliseconds: 320), () {
+      if (!mounted) return;
+      if (MediaQuery.viewInsetsOf(context).bottom > 0 || _focusIsInsideHost()) {
+        return;
+      }
+      setState(() => _heldInset = 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _clearInsetTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final inset = media.viewInsets.bottom;
+    if (inset > 0) {
+      _heldInset = inset;
+      _clearInsetTimer?.cancel();
+      _clearInsetTimer = null;
+    } else if (!_focusIsInsideHost()) {
+      _scheduleClearHeldInset();
+    }
+
+    // Keep last keyboard height through a short focus handoff gap.
+    final bottomInset = inset > 0 ? inset : _heldInset;
+    final maxHeight = media.size.height - bottomInset - media.padding.top - 24;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Theme(
+        data: widget.theme,
+        child: TaskEditSheet(taskId: widget.taskId, maxHeight: maxHeight),
+      ),
+    );
+  }
 }
 
 class TaskEditSheet extends StatefulWidget {
-  const TaskEditSheet({super.key, this.taskId, required this.scrollController});
+  const TaskEditSheet({super.key, this.taskId, required this.maxHeight});
 
   final String? taskId;
-  final ScrollController scrollController;
+
+  /// Maximum sheet height in logical pixels (above the keyboard).
+  final double maxHeight;
 
   @override
   State<TaskEditSheet> createState() => _TaskEditSheetState();
@@ -155,6 +241,8 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
   }
 
   Future<void> _save(EditTaskViewModel vm) async {
+    // Create only — edits persist live; use [_closeEdit] to dismiss.
+    if (vm.isEditing) return;
     vm.setTitle(_titleController.text);
     vm.setDescription(_descriptionController.text);
     if (vm.title.trim().isEmpty) {
@@ -164,6 +252,14 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     }
     final saved = await vm.save();
     if (saved != null && mounted) Navigator.of(context).pop(saved);
+  }
+
+  Future<void> _closeEdit(EditTaskViewModel vm) async {
+    vm.setTitle(_titleController.text);
+    vm.setDescription(_descriptionController.text);
+    final saved = await vm.flushAutosave();
+    if (!mounted) return;
+    Navigator.of(context).pop(saved ?? vm.lastAutosaved);
   }
 
   void _onTitleChanged(EditTaskViewModel vm, String value) {
@@ -217,24 +313,29 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
 
         return _SheetSurface(
           palette: palette,
-          child: Column(
-            children: [
-              BottomSheetDragHandle(
-                color: palette.textMuted.withValues(alpha: 0.3),
-                width: 40,
-                topPadding: 8,
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          maxHeight: widget.maxHeight,
+          // Taps on chips / add-subtask must not count as "outside" text fields.
+          child: TextFieldTapRegion(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BottomSheetDragHandle(
+                  color: palette.textMuted.withValues(alpha: 0.3),
+                  width: 40,
+                  topPadding: 8,
+                ),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: ListView(
+                    shrinkWrap: true,
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                     children: [
                       TextField(
                         controller: _titleController,
                         focusNode: _titleFocus,
                         autofocus: widget.taskId == null,
+                        onTapOutside: (_) {},
                         keyboardType: TextInputType.text,
                         textCapitalization: TextCapitalization.sentences,
                         enableSuggestions: true,
@@ -297,6 +398,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         controller: _descriptionController,
                         minLines: 1,
                         maxLines: 6,
+                        onTapOutside: (_) {},
                         keyboardType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
                         enableSuggestions: true,
@@ -314,7 +416,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         ),
                         onChanged: vm.setDescription,
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 12),
                       TaskSubtasksEditor(
                         vm: vm,
                         palette: palette,
@@ -339,60 +441,73 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                     ],
                   ),
                 ),
-              ),
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: palette.cardBorder.withValues(alpha: 0.35),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _ActionChip(
-                            palette: palette,
-                            icon: Icons.calendar_today_outlined,
-                            label: _dateLabel(strings, vm),
-                            active: vm.hasDueDate,
-                            onTap: () => _pickDate(vm),
-                            onLongPress: () {
-                              vm.setHasDueDate(!vm.hasDueDate);
-                            },
-                          ),
-                          _PriorityChip(
-                            palette: palette,
-                            priority: vm.priority,
-                            strings: strings,
-                            onSelected: vm.setPriority,
-                          ),
-                          _ActionChip(
-                            palette: palette,
-                            icon: Icons.label_outline,
-                            label: vm.resolvedTheme() ?? strings.taskNoTheme,
-                            active: vm.themeMode != ThemePickerMode.none,
-                            onTap: () => setState(
-                              () => _optionsExpanded = !_optionsExpanded,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _SubmitButton(
-                      palette: palette,
-                      isSaving: vm.isSaving,
-                      onPressed: vm.isSaving ? null : () => _save(vm),
-                    ),
-                  ],
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: palette.cardBorder.withValues(alpha: 0.35),
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _ActionChip(
+                              palette: palette,
+                              icon: Icons.calendar_today_outlined,
+                              label: _dateLabel(strings, vm),
+                              active: vm.hasDueDate,
+                              onTap: () => _pickDate(vm),
+                              onLongPress: () {
+                                vm.setHasDueDate(!vm.hasDueDate);
+                              },
+                            ),
+                            _PriorityChip(
+                              palette: palette,
+                              priority: vm.priority,
+                              strings: strings,
+                              onSelected: vm.setPriority,
+                            ),
+                            _ActionChip(
+                              palette: palette,
+                              icon: Icons.label_outline,
+                              label: vm.resolvedTheme() ?? strings.taskNoTheme,
+                              active: vm.themeMode != ThemePickerMode.none,
+                              onTap: () => setState(
+                                () => _optionsExpanded = !_optionsExpanded,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (widget.taskId == null) ...[
+                        const SizedBox(width: 12),
+                        _SubmitButton(
+                          palette: palette,
+                          icon: Icons.arrow_upward_rounded,
+                          isSaving: vm.isSaving,
+                          tooltip: strings.taskAdd,
+                          onPressed: vm.isSaving ? null : () => _save(vm),
+                        ),
+                      ] else ...[
+                        const SizedBox(width: 12),
+                        _SubmitButton(
+                          palette: palette,
+                          icon: Icons.check_rounded,
+                          isSaving: false,
+                          tooltip: strings.taskDone,
+                          onPressed: () => _closeEdit(vm),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -401,18 +516,30 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
 }
 
 class _SheetSurface extends StatelessWidget {
-  const _SheetSurface({required this.palette, required this.child});
+  const _SheetSurface({
+    required this.palette,
+    required this.child,
+    this.maxHeight,
+  });
 
   final TasksUiPalette palette;
   final Widget child;
+  final double? maxHeight;
 
   @override
   Widget build(BuildContext context) {
-    return TasksGlassSheet(
+    final sheet = TasksGlassSheet(
       palette: palette,
       blur: 14,
-      fillHeight: true,
+      // Content defines height; outer ConstrainedBox caps in pixels.
+      fillHeight: false,
+      maxHeightFactor: 1,
       child: child,
+    );
+    if (maxHeight == null) return sheet;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight!),
+      child: sheet,
     );
   }
 }
@@ -441,6 +568,7 @@ class _ActionChip extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        canRequestFocus: false,
         onTap: onTap,
         onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(8),
@@ -607,17 +735,21 @@ class _PriorityChip extends StatelessWidget {
 class _SubmitButton extends StatelessWidget {
   const _SubmitButton({
     required this.palette,
+    required this.icon,
     required this.isSaving,
     required this.onPressed,
+    this.tooltip,
   });
 
   final TasksUiPalette palette;
+  final IconData icon;
   final bool isSaving;
   final VoidCallback? onPressed;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return TasksGlassPanel(
+    final button = TasksGlassPanel(
       palette: palette,
       borderRadius: BorderRadius.circular(24),
       blur: 0,
@@ -625,6 +757,7 @@ class _SubmitButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          canRequestFocus: false,
           onTap: onPressed,
           customBorder: const CircleBorder(),
           child: SizedBox(
@@ -638,14 +771,12 @@ class _SubmitButton extends StatelessWidget {
                       color: palette.onPrimary,
                     ),
                   )
-                : Icon(
-                    Icons.arrow_upward_rounded,
-                    color: palette.onPrimary,
-                    size: 24,
-                  ),
+                : Icon(icon, color: palette.onPrimary, size: 24),
           ),
         ),
       ),
     );
+    if (tooltip == null || tooltip!.isEmpty) return button;
+    return Tooltip(message: tooltip!, child: button);
   }
 }

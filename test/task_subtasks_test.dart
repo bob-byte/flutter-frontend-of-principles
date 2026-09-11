@@ -11,6 +11,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/l10n/task_strings.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/models/task_item_dto.dart';
+import 'package:principles_app/models/task_priority.dart';
 import 'package:principles_app/models/task_repeat_config.dart';
 import 'package:principles_app/models/task_subtask.dart';
 import 'package:principles_app/services/task_service.dart';
@@ -268,6 +269,58 @@ void main() {
       expect(saved, isNotNull);
       expect(saved!.subtasks, hasLength(1));
       expect(saved.subtasks.single.title, 'Milk');
+    });
+  });
+
+  group('EditTaskViewModel live save', () {
+    test('edit session persists changes without explicit save', () async {
+      final service = _offlineService();
+      final created = await service.saveTask(
+        Task(
+          id: '0',
+          title: 'Original',
+          description: 'Body',
+          createdAt: DateTime(2026, 1, 1),
+          dueDate: dateOnly(DateTime.now()),
+        ),
+        isNew: true,
+      );
+
+      final vm = EditTaskViewModel(service);
+      final live = <Task>[];
+      await vm.load(taskId: created.id, seed: created);
+      vm.onAutosaved = live.add;
+
+      expect(vm.liveSave, isTrue);
+      vm.setTitle('Renamed');
+      vm.setDescription('Updated');
+      vm.setPriority(TaskPriority.high);
+
+      final flushed = await vm.flushAutosave();
+      expect(flushed?.title, 'Renamed');
+      expect(flushed?.description, 'Updated');
+      expect(flushed?.priority, TaskPriority.high);
+      expect(live, isNotEmpty);
+      expect(live.last.title, 'Renamed');
+
+      final fromDb = await service.getTask(created.id);
+      expect(fromDb?.title, 'Renamed');
+      expect(fromDb?.description, 'Updated');
+      expect(fromDb?.priority, TaskPriority.high);
+    });
+
+    test('create mode does not live-save', () async {
+      final vm = EditTaskViewModel(_offlineService());
+      final live = <Task>[];
+      vm.prepareCreate();
+      vm.onAutosaved = live.add;
+      vm.setTitle('Draft');
+      vm.setPriority(TaskPriority.medium);
+
+      final flushed = await vm.flushAutosave();
+      expect(vm.liveSave, isFalse);
+      expect(flushed, isNull);
+      expect(live, isEmpty);
     });
   });
 

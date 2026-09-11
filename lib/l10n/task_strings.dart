@@ -79,6 +79,7 @@ class TaskStrings {
     required this.taskAddSubtask,
     required this.taskSubtaskHint,
     required this.taskRemoveSubtask,
+    required this.taskDone,
   });
 
   final String tasksTitle;
@@ -158,6 +159,7 @@ class TaskStrings {
   final String taskAddSubtask;
   final String taskSubtaskHint;
   final String taskRemoveSubtask;
+  final String taskDone;
 
   String taskProgressCount(int completed, int total) {
     if (identical(this, uk)) {
@@ -266,6 +268,7 @@ class TaskStrings {
     taskAddSubtask: 'Add sub-task',
     taskSubtaskHint: 'Sub-task',
     taskRemoveSubtask: 'Remove',
+    taskDone: 'Done',
   );
 
   static final uk = TaskStrings._(
@@ -347,5 +350,6 @@ class TaskStrings {
     taskAddSubtask: 'Додати підзавдання',
     taskSubtaskHint: 'Підзавдання',
     taskRemoveSubtask: 'Прибрати',
+    taskDone: 'Готово',
   );
 }

@@ -25,6 +25,8 @@ class EditTaskViewModel extends ChangeNotifier {
   final ReminderService? _reminderService;
   final DialogService _dialogService = DialogService();
 
+  static const _textAutosaveDelay = Duration(milliseconds: 450);
+
   String? editingId;
   String title = '';
   String description = '';
@@ -45,6 +47,20 @@ class EditTaskViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool isSaving = false;
   Map<String, int> themeColors = {};
+
+  /// When true, discrete/text edits persist immediately (TickTick-style edit).
+  bool liveSave = false;
+
+  /// Last task written by [autosave] / [flushAutosave] during an edit session.
+  Task? lastAutosaved;
+
+  /// Invoked after a successful live save so the tasks list can upsert.
+  void Function(Task task)? onAutosaved;
+
+  Timer? _autosaveTimer;
+  bool _promptNotificationsOnNextSave = false;
+  String? _lastSavedSignature;
+  Future<Task?> _autosaveChain = Future<Task?>.value();
 
   bool get isEditing => editingId != null;
 
@@ -72,6 +88,7 @@ class EditTaskViewModel extends ChangeNotifier {
       return;
     }
 
+    _stopLiveSave();
     isLoading = true;
     notifyListeners();
     try {
@@ -79,6 +96,7 @@ class EditTaskViewModel extends ChangeNotifier {
       if (seed != null) {
         themeColors = Map<String, int>.from(themeColors);
         _applyTask(seed);
+        _beginLiveSave(seed);
         isLoading = false;
         notifyListeners();
         unawaited(_refreshEditFromStorage(taskId, seed));
@@ -93,6 +111,7 @@ class EditTaskViewModel extends ChangeNotifier {
         return;
       }
       _applyTask(task);
+      _beginLiveSave(task);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -101,6 +120,7 @@ class EditTaskViewModel extends ChangeNotifier {
 
   /// Sync create form so the sheet can open without awaiting DB/themes.
   void prepareCreate({AiTaskDraft? aiDraft}) {
+    _stopLiveSave();
     _clearForm();
     editingId = null;
     hasDueDate = true;
@@ -110,6 +130,107 @@ class EditTaskViewModel extends ChangeNotifier {
     }
     isLoading = false;
     notifyListeners();
+  }
+
+  void _beginLiveSave(Task baseline) {
+    _autosaveTimer?.cancel();
+    _autosaveTimer = null;
+    _autosaveChain = Future<Task?>.value();
+    liveSave = true;
+    lastAutosaved = baseline;
+    _lastSavedSignature = _formSignature();
+    _promptNotificationsOnNextSave = false;
+  }
+
+  void _stopLiveSave() {
+    _autosaveTimer?.cancel();
+    _autosaveTimer = null;
+    _autosaveChain = Future<Task?>.value();
+    liveSave = false;
+    lastAutosaved = null;
+    _lastSavedSignature = null;
+    _promptNotificationsOnNextSave = false;
+    onAutosaved = null;
+  }
+
+  void _markDirty({
+    bool immediate = false,
+    bool promptForNotifications = false,
+  }) {
+    if (!liveSave || !isEditing) return;
+    if (promptForNotifications) _promptNotificationsOnNextSave = true;
+    _autosaveTimer?.cancel();
+    if (immediate) {
+      _autosaveTimer = null;
+      _enqueueAutosave();
+      return;
+    }
+    _autosaveTimer = Timer(_textAutosaveDelay, () {
+      _autosaveTimer = null;
+      _enqueueAutosave();
+    });
+  }
+
+  void _enqueueAutosave() {
+    _autosaveChain = _autosaveChain
+        .catchError((_) => lastAutosaved)
+        .then((_) => autosave());
+  }
+
+  /// Persists the current edit form if live-save is active.
+  Future<Task?> autosave() async {
+    if (!liveSave || !isEditing) return lastAutosaved;
+    if (title.trim().isEmpty) return lastAutosaved;
+    if (_lastSavedSignature == _formSignature()) return lastAutosaved;
+
+    final prompt = _promptNotificationsOnNextSave;
+    _promptNotificationsOnNextSave = false;
+    final saved = await save(promptForNotifications: prompt);
+    if (saved != null) {
+      lastAutosaved = saved;
+      _lastSavedSignature = _formSignature();
+      onAutosaved?.call(saved);
+    }
+    return saved ?? lastAutosaved;
+  }
+
+  /// Cancels the debounce and writes any pending edit immediately.
+  Future<Task?> flushAutosave() async {
+    _autosaveTimer?.cancel();
+    _autosaveTimer = null;
+    _enqueueAutosave();
+    return _autosaveChain;
+  }
+
+  String _formSignature() {
+    final themeName = resolvedTheme() ?? '';
+    final themeColorValue = resolvedThemeColor(
+      themeName.isEmpty ? null : themeName,
+    );
+    final due = hasDueDate ? dueDate?.toIso8601String() ?? '' : '';
+    final end = hasDueDate ? endDate?.toIso8601String() ?? '' : '';
+    final reminderSig = hasDueDate
+        ? reminders.map((r) => r.offsetMinutes).join(',')
+        : '';
+    final subtaskSig = subtasks
+        .map((s) => '${s.id}:${s.title}:${s.isDone ? 1 : 0}')
+        .join('|');
+    return [
+      title.trim(),
+      description.trim(),
+      priority?.name ?? '',
+      themeMode.name,
+      themeName,
+      themeColorValue?.toARGB32().toString() ?? '',
+      hasDueDate ? '1' : '0',
+      due,
+      end,
+      allDay ? '1' : '0',
+      reminderSig,
+      hasDueDate && constantReminder ? '1' : '0',
+      hasDueDate ? repeat.toJson().toString() : '',
+      subtaskSig,
+    ].join('\u0001');
   }
 
   Future<void> ensureThemesLoaded() async {
@@ -133,6 +254,10 @@ class EditTaskViewModel extends ChangeNotifier {
         return;
       }
       _applyTask(task);
+      if (liveSave) {
+        lastAutosaved = task;
+        _lastSavedSignature = _formSignature();
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('Task edit refresh failed: $e');
@@ -190,6 +315,7 @@ class EditTaskViewModel extends ChangeNotifier {
   void applyAiDraft(AiTaskDraft aiDraft) {
     _applyAiDraft(aiDraft, overwriteDueDateIfMissing: false);
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void _applyAiDraft(
@@ -232,10 +358,12 @@ class EditTaskViewModel extends ChangeNotifier {
   /// Text fields keep their own controllers — avoid sheet rebuilds while typing.
   void setTitle(String value) {
     title = value;
+    _markDirty();
   }
 
   void setDescription(String value) {
     description = value;
+    _markDirty();
   }
 
   String addSubtask() {
@@ -246,6 +374,7 @@ class EditTaskViewModel extends ChangeNotifier {
     );
     subtasks = [...subtasks, item];
     notifyListeners();
+    _markDirty(immediate: true);
     return item.id;
   }
 
@@ -257,6 +386,7 @@ class EditTaskViewModel extends ChangeNotifier {
     if (next.length == subtasks.length) return;
     subtasks = next;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void setSubtaskTitle(String id, String title) {
@@ -264,6 +394,7 @@ class EditTaskViewModel extends ChangeNotifier {
       for (final item in subtasks)
         if (item.id == id) item.copyWith(title: title) else item,
     ];
+    _markDirty();
   }
 
   void toggleSubtaskDone(String id) {
@@ -272,6 +403,7 @@ class EditTaskViewModel extends ChangeNotifier {
         if (item.id == id) item.copyWith(isDone: !item.isDone) else item,
     ];
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   List<TaskSubtask> _preparedSubtasks() => TaskSubtask.sanitize(subtasks);
@@ -287,26 +419,31 @@ class EditTaskViewModel extends ChangeNotifier {
   void setPriority(TaskPriority? value) {
     priority = value;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void setThemeMode(ThemePickerMode mode) {
     themeMode = mode;
     if (mode == ThemePickerMode.none) selectedTheme = null;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void setSelectedTheme(String? value) {
     selectedTheme = value;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void setNewThemeName(String value) {
     newThemeName = value;
+    _markDirty();
   }
 
   void setThemeColor(Color value) {
     themeColor = value;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void setHasDueDate(bool value) {
@@ -320,12 +457,14 @@ class EditTaskViewModel extends ChangeNotifier {
       repeat = const TaskRepeatConfig();
     }
     notifyListeners();
+    _markDirty(immediate: true, promptForNotifications: value);
   }
 
   void setDueDate(DateTime value) {
     dueDate = value;
     hasDueDate = true;
     notifyListeners();
+    _markDirty(immediate: true);
   }
 
   void applySchedule(ScheduleDraft draft) {
@@ -349,6 +488,11 @@ class EditTaskViewModel extends ChangeNotifier {
       repeat = draft.repeat;
     }
     notifyListeners();
+    _markDirty(
+      immediate: true,
+      promptForNotifications:
+          hasDueDate && (reminders.isNotEmpty || constantReminder),
+    );
   }
 
   ScheduleDraft toScheduleDraft() {
@@ -383,13 +527,13 @@ class EditTaskViewModel extends ChangeNotifier {
         : themeColor;
   }
 
-  Future<Task?> save() async {
+  Future<Task?> save({bool promptForNotifications = true}) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) return null;
 
     final wantsNotifications =
         hasDueDate && (reminders.isNotEmpty || constantReminder);
-    if (wantsNotifications) {
+    if (promptForNotifications && wantsNotifications) {
       final allowed =
           await _reminderService?.requestAccessToSendNotifications() ?? true;
       if (!allowed) {
@@ -457,6 +601,10 @@ class EditTaskViewModel extends ChangeNotifier {
               debugPrint('Task notification sync failed: $e');
             }),
       );
+      if (isEditing) {
+        lastAutosaved = saved;
+        _lastSavedSignature = _formSignature();
+      }
       return saved;
     } finally {
       isSaving = false;
