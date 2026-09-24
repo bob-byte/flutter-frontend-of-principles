@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 
 import '../app/post_auth_navigation.dart';
 import '../core/launch_data_loader.dart';
+import '../core/network/network_service.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/startup_viewmodel.dart';
-import '../widgets/app_loading_indicator.dart';
 import '../widgets/themed_lottie.dart';
 import '../widgets/ui_theme_switcher.dart';
 import 'app_benefits_view.dart';
@@ -39,10 +39,19 @@ class _StartupViewState extends State<StartupView> {
         } on ProviderNotFoundException {
           // Widget tests may mount StartupView without the full graph.
         }
+        _markPostSplashUiReady();
       });
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Keep auth/session work off the UI isolate until epic_start ends so
+      // MainShell cannot start SQLite hydrate under the video.
+      try {
+        await context.read<NetworkService>().waitUntilSplashFinished();
+      } on ProviderNotFoundException {
+        // Widget tests may mount StartupView without NetworkService.
+      }
+      if (!mounted) return;
       final vm = context.read<StartupViewModel>();
       try {
         final nextRoute = await vm.initialize();
@@ -62,13 +71,23 @@ class _StartupViewState extends State<StartupView> {
             });
             break;
         }
+        _markPostSplashUiReady();
       } catch (e) {
         if (!mounted) return;
         setState(() {
           _isChecking = false; // Show the view even if initialization fails
         });
+        _markPostSplashUiReady();
       }
     });
+  }
+
+  void _markPostSplashUiReady() {
+    try {
+      context.read<NetworkService>().markPostSplashUiReady();
+    } on ProviderNotFoundException {
+      // Widget tests may mount StartupView without NetworkService.
+    }
   }
 
   void _resetLaunchDataForPostAuth() {
@@ -111,10 +130,12 @@ class _StartupViewState extends State<StartupView> {
     final palette = context.watch<ThemeController>().palette;
 
     if (_isChecking) {
-      return Scaffold(
-        backgroundColor: palette.pageBg,
-        body: const AppLoadingIndicator(),
-      );
+      // Solid splash color only — never AppLoadingIndicator after epic_start.
+      final splashBg = context
+          .watch<ThemeController>()
+          .uiTheme
+          .splashBackground;
+      return Scaffold(backgroundColor: splashBg, body: const SizedBox.expand());
     }
 
     final l10n = AppLocalizations.of(context)!;

@@ -56,6 +56,9 @@ class SyncOrchestrator {
         return _result(SyncRunStatus.skippedNoAuth);
       }
 
+      // Post-splash ensureLoaded may race NetworkService.start() (defaults
+      // to offline until the first connectivity check completes).
+      await _network.ensureStarted();
       if (!_network.isConnected) {
         return _result(SyncRunStatus.skippedNoInternet);
       }

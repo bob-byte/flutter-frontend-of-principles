@@ -29,18 +29,52 @@ class NetworkService extends ChangeNotifier {
   Future<SyncRunResult> Function()? onConnectivityRestored;
   Future<void> Function()? onAuthenticationFailure;
 
-  bool _started = false;
   bool _wasConnected;
   bool _sawFirstChange = false;
   bool _splashFinished = false;
+  bool _postSplashUiReady = false;
+  Completer<void>? _splashFinishedCompleter;
+  Completer<void>? _postSplashUiReadyCompleter;
+  Future<void>? _startFuture;
   StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   /// True after [onSplashFinished] — update prompts may show.
   bool get isSplashFinished => _splashFinished;
 
-  Future<void> start() async {
-    if (_started) return;
-    _started = true;
+  /// Completes when the epic_start clip ended (or immediately if already).
+  ///
+  /// The solid splash cover may still be up until [markPostSplashUiReady].
+  Future<void> waitUntilSplashFinished() {
+    if (_splashFinished) return Future<void>.value();
+    return (_splashFinishedCompleter ??= Completer<void>()).future;
+  }
+
+  /// Completes when StartupView has navigated / shown its first real screen.
+  Future<void> waitUntilPostSplashUiReady() {
+    if (_postSplashUiReady) return Future<void>.value();
+    return (_postSplashUiReadyCompleter ??= Completer<void>()).future;
+  }
+
+  /// True after [start] has begun (including while the first check is in flight).
+  bool get hasStarted => _startFuture != null;
+
+  /// Begins listening for connectivity. Safe to call more than once.
+  Future<void> start() {
+    final existing = _startFuture;
+    if (existing != null) return existing;
+    return _startFuture = _startBody();
+  }
+
+  /// Waits for the first connectivity check when [start] was already invoked.
+  ///
+  /// Does not call [start] itself — unit tests may set [isConnected] without
+  /// running a platform check.
+  Future<void> ensureStarted() async {
+    final pending = _startFuture;
+    if (pending != null) await pending;
+  }
+
+  Future<void> _startBody() async {
     try {
       final results = await _checkConnectivity();
       isConnected = _hasInternet(results);
@@ -52,11 +86,27 @@ class NetworkService extends ChangeNotifier {
     _subscription = _connectivityChanges.listen(_onChanged);
   }
 
-  /// Call when the launch video overlay is gone.
+  /// Call when the launch video has ended (hydrate may start; cover may remain).
   void onSplashFinished() {
     if (_splashFinished) return;
     _splashFinished = true;
+    final waiting = _splashFinishedCompleter;
+    _splashFinishedCompleter = null;
+    if (waiting != null && !waiting.isCompleted) {
+      waiting.complete();
+    }
     notifyListeners();
+  }
+
+  /// Call when the first post-splash screen is ready so the solid cover can lift.
+  void markPostSplashUiReady() {
+    if (_postSplashUiReady) return;
+    _postSplashUiReady = true;
+    final waiting = _postSplashUiReadyCompleter;
+    _postSplashUiReadyCompleter = null;
+    if (waiting != null && !waiting.isCompleted) {
+      waiting.complete();
+    }
   }
 
   Future<void> _onChanged(List<ConnectivityResult> results) async {
@@ -85,13 +135,16 @@ class NetworkService extends ChangeNotifier {
     notifyListeners();
 
     if (nowConnected && !wasConnected) {
-      try {
-        final result = await onConnectivityRestored?.call();
-        if (result?.isAuthenticationFailure == true) {
-          await onAuthenticationFailure?.call();
+      // Avoid SQLite/sync on the UI isolate while epic_start is playing.
+      if (_splashFinished) {
+        try {
+          final result = await onConnectivityRestored?.call();
+          if (result?.isAuthenticationFailure == true) {
+            await onAuthenticationFailure?.call();
+          }
+        } catch (e) {
+          debugPrint('Connectivity restored sync failed: $e');
         }
-      } catch (e) {
-        debugPrint('Connectivity restored sync failed: $e');
       }
     }
 
@@ -101,6 +154,16 @@ class NetworkService extends ChangeNotifier {
   @override
   void dispose() {
     _subscription?.cancel();
+    final splashWaiting = _splashFinishedCompleter;
+    _splashFinishedCompleter = null;
+    if (splashWaiting != null && !splashWaiting.isCompleted) {
+      splashWaiting.complete();
+    }
+    final uiWaiting = _postSplashUiReadyCompleter;
+    _postSplashUiReadyCompleter = null;
+    if (uiWaiting != null && !uiWaiting.isCompleted) {
+      uiWaiting.complete();
+    }
     super.dispose();
   }
 

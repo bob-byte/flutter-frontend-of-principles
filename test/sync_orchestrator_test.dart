@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +80,26 @@ void main() {
     final result = await orchestrator().run(SyncTrigger.resume);
     expect(result.status, SyncRunStatus.skippedNoInternet);
     expect(syncService.calls, 0);
+  });
+
+  test('waits for pending NetworkService.start before offline check', () async {
+    final connectivity = Completer<List<ConnectivityResult>>();
+    network = NetworkService(
+      initialConnected: false,
+      checkConnectivity: () => connectivity.future,
+      connectivityChanges: const Stream.empty(),
+    );
+    unawaited(network.start());
+
+    final syncFuture = orchestrator().run(SyncTrigger.startup);
+    await pumpEventQueue();
+    expect(syncService.calls, 0);
+
+    connectivity.complete([ConnectivityResult.wifi]);
+    final result = await syncFuture;
+    expect(result.status, SyncRunStatus.succeeded);
+    expect(syncService.calls, 1);
+    expect(network.isConnected, isTrue);
   });
 
   test('skips when backend unreachable and stamps failed sync', () async {

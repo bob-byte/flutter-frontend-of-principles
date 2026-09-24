@@ -87,6 +87,9 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
   static const _endSlop = Duration(milliseconds: 50);
   static const _holdAfterEnd = Duration(milliseconds: 300);
   static const _maxFallback = Duration(seconds: 8);
+
+  /// How long a solid splash cover may wait for StartupView to route.
+  static const _postSplashRevealTimeout = Duration(seconds: 3);
   static const _audioChannel = MethodChannel('com.set.principles/splash_audio');
 
   bool get _useNativeSplashAudio =>
@@ -115,9 +118,12 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
     WidgetsBinding.instance.addObserver(this);
     if (_inWidgetTest) {
       _showSplash = false;
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _notifySplashFinished(),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _notifySplashFinished();
+        try {
+          context.read<NetworkService>().markPostSplashUiReady();
+        } catch (_) {}
+      });
       return;
     }
     try {
@@ -127,8 +133,8 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
   }
 
   Future<void> _boot() async {
-    unawaited(context.read<LaunchDataLoader>().ensureLoaded());
-
+    // Do not hydrate/sync here — SQLite and merge on the UI isolate freeze
+    // epic_start. [LaunchDataLoader.ensureLoaded] starts in [_notifySplashFinished].
     final theme = context.read<ThemeController>();
     await theme.restore();
     if (!mounted || _finishing || !_showSplash) return;
@@ -271,17 +277,34 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
     _completionFallback = null;
     _controller?.removeListener(_onVideoUpdate);
     unawaited(_stopSplashAudio());
+    // Drop the player but keep a solid splash-colored cover so StartupView's
+    // auth check never flashes AppLoadingIndicator under the clip.
+    final controller = _controller;
+    _controller = null;
+    controller?.dispose();
     if (mounted) {
-      setState(() => _showSplash = false);
+      setState(() => _initialized = false);
       _notifySplashFinished();
+      unawaited(_revealWhenPostSplashUiReady());
     } else {
       _showSplash = false;
     }
   }
 
+  Future<void> _revealWhenPostSplashUiReady() async {
+    try {
+      await context.read<NetworkService>().waitUntilPostSplashUiReady().timeout(
+        _postSplashRevealTimeout,
+      );
+    } catch (_) {}
+    if (!mounted || !_showSplash) return;
+    setState(() => _showSplash = false);
+  }
+
   void _notifySplashFinished() {
     if (!mounted) return;
     context.read<NetworkService>().onSplashFinished();
+    unawaited(context.read<LaunchDataLoader>().ensureLoaded());
     unawaited(context.read<ThemeController>().applyAppIcon());
   }
 
