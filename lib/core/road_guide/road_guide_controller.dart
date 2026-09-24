@@ -68,7 +68,7 @@ class RoadGuideController extends ChangeNotifier {
     _isActive = true;
     _applyEnsureTab(steps.first);
     notifyListeners();
-    // Allow IndexedStack / demo tiles / tab bar to mount and lay out before
+    // Allow lazy tabs / demo tiles / tab bar to mount and lay out before
     // the overlay measures spotlight holes (auto-start after SyncGate is the
     // heavy case — shell just appeared).
     await Future<void>.delayed(const Duration(milliseconds: 280));

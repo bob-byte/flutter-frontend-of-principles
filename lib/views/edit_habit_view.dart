@@ -441,10 +441,6 @@ class _EditHabitViewState extends State<EditHabitView> {
                           ),
                           Positioned.fill(
                             child: OutlinedButton(
-                              key: context
-                                  .read<RoadGuideController>()
-                                  .keys
-                                  .recommendedHabits,
                               onPressed: vm.isSaving ? null : _recommendHabits,
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: scheme.primary,

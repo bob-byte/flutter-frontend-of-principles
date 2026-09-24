@@ -7,11 +7,12 @@ alwaysApply: false
 # Road guide
 
 - `RoadGuideController` + `RoadGuideKeys` + `RoadGuideOverlay` as `OverlayEntry`
+- **6 steps** (core loop): Goals composer → Habits FAB → Habit detail → Tasks (today’s habits) → AI Helper input → Settings profile
 - Demo entities: negative goal/habit ids, string task id
 - Persistence: SharedPreferences device flag + `User.HasSeenRoadGuide` on the backend
 - Auto-start after SyncGate: wait for the shell’s first layout (~320ms + guide start settle) before the overlay; defer first-sync Retry/Cancel, deep links, and session remesh until the tour is inactive so they do not freeze the spotlight. Bulk reminder scheduling stays on SyncGate (before the tour).
 - Do **not** wrap `GlassScaffold` in `Stack` or `OverlayPortal`.
-- Do **not** put `GlobalKey`s on `GlassTabBar` / tab icons; tab holes use `RoadGuideKeys.tabHole`.
+- Do **not** put `GlobalKey`s on `GlassTabBar` / tab icons; tab holes use `RoadGuideKeys.tabHole` (unused while the 6-step tour spotlights in-page chrome only).
 - Spotlight targets need full-width keys (`SizedBox(width: double.infinity)` or the real button).
 - Remeasure holes after route open/close (~120–480ms); mid-transition sizes are wrong.
 - Habit detail guide step has **no** spotlight hole (dim + card only).

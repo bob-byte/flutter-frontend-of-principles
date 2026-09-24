@@ -232,7 +232,6 @@ class _GoalsBody extends StatelessWidget {
                       goals: displayGoals,
                       habits: displayHabits,
                       demoGoalId: demoGoal?.id,
-                      demoKey: guide.keys.goalsDemo,
                       guideActive: guide.isActive,
                       embedded: embedded,
                       onShowMenu: (tileContext, goal, {Rect? anchor}) {
@@ -263,7 +262,6 @@ class _GoalsList extends StatelessWidget {
     required this.onShowMenu,
     required this.guideActive,
     this.demoGoalId,
-    this.demoKey,
   });
 
   final List<UserGoal> goals;
@@ -271,7 +269,6 @@ class _GoalsList extends StatelessWidget {
   final bool embedded;
   final bool guideActive;
   final int? demoGoalId;
-  final GlobalKey? demoKey;
   final void Function(BuildContext tileContext, UserGoal goal, {Rect? anchor})
   onShowMenu;
 
@@ -296,7 +293,6 @@ class _GoalsList extends StatelessWidget {
             scheme: scheme,
             onShowMenu: onShowMenu,
             guideActive: guideActive,
-            tileKey: active[i].id == demoGoalId ? demoKey : null,
             isDemo: active[i].id == demoGoalId,
           ),
         if (completed.isNotEmpty) ...[
@@ -360,7 +356,6 @@ class _GoalDismissibleTile extends StatelessWidget {
     required this.scheme,
     required this.onShowMenu,
     required this.guideActive,
-    this.tileKey,
     this.isDemo = false,
   });
 
@@ -370,7 +365,6 @@ class _GoalDismissibleTile extends StatelessWidget {
   final GoalsViewModel vm;
   final ColorScheme scheme;
   final bool guideActive;
-  final GlobalKey? tileKey;
   final bool isDemo;
   final void Function(BuildContext tileContext, UserGoal goal, {Rect? anchor})
   onShowMenu;
@@ -440,7 +434,6 @@ class _GoalDismissibleTile extends StatelessWidget {
           );
 
     return Padding(
-      key: tileKey,
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

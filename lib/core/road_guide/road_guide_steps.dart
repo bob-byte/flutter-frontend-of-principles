@@ -4,7 +4,6 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import '../../models/habit.dart';
 import '../../models/task.dart';
 import '../../models/user_goal.dart';
-import '../home_widget/home_widget_add_prompt.dart';
 import 'main_shell_controller.dart';
 
 /// Stable negative ids so tour demo rows never collide with real entities.
@@ -35,26 +34,7 @@ Task roadGuideDemoTask(AppLocalizations l10n) => Task(
   dueDate: DateTime.now(),
 );
 
-enum RoadGuideStepId {
-  goalsTab,
-  goalsComposer,
-  goalsDemo,
-  habitsTab,
-  habitsFab,
-  recommendHabits,
-  habitsDemo,
-  habitDetail,
-  tasksTab,
-  tasksAdd,
-  tasksDemo,
-  tasksHabits,
-  chatTab,
-  chatInput,
-  settingsTab,
-  settingsProfile,
-  settingsCalendarWidget,
-  settingsReplay,
-}
+enum RoadGuideStepId { goals, habits, habitDetail, tasks, chat, settings }
 
 class RoadGuideStep {
   const RoadGuideStep({
@@ -101,19 +81,10 @@ class RoadGuideKeys {
   RoadGuideKeys();
 
   final goalsComposer = GlobalKey(debugLabel: 'roadGuideGoalsComposer');
-  final goalsDemo = GlobalKey(debugLabel: 'roadGuideGoalsDemo');
   final habitsFab = GlobalKey(debugLabel: 'roadGuideHabitsFab');
-  final recommendedHabits = GlobalKey(debugLabel: 'roadGuideRecommendedHabits');
-  final habitsDemo = GlobalKey(debugLabel: 'roadGuideHabitsDemo');
-  final tasksAdd = GlobalKey(debugLabel: 'roadGuideTasksAdd');
-  final tasksDemo = GlobalKey(debugLabel: 'roadGuideTasksDemo');
   final tasksHabits = GlobalKey(debugLabel: 'roadGuideTasksHabits');
   final chatInput = GlobalKey(debugLabel: 'roadGuideChatInput');
   final settingsProfile = GlobalKey(debugLabel: 'roadGuideSettingsProfile');
-  final settingsCalendarWidget = GlobalKey(
-    debugLabel: 'roadGuideSettingsCalendarWidget',
-  );
-  final settingsReplay = GlobalKey(debugLabel: 'roadGuideSettingsReplay');
 
   static const tabCount = 5;
   static const tabBarHeight = 58.0;
@@ -139,56 +110,21 @@ class RoadGuideKeys {
     );
   }
 
+  /// Six steps covering the core loop: goal → habit → detail → tasks → helper → profile.
   List<RoadGuideStep> buildSteps() {
     return [
       RoadGuideStep(
-        id: RoadGuideStepId.goalsTab,
-        tabIndex: MainShellTab.goals,
-        title: (l) => l.roadGuideGoalsTabTitle,
-        body: (l) => l.roadGuideGoalsTabBody,
-        switchToTabOnNext: MainShellTab.goals,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.goalsComposer,
+        id: RoadGuideStepId.goals,
         targetKey: goalsComposer,
-        title: (l) => l.roadGuideGoalsComposerTitle,
-        body: (l) => l.roadGuideGoalsComposerBody,
+        title: (l) => l.roadGuideGoalsTitle,
+        body: (l) => l.roadGuideGoalsBody,
         ensureTabOnShow: MainShellTab.goals,
       ),
       RoadGuideStep(
-        id: RoadGuideStepId.goalsDemo,
-        targetKey: goalsDemo,
-        title: (l) => l.roadGuideGoalsDemoTitle,
-        body: (l) => l.roadGuideGoalsDemoBody,
-        ensureTabOnShow: MainShellTab.goals,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.habitsTab,
-        tabIndex: MainShellTab.habits,
-        title: (l) => l.roadGuideHabitsTabTitle,
-        body: (l) => l.roadGuideHabitsTabBody,
-        switchToTabOnNext: MainShellTab.habits,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.habitsFab,
+        id: RoadGuideStepId.habits,
         targetKey: habitsFab,
-        title: (l) => l.roadGuideHabitsFabTitle,
-        body: (l) => l.roadGuideHabitsFabBody,
-        ensureTabOnShow: MainShellTab.habits,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.recommendHabits,
-        targetKey: recommendedHabits,
-        title: (l) => l.roadGuideRecommendTitle,
-        body: (l) => l.roadGuideRecommendBody,
-        ensureTabOnShow: MainShellTab.habits,
-        openEditHabitOnShow: true,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.habitsDemo,
-        targetKey: habitsDemo,
-        title: (l) => l.roadGuideHabitsDemoTitle,
-        body: (l) => l.roadGuideHabitsDemoBody,
+        title: (l) => l.roadGuideHabitsTitle,
+        body: (l) => l.roadGuideHabitsBody,
         ensureTabOnShow: MainShellTab.habits,
       ),
       RoadGuideStep(
@@ -199,74 +135,24 @@ class RoadGuideKeys {
         openHabitDetailOnShow: true,
       ),
       RoadGuideStep(
-        id: RoadGuideStepId.tasksTab,
-        tabIndex: MainShellTab.tasks,
-        title: (l) => l.roadGuideTasksTabTitle,
-        body: (l) => l.roadGuideTasksTabBody,
-        switchToTabOnNext: MainShellTab.tasks,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.tasksAdd,
-        targetKey: tasksAdd,
-        title: (l) => l.roadGuideTasksAddTitle,
-        body: (l) => l.roadGuideTasksAddBody,
-        ensureTabOnShow: MainShellTab.tasks,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.tasksDemo,
-        targetKey: tasksDemo,
-        title: (l) => l.roadGuideTasksDemoTitle,
-        body: (l) => l.roadGuideTasksDemoBody,
-        ensureTabOnShow: MainShellTab.tasks,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.tasksHabits,
+        id: RoadGuideStepId.tasks,
         targetKey: tasksHabits,
-        title: (l) => l.roadGuideTasksHabitsTitle,
-        body: (l) => l.roadGuideTasksHabitsBody,
+        title: (l) => l.roadGuideTasksTitle,
+        body: (l) => l.roadGuideTasksBody,
         ensureTabOnShow: MainShellTab.tasks,
       ),
       RoadGuideStep(
-        id: RoadGuideStepId.chatTab,
-        tabIndex: MainShellTab.chat,
-        title: (l) => l.roadGuideChatTabTitle,
-        body: (l) => l.roadGuideChatTabBody,
-        switchToTabOnNext: MainShellTab.chat,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.chatInput,
+        id: RoadGuideStepId.chat,
         targetKey: chatInput,
-        title: (l) => l.roadGuideChatInputTitle,
-        body: (l) => l.roadGuideChatInputBody,
+        title: (l) => l.roadGuideChatTitle,
+        body: (l) => l.roadGuideChatBody,
         ensureTabOnShow: MainShellTab.chat,
       ),
       RoadGuideStep(
-        id: RoadGuideStepId.settingsTab,
-        tabIndex: MainShellTab.settings,
-        title: (l) => l.roadGuideSettingsTabTitle,
-        body: (l) => l.roadGuideSettingsTabBody,
-        switchToTabOnNext: MainShellTab.settings,
-      ),
-      RoadGuideStep(
-        id: RoadGuideStepId.settingsProfile,
+        id: RoadGuideStepId.settings,
         targetKey: settingsProfile,
-        title: (l) => l.roadGuideSettingsProfileTitle,
-        body: (l) => l.roadGuideSettingsProfileBody,
-        ensureTabOnShow: MainShellTab.settings,
-      ),
-      if (showHomeCalendarWidgetSettingsEntry())
-        RoadGuideStep(
-          id: RoadGuideStepId.settingsCalendarWidget,
-          targetKey: settingsCalendarWidget,
-          title: (l) => l.roadGuideSettingsCalendarTitle,
-          body: (l) => l.roadGuideSettingsCalendarBody,
-          ensureTabOnShow: MainShellTab.settings,
-        ),
-      RoadGuideStep(
-        id: RoadGuideStepId.settingsReplay,
-        targetKey: settingsReplay,
-        title: (l) => l.roadGuideSettingsReplayTitle,
-        body: (l) => l.roadGuideSettingsReplayBody,
+        title: (l) => l.roadGuideSettingsTitle,
+        body: (l) => l.roadGuideSettingsBody,
         ensureTabOnShow: MainShellTab.settings,
       ),
     ];

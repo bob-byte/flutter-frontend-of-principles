@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Tab indices in [MainShell]'s IndexedStack / GlassTabBar.
+/// Tab indices in [MainShell]'s [LazyShellTabStack] / GlassTabBar.
 abstract final class MainShellTab {
   static const chat = 0;
   static const goals = 1;

@@ -521,9 +521,6 @@ class _HabitProgressViewState extends State<HabitProgressView> {
           palette,
           guideActive: guide.isActive,
           isDemo: habit.id == RoadGuideDemoIds.habitId,
-          spotlightKey: habit.id == RoadGuideDemoIds.habitId
-              ? guide.keys.habitsDemo
-              : null,
         );
       },
     );
@@ -536,7 +533,6 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     TasksUiPalette palette, {
     bool guideActive = false,
     bool isDemo = false,
-    GlobalKey? spotlightKey,
   }) {
     final l10n = AppLocalizations.of(context)!;
     final status = vm.getStatusForHabitAndDate(habit.id ?? 0, vm.selectedDate);
@@ -578,7 +574,6 @@ class _HabitProgressViewState extends State<HabitProgressView> {
               ? null
               : () => _openDetails(context, habit, vm),
           child: SizedBox(
-            key: spotlightKey,
             width: double.infinity,
             child: AnimatedContainer(
               duration: kTasksProgressAnimDuration,

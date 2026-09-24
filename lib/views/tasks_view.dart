@@ -195,10 +195,6 @@ class _TasksViewState extends State<TasksView> {
                         ),
                         const Spacer(),
                         TasksGlassCircleButton(
-                          key: context
-                              .read<RoadGuideController>()
-                              .keys
-                              .tasksAdd,
                           palette: palette,
                           icon: Icons.add,
                           tooltip: strings.taskAdd,
@@ -380,9 +376,7 @@ class _TasksBody extends StatelessWidget {
                 children: [
                   for (final task in filtered)
                     Padding(
-                      key: task.id == RoadGuideDemoIds.taskId
-                          ? guide.keys.tasksDemo
-                          : ValueKey('task-${task.id}'),
+                      key: ValueKey('task-${task.id}'),
                       padding: const EdgeInsets.only(bottom: 10),
                       child: TaskTile(
                         key: Key('taskTile-${task.id}'),
@@ -590,9 +584,9 @@ const _kEmbeddedTabBarClearanceIos = 35.0;
 /// Matches [MainShell] [GlassTabBar.bottom] `barHeight` (the visible pill).
 const _kShellTabPillHeight = 58.0;
 
-/// Gap between the Tasks action panel and the shell tab pill on Android.
+/// Gap between the Tasks action panel and the shell tab pill.
 /// [TasksGlassBottomBar] already adds 16px bottom padding inside the bar.
-const _kEmbeddedTabBarGapAndroid = 8.0;
+const _kEmbeddedTabBarGap = 8.0;
 
 /// [GlassTabBar] preferred height: barHeight 58 + verticalPadding 20×2.
 const _kMainShellTabBarHeight = 98.0;
@@ -603,19 +597,23 @@ const _kTasksListClearanceGap = 24.0;
 /// [GlassScaffold] applies bottom [SafeArea] to the tab bar on Android only.
 /// Clear to just above the visible pill (not the full preferred height — that
 /// includes the tab bar's top padding and left a large empty gap).
+///
+/// On iOS the action bar's own [SafeArea] (home indicator) supplies most of
+/// the lift. On Android and desktop (macOS/Windows/Linux) there is no shared
+/// home-indicator inset, so compute clearance from the tab bar layout.
 double _embeddedTasksBarClearance(BuildContext context) {
-  if (Theme.of(context).platform == TargetPlatform.android) {
-    // From the shared SafeArea baseline: empty tab-bar bottom pad, then pill.
-    // [TasksGlassBottomBar] already pads 16px below the panel — subtract that
-    // so the visual gap above the pill is only [_kEmbeddedTabBarGapAndroid].
-    const tabBarBottomPad = 20.0;
-    const tasksBarBottomPad = 16.0;
-    return tabBarBottomPad +
-        _kShellTabPillHeight +
-        _kEmbeddedTabBarGapAndroid -
-        tasksBarBottomPad;
+  if (Theme.of(context).platform == TargetPlatform.iOS) {
+    return _kEmbeddedTabBarClearanceIos;
   }
-  return _kEmbeddedTabBarClearanceIos;
+  // Shared SafeArea baseline on Android; window bottom on desktop.
+  // [TasksGlassBottomBar] already pads 16px below the panel — subtract that
+  // so the visual gap above the pill is only [_kEmbeddedTabBarGap].
+  const tabBarBottomPad = 20.0;
+  const tasksBarBottomPad = 16.0;
+  return tabBarBottomPad +
+      _kShellTabPillHeight +
+      _kEmbeddedTabBarGap -
+      tasksBarBottomPad;
 }
 
 double _tasksListBottomPadding(BuildContext context, {required bool embedded}) {
