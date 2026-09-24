@@ -315,7 +315,10 @@ class EditTaskViewModel extends ChangeNotifier {
   void applyAiDraft(AiTaskDraft aiDraft) {
     _applyAiDraft(aiDraft, overwriteDueDateIfMissing: false);
     notifyListeners();
-    _markDirty(immediate: true);
+    _markDirty(
+      immediate: true,
+      promptForNotifications: aiDraft.reminders.isNotEmpty,
+    );
   }
 
   void _applyAiDraft(
@@ -347,11 +350,25 @@ class EditTaskViewModel extends ChangeNotifier {
 
     if (aiDraft.hasDueDate && aiDraft.dueDate != null) {
       hasDueDate = true;
-      dueDate = dateOnly(aiDraft.dueDate!);
-      reminders = const [];
+      dueDate = aiDraft.dueDate;
+      allDay = aiDraft.allDay;
+      reminders = List.of(aiDraft.reminders);
     } else if (overwriteDueDateIfMissing) {
       hasDueDate = aiDraft.hasDueDate;
       dueDate = aiDraft.dueDate ?? dateOnly(DateTime.now());
+      allDay = false;
+      reminders = List.of(aiDraft.reminders);
+    }
+
+    if (aiDraft.subtasks.isNotEmpty) {
+      subtasks = [
+        for (var i = 0; i < aiDraft.subtasks.length; i++)
+          aiDraft.subtasks[i].copyWith(
+            id: TaskSubtask.allocateId(),
+            sortOrder: i,
+            isDone: false,
+          ),
+      ];
     }
   }
 

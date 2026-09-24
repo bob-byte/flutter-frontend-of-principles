@@ -54,7 +54,10 @@ void main() {
                   'description': 'Milk and bread',
                   'priority': 'high',
                   'theme': 'Health',
-                  'dueDate': '2026-09-04',
+                  'dueDate': '2026-09-04T18:00',
+                  'allDay': false,
+                  'reminders': [30],
+                  'subtasks': ['Milk', 'Bread'],
                 },
               ),
             );
@@ -130,11 +133,17 @@ void main() {
     expect(draft.description, 'Milk and bread');
     expect(draft.priority, TaskPriority.high);
     expect(draft.theme, 'Health');
-    expect(draft.dueDate, DateTime(2026, 9, 4));
+    expect(draft.dueDate, DateTime(2026, 9, 4, 18, 0));
+    expect(draft.allDay, isFalse);
+    expect(draft.reminders.single.offsetMinutes, 30);
+    expect(draft.subtasks.map((s) => s.title), ['Milk', 'Bread']);
 
     expect(requests, hasLength(1));
     expect(requests.single.path, ApiEndpoints.aiParseTask);
     expect(requests.single.method, 'POST');
-    expect(requests.single.data, {'prompt': 'buy milk tomorrow'});
+    final body = requests.single.data as Map;
+    expect(body['prompt'], 'buy milk tomorrow');
+    expect(body['localDate'], isA<String>());
+    expect(body['utcOffsetMinutes'], isA<int>());
   });
 }

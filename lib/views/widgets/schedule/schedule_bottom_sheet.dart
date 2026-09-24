@@ -33,7 +33,7 @@ Future<ScheduleDraft?> showScheduleBottomSheet(
 
   return showExpandableModalBottomSheet<ScheduleDraft>(
     context: context,
-    initialChildSize: 0.62,
+    initialChildSize: ExpandableSheetDefaults.maxChildSize,
     minChildSize: 0.4,
     maxChildSize: ExpandableSheetDefaults.maxChildSize,
     builder: (ctx, scrollController) {
@@ -79,49 +79,51 @@ class ScheduleBottomSheet extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                child: Row(
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        strings.cancel,
-                        style: TextStyle(color: palette.primary),
-                      ),
-                    ),
-                    Expanded(
-                      child: !draft.showDateDuration
-                          ? Center(
-                              child: Text(
-                                strings.reminder,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            )
-                          : draft.showDuration
-                          ? _TabSwitch(palette: palette, strings: strings)
-                          : Center(
-                              child: Text(
-                                strings.date,
-                                style: TextStyle(
-                                  color: palette.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, draft),
-                      child: Text(
-                        strings.done,
+                    // True screen-center title / tabs (Cancel ≠ Done width).
+                    if (!draft.showDateDuration)
+                      Text(
+                        strings.reminder,
                         style: TextStyle(
-                          color: palette.primary,
+                          color: palette.textPrimary,
                           fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      )
+                    else if (draft.showDuration)
+                      _TabSwitch(palette: palette, strings: strings)
+                    else
+                      Text(
+                        strings.date,
+                        style: TextStyle(
+                          color: palette.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
                       ),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            strings.cancel,
+                            style: TextStyle(color: palette.primary),
+                          ),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, draft),
+                          child: Text(
+                            strings.done,
+                            style: TextStyle(
+                              color: palette.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

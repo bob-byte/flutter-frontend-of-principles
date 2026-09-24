@@ -19,6 +19,49 @@ void main() {
     expect(draft.theme, "Здоров'я");
     expect(draft.hasDueDate, isTrue);
     expect(draft.dueDate, DateTime(2026, 7, 26));
+    expect(draft.allDay, isTrue);
+    expect(draft.reminders, isEmpty);
+    expect(draft.subtasks, isEmpty);
+  });
+
+  test('AiTaskDraft.fromJson keeps time, reminders, and subtasks', () {
+    final draft = AiTaskDraft.fromJson({
+      'title': 'Team sync',
+      'description': '',
+      'priority': 'medium',
+      'theme': null,
+      'dueDate': '2026-09-12T18:30',
+      'allDay': false,
+      'reminders': [
+        30,
+        0,
+        {'offsetMinutes': 60},
+      ],
+      'subtasks': [
+        'Prepare agenda',
+        {'title': 'Share notes'},
+        {'name': 'Book room'},
+      ],
+    });
+
+    expect(draft.dueDate, DateTime(2026, 9, 12, 18, 30));
+    expect(draft.allDay, isFalse);
+    expect(draft.reminders.map((r) => r.offsetMinutes), [0, 30, 60]);
+    expect(draft.subtasks.map((s) => s.title), [
+      'Prepare agenda',
+      'Share notes',
+      'Book room',
+    ]);
+  });
+
+  test('AiTaskDraft.fromJson strips timezone suffix as local wall clock', () {
+    final draft = AiTaskDraft.fromJson({
+      'title': 'Call',
+      'dueDate': '2026-09-12T15:00:00Z',
+    });
+
+    expect(draft.dueDate, DateTime(2026, 9, 12, 15, 0));
+    expect(draft.allDay, isFalse);
   });
 
   test('AiTaskDraft.fromJson tolerates null optional fields', () {
@@ -35,5 +78,7 @@ void main() {
     expect(draft.priority, isNull);
     expect(draft.theme, isNull);
     expect(draft.hasDueDate, isFalse);
+    expect(draft.reminders, isEmpty);
+    expect(draft.subtasks, isEmpty);
   });
 }

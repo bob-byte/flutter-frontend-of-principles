@@ -9,6 +9,8 @@ import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/core/utils/date_helpers.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/l10n/task_strings.dart';
+import 'package:principles_app/models/ai_task_draft.dart';
+import 'package:principles_app/models/schedule_reminder_offset.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/models/task_item_dto.dart';
 import 'package:principles_app/models/task_priority.dart';
@@ -269,6 +271,29 @@ void main() {
       expect(saved, isNotNull);
       expect(saved!.subtasks, hasLength(1));
       expect(saved.subtasks.single.title, 'Milk');
+    });
+
+    test('prepareCreate applies AI draft subtasks, time, and reminders', () {
+      final vm = EditTaskViewModel(_offlineService());
+      vm.prepareCreate(
+        aiDraft: AiTaskDraft(
+          title: 'Shop',
+          dueDate: DateTime(2026, 9, 12, 18, 30),
+          hasDueDate: true,
+          allDay: false,
+          reminders: const [ScheduleReminderOffset(offsetMinutes: 30)],
+          subtasks: [
+            TaskSubtask(id: 'a', title: 'Milk'),
+            TaskSubtask(id: 'b', title: 'Bread'),
+          ],
+        ),
+      );
+
+      expect(vm.title, 'Shop');
+      expect(vm.dueDate, DateTime(2026, 9, 12, 18, 30));
+      expect(vm.allDay, isFalse);
+      expect(vm.reminders.single.offsetMinutes, 30);
+      expect(vm.subtasks.map((s) => s.title), ['Milk', 'Bread']);
     });
   });
 

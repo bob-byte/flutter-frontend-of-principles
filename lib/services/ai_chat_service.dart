@@ -35,9 +35,7 @@ class AiChatService {
       final response = await _apiClient.postStream(
         ApiEndpoints.aiChat,
         data: {
-          'messages': [
-            for (final m in messages) Map<String, String>.from(m),
-          ],
+          'messages': [for (final m in messages) Map<String, String>.from(m)],
         },
         receiveTimeout: _aiTimeout,
         cancelToken: cancelToken,
@@ -83,9 +81,18 @@ class AiChatService {
     }
 
     try {
+      final now = DateTime.now();
+      final localDate =
+          '${now.year.toString().padLeft(4, '0')}-'
+          '${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
       final response = await _apiClient.post(
         ApiEndpoints.aiParseTask,
-        data: {'prompt': trimmed},
+        data: {
+          'prompt': trimmed,
+          'localDate': localDate,
+          'utcOffsetMinutes': now.timeZoneOffset.inMinutes,
+        },
         receiveTimeout: _aiTimeout,
       );
 
