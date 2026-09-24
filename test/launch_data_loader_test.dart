@@ -117,10 +117,18 @@ class _FakeHabits extends Fake implements HabitProgressViewModel {
 
 class _FakeHelper extends Fake implements HelperViewModel {
   int loads = 0;
+  int refreshIfLoadedCalls = 0;
+  bool isLoaded = false;
 
   @override
   Future<void> load({bool silent = false}) async {
     loads += 1;
+    isLoaded = true;
+  }
+
+  @override
+  Future<void> refreshIfLoaded() async {
+    refreshIfLoadedCalls += 1;
   }
 }
 
@@ -308,7 +316,7 @@ void main() {
     expect(orchestrator.runs, 2);
   });
 
-  test('bootstrap hydrate reloads chats after merge', () async {
+  test('bootstrap hydrate skips chat until Chat tab loads', () async {
     final helper = _FakeHelper();
     final loader = LaunchDataLoader(
       startup: _FakeStartup([StartupNextRoute.helper]),
@@ -323,8 +331,29 @@ void main() {
     await loader.ensureLoaded();
 
     expect(loader.isSessionHydrated, isTrue);
-    // Local paint, then again after bootstrap merge.
-    expect(helper.loads, 2);
+    expect(helper.loads, 0);
+    // Local paint + post-merge: refreshIfLoaded is a no-op until first open.
+    expect(helper.refreshIfLoadedCalls, 2);
+  });
+
+  test('syncAndHydrate refreshes chat only after it was loaded', () async {
+    final helper = _FakeHelper();
+    final loader = LaunchDataLoader(
+      startup: _FakeStartup([StartupNextRoute.helper]),
+      orchestrator: _FakeOrchestrator(),
+      goals: _FakeGoals(),
+      tasks: _FakeTasks(),
+      habits: _FakeHabits(),
+      settings: _FakeSettings(),
+      helper: helper,
+    );
+
+    await loader.ensureLoaded();
+    final refreshesAfterStart = helper.refreshIfLoadedCalls;
+
+    await loader.syncAndHydrate(SyncTrigger.resume);
+    expect(helper.refreshIfLoadedCalls, refreshesAfterStart + 1);
+    expect(helper.loads, 0);
   });
 
   test('reset allows hydrate again', () async {

@@ -20,12 +20,16 @@ class HelperView extends StatefulWidget {
   const HelperView({
     super.key,
     this.embedded = false,
+    this.isActive = true,
     this.bottomBarClearance = kMainShellTabBarPreferredHeight,
   });
 
   static const routeName = '/helper';
 
   final bool embedded;
+
+  /// When embedded in [MainShell], true while the Chat tab is selected.
+  final bool isActive;
 
   /// Space reserved for the shell tab bar. Pass 0 when that bar is hidden.
   final double bottomBarClearance;
@@ -43,8 +47,19 @@ class _HelperViewState extends State<HelperView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<HelperViewModel>().ensureLoaded();
+      // Lazy shell may mount this tab before it is selected; only hydrate when shown.
+      if (widget.isActive) {
+        context.read<HelperViewModel>().ensureLoaded();
+      }
     });
+  }
+
+  @override
+  void didUpdateWidget(HelperView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      context.read<HelperViewModel>().ensureLoaded();
+    }
   }
 
   Future<void> _showHelperInfo(AppLocalizations l10n) {

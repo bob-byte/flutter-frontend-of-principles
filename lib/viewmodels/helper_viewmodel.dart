@@ -55,13 +55,23 @@ class HelperViewModel extends ChangeNotifier {
     ];
   }
 
+  /// Whether chats were painted into this VM (first Chat-tab open).
+  bool get isLoaded => _loaded;
+
   Future<void> ensureLoaded() async {
     if (_loaded) return;
     await load();
   }
 
-  /// Reloads sidebar chats from SQLite. Launch hydrate calls this after
-  /// bootstrap merge so a first empty paint is not sticky.
+  /// Sidebar refresh after sync — no-op until the Chat tab has loaded once.
+  Future<void> refreshIfLoaded() async {
+    if (!_loaded) return;
+    await refreshConversations();
+  }
+
+  /// Loads sidebar chats from SQLite and leaves the composer on a new chat
+  /// (does not auto-open the latest thread). An already-open chat is kept so
+  /// switching shell tabs does not wipe the user's selection.
   Future<void> load({bool silent = false}) async {
     if (silent && _loaded) {
       await refreshConversations();
@@ -74,9 +84,7 @@ class HelperViewModel extends ChangeNotifier {
     try {
       await refreshConversations();
       final hasOpenChat = activeConversationId != null || messages.isNotEmpty;
-      if (conversations.isNotEmpty && !hasOpenChat) {
-        await openConversation(conversations.first.id);
-      } else if (conversations.isEmpty && !_loaded) {
+      if (!hasOpenChat) {
         startNewChat(notify: false);
       }
       _loaded = true;

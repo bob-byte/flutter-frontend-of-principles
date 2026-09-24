@@ -199,7 +199,6 @@ class _ArchiveBottomSheetContent extends StatelessWidget {
                     width: size,
                     height: size,
                     fit: BoxFit.contain,
-                    recolorOrange: false,
                   ),
                 );
               },

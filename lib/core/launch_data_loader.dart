@@ -43,8 +43,8 @@ const kBootstrapSyncTimeout = Duration(seconds: 45);
 /// How long SyncGate waits for a local SQLite paint before waiting on merge.
 const kLocalSessionTimeout = Duration(seconds: 8);
 
-/// Prefetches session, sync, and the first screens' data while the launch
-/// video is playing so the UI is ready when the overlay goes away.
+/// Prefetches session, sync, and the first screens' data after epic_start
+/// finishes (not during the clip — UI-isolate SQLite/merge freezes video).
 class LaunchDataLoader {
   LaunchDataLoader({
     required StartupViewModel startup,
@@ -86,8 +86,9 @@ class LaunchDataLoader {
   int _epoch = 0;
 
   /// True after the first authenticated local paint (profile, goals, tasks,
-  /// habits, chats). Pre-login splash runs that only load locale leave this
-  /// false so MainShell can hydrate again after Google/Apple/email sign-in.
+  /// habits). AI Helper chats load on first Chat-tab open. Pre-login splash
+  /// runs that only load locale leave this false so MainShell can hydrate
+  /// again after Google/Apple/email sign-in.
   bool _sessionHydrated = false;
 
   /// True after startup bootstrap sync finished (or timed out / failed).
@@ -110,8 +111,7 @@ class LaunchDataLoader {
   bool get hasCompletedReminderRestore => _reminderRestoreDone;
 
   /// SyncGate can dismiss only after bootstrap and reminder restore.
-  bool get isSyncGateComplete =>
-      _bootstrapComplete && _reminderRestoreDone;
+  bool get isSyncGateComplete => _bootstrapComplete && _reminderRestoreDone;
 
   void markReminderRestoreDone() {
     _reminderRestoreDone = true;
@@ -327,7 +327,8 @@ class LaunchDataLoader {
       // Orchestrator already merges habits; skip the extra /habits/inprogress call.
       _safe(() => _habits.load(silent: true, syncRemote: false)),
       _safe(() => _settings.load(silent: true)),
-      if (helper != null) _safe(() => helper.load(silent: true)),
+      // Chat stays out of session hydrate; refresh only after first Chat open.
+      if (helper != null) _safe(() => helper.refreshIfLoaded()),
     ]);
   }
 
