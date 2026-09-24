@@ -70,8 +70,10 @@ class AuthService {
   }
 
   Future<void> _storeSessionToken(String token) async {
+    // Production [tokenStorageKey] is already [productionAuthTokenKey].
+    // Writing the same Keychain key twice throws errSecDuplicateItem (-25299).
     await _secureStore.write(_tokenKey, token);
-    if (!AppConfig.isLocal) {
+    if (!AppConfig.isLocal && _tokenKey != AppConfig.productionAuthTokenKey) {
       await _secureStore.write(AppConfig.productionAuthTokenKey, token);
     }
   }

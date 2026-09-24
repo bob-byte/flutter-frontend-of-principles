@@ -10,5 +10,10 @@
 	<array>
 		<string>group.com.set.principles</string>
 	</array>
+	<!-- Keychain Sharing (empty = app default access group). Do not put the
+	     App Group id here — that changes Keychain item identity and breaks
+	     flutter_secure_storage upserts with errSecDuplicateItem (-25299). -->
+	<key>keychain-access-groups</key>
+	<array/>
 </dict>
 </plist>

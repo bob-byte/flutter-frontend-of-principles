@@ -51,6 +51,51 @@ Dio _dioReturning(int statusCode) {
   return dio;
 }
 
+class _TokenAdapter implements HttpClientAdapter {
+  _TokenAdapter(this.token);
+
+  final String token;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return ResponseBody.fromString(
+      jsonEncode({'token': token}),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+Dio _dioReturningToken(String token) {
+  final dio = Dio();
+  dio.httpClientAdapter = _TokenAdapter(token);
+  return dio;
+}
+
+class _CountingSecureStore extends SecureStore {
+  final writes = <String>[];
+
+  @override
+  Future<void> write(String key, String value) async {
+    writes.add(key);
+  }
+
+  @override
+  Future<String?> read(String key) async => null;
+
+  @override
+  Future<void> delete(String key) async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -99,6 +144,36 @@ void main() {
 
     expect(await authService.hasValidSession(), isFalse);
     expect(await authService.getToken(), isNull);
+  });
+
+  test('login stores the production session token only once', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final store = _CountingSecureStore();
+    final authService = AuthService(store, dio: _dioReturningToken('tok'));
+
+    expect(await authService.login('a@b.com', 'secret'), isTrue);
+    expect(store.writes, [AppConfig.tokenStorageKey]);
+    expect(store.writes.where((k) => k == AppConfig.productionAuthTokenKey).length, 1);
+  });
+
+  test('detects Keychain duplicate-item errors', () {
+    expect(
+      SecureStore.isKeychainDuplicateItem(
+        PlatformException(
+          code: 'Unexpected security result code',
+          message:
+              'Code: -25299, Message: The specified item already exists in the keychain.',
+          details: -25299,
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      SecureStore.isKeychainDuplicateItem(
+        PlatformException(code: 'Unexpected security result code', message: 'other'),
+      ),
+      isFalse,
+    );
   });
 
   test('uses ephemeral Google auth only on the iOS Simulator', () {
