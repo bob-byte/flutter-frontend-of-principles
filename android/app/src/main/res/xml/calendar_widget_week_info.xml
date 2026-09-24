@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/calendar_widget_week_description"
-    android:initialLayout="@layout/calendar_widget_month"
+    android:initialLayout="@layout/calendar_widget_week"
     android:minWidth="250dp"
     android:minHeight="110dp"
     android:minResizeWidth="180dp"

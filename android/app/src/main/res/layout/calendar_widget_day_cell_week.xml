@@ -25,7 +25,7 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <View
+        <FrameLayout
             android:id="@+id/event1_bar"
             android:layout_width="2dp"
             android:layout_height="11dp"
@@ -52,7 +52,7 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <View
+        <FrameLayout
             android:id="@+id/event2_bar"
             android:layout_width="2dp"
             android:layout_height="11dp"
@@ -79,7 +79,7 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <View
+        <FrameLayout
             android:id="@+id/event3_bar"
             android:layout_width="2dp"
             android:layout_height="11dp"
@@ -106,7 +106,7 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <View
+        <FrameLayout
             android:id="@+id/event4_bar"
             android:layout_width="2dp"
             android:layout_height="11dp"

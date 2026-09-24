@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Parcel
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import com.set.principles.MainActivity
@@ -18,20 +20,47 @@ import java.util.Locale
 enum class CalendarWidgetKind { MONTH, WEEK, TODAY }
 
 object CalendarWidgetViews {
+    private const val TAG = "CalendarWidget"
+    /** Soft ceiling — Samsung One UI often rejects larger oneway binder pushes. */
+    private const val MAX_SAFE_BYTES = 180_000
+
     fun build(
         context: Context,
         widgetId: Int,
         kind: CalendarWidgetKind,
         snapshot: CalendarSnapshot,
     ): RemoteViews {
-        return when (kind) {
-            CalendarWidgetKind.TODAY -> buildToday(context, snapshot)
-            CalendarWidgetKind.WEEK -> buildCalendar(context, widgetId, snapshot, week = true)
-            CalendarWidgetKind.MONTH -> buildCalendar(context, widgetId, snapshot, week = false)
+        val full =
+            when (kind) {
+                CalendarWidgetKind.TODAY -> buildToday(context, snapshot, withEvents = true)
+                CalendarWidgetKind.WEEK ->
+                    buildCalendar(context, widgetId, snapshot, week = true, withEvents = true)
+                CalendarWidgetKind.MONTH ->
+                    buildCalendar(context, widgetId, snapshot, week = false, withEvents = true)
+            }
+        val fullSize = parcelSize(full)
+        if (fullSize <= MAX_SAFE_BYTES) {
+            Log.d(TAG, "RemoteViews kind=$kind size=$fullSize")
+            return full
         }
+        Log.w(TAG, "RemoteViews kind=$kind size=$fullSize too large; stripping event chips")
+        val lite =
+            when (kind) {
+                CalendarWidgetKind.TODAY -> buildToday(context, snapshot, withEvents = false)
+                CalendarWidgetKind.WEEK ->
+                    buildCalendar(context, widgetId, snapshot, week = true, withEvents = false)
+                CalendarWidgetKind.MONTH ->
+                    buildCalendar(context, widgetId, snapshot, week = false, withEvents = false)
+            }
+        Log.d(TAG, "RemoteViews kind=$kind lite size=${parcelSize(lite)}")
+        return lite
     }
 
-    private fun buildToday(context: Context, snapshot: CalendarSnapshot): RemoteViews {
+    private fun buildToday(
+        context: Context,
+        snapshot: CalendarSnapshot,
+        withEvents: Boolean,
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.calendar_widget_today)
         val theme = snapshot.theme
         views.setInt(R.id.calendar_root, "setBackgroundColor", theme.background)
@@ -56,7 +85,7 @@ object CalendarWidgetViews {
         )
 
         views.removeAllViews(R.id.events)
-        val upcoming = snapshot.upcoming()
+        val upcoming = if (withEvents) snapshot.upcoming() else emptyList()
         if (upcoming.isEmpty()) {
             views.setViewVisibility(R.id.empty, View.VISIBLE)
             views.setTextColor(R.id.empty, theme.textMuted)
@@ -75,8 +104,10 @@ object CalendarWidgetViews {
         widgetId: Int,
         snapshot: CalendarSnapshot,
         week: Boolean,
+        withEvents: Boolean,
     ): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.calendar_widget_month)
+        val layout = if (week) R.layout.calendar_widget_week else R.layout.calendar_widget_month
+        val views = RemoteViews(context.packageName, layout)
         val theme = snapshot.theme
         views.setInt(R.id.calendar_root, "setBackgroundColor", theme.background)
         views.setTextColor(R.id.month_title, theme.text)
@@ -119,47 +150,54 @@ object CalendarWidgetViews {
             launch(context, action = "create", date = snapshot.today),
         )
 
-        views.removeAllViews(R.id.weekday_row)
         for (index in 0 until 7) {
-            val label = RemoteViews(context.packageName, R.layout.calendar_widget_weekday)
+            val wdId = id(context, "wd_$index")
             val text = snapshot.labels.weekdays.getOrElse(index) { "" }
             val sunday = index == 6
-            label.setTextViewText(R.id.weekday_label, text)
-            label.setTextColor(R.id.weekday_label, if (sunday) theme.sunday else theme.textMuted)
-            views.addView(R.id.weekday_row, label)
+            views.setTextViewText(wdId, text)
+            views.setTextColor(wdId, if (sunday) theme.sunday else theme.textMuted)
         }
 
-        views.removeAllViews(R.id.grid)
         val days = if (week) weekDays(anchor, snapshot.weekStartsOn) else monthGrid(anchor, snapshot.weekStartsOn)
         val rows = if (week) 1 else 6
         val maxEvents = if (week) 4 else 2
         for (row in 0 until rows) {
-            val rowViews = RemoteViews(context.packageName, R.layout.calendar_widget_week_row)
             for (col in 0 until 7) {
                 val day = days[row * 7 + col]
-                rowViews.addView(
-                    R.id.week_row,
-                    dayCell(context, snapshot, day, week, maxEvents, inMonth = day.month == anchor.month),
+                bindDayCell(
+                    context,
+                    views,
+                    snapshot,
+                    day,
+                    week = week,
+                    row = row,
+                    col = col,
+                    maxEvents = maxEvents,
+                    inMonth = day.month == anchor.month,
+                    withEvents = withEvents,
                 )
             }
-            views.addView(R.id.grid, rowViews)
         }
         return views
     }
 
-    private fun dayCell(
+    private fun bindDayCell(
         context: Context,
+        views: RemoteViews,
         snapshot: CalendarSnapshot,
         day: LocalDate,
         week: Boolean,
+        row: Int,
+        col: Int,
         maxEvents: Int,
         inMonth: Boolean,
-    ): RemoteViews {
+        withEvents: Boolean,
+    ) {
         val theme = snapshot.theme
-        val views = RemoteViews(
-            context.packageName,
-            if (week) R.layout.calendar_widget_day_cell_week else R.layout.calendar_widget_day_cell,
-        )
+        val prefix = if (week) "wday_$col" else "day_${row}_$col"
+        val rootId = id(context, prefix)
+        val numId = id(context, "${prefix}_num")
+        val moreId = id(context, "${prefix}_more")
         val isToday = day == snapshot.today
         val numberColor =
             when {
@@ -168,49 +206,45 @@ object CalendarWidgetViews {
                 day.dayOfWeek.value == 7 -> theme.sunday
                 else -> theme.text
             }
-        views.setTextViewText(R.id.day_number, day.dayOfMonth.toString())
-        views.setTextColor(R.id.day_number, numberColor)
-        if (isToday) {
-            views.setInt(R.id.day_number, "setBackgroundColor", theme.todayFill)
-        } else {
-            views.setInt(R.id.day_number, "setBackgroundColor", 0x00000000)
-        }
-        views.setOnClickPendingIntent(
-            R.id.day_root,
-            launch(context, action = "day", date = day),
+        views.setTextViewText(numId, day.dayOfMonth.toString())
+        views.setTextColor(numId, numberColor)
+        views.setInt(
+            numId,
+            "setBackgroundColor",
+            if (isToday) theme.todayFill else 0x00000000,
         )
+        views.setOnClickPendingIntent(rootId, launch(context, action = "day", date = day))
 
-        val items = snapshot.itemsOn(day)
-        bindEvent(views, R.id.event1, R.id.event1_bar, R.id.event1_text, items.getOrNull(0), theme)
-        bindEvent(views, R.id.event2, R.id.event2_bar, R.id.event2_text, items.getOrNull(1), theme)
-        if (week) {
-            bindEvent(views, R.id.event3, R.id.event3_bar, R.id.event3_text, items.getOrNull(2), theme)
-            bindEvent(views, R.id.event4, R.id.event4_bar, R.id.event4_text, items.getOrNull(3), theme)
+        val items = if (withEvents) snapshot.itemsOn(day) else emptyList()
+        for (i in 1..maxEvents) {
+            bindEventChip(
+                views,
+                id(context, "${prefix}_e$i"),
+                items.getOrNull(i - 1),
+                theme,
+            )
         }
         val overflow = items.size - maxEvents
         if (overflow > 0) {
-            views.setViewVisibility(R.id.more, View.VISIBLE)
-            views.setTextColor(R.id.more, theme.textMuted)
-            views.setTextViewText(R.id.more, "+$overflow")
+            views.setViewVisibility(moreId, View.VISIBLE)
+            views.setTextColor(moreId, theme.textMuted)
+            views.setTextViewText(moreId, "+$overflow")
         } else {
-            views.setViewVisibility(R.id.more, View.GONE)
+            views.setViewVisibility(moreId, View.GONE)
         }
-        return views
     }
 
-    private fun bindEvent(
+    private fun bindEventChip(
         views: RemoteViews,
-        rootId: Int,
-        barId: Int,
         textId: Int,
         item: CalendarItem?,
         theme: CalendarTheme,
     ) {
         if (item == null) {
-            views.setViewVisibility(rootId, View.GONE)
+            views.setViewVisibility(textId, View.GONE)
             return
         }
-        views.setViewVisibility(rootId, View.VISIBLE)
+        views.setViewVisibility(textId, View.VISIBLE)
         val color = if (item.done) applyAlpha(item.color, 0.45f) else item.color
         val textColor =
             if (item.allDay && !item.timed) {
@@ -221,12 +255,9 @@ object CalendarWidgetViews {
         views.setTextViewText(textId, item.title)
         views.setTextColor(textId, textColor)
         if (item.allDay && !item.timed) {
-            views.setInt(rootId, "setBackgroundColor", color)
-            views.setViewVisibility(barId, View.GONE)
+            views.setInt(textId, "setBackgroundColor", color)
         } else {
-            views.setInt(rootId, "setBackgroundColor", 0x00000000)
-            views.setViewVisibility(barId, View.VISIBLE)
-            views.setInt(barId, "setBackgroundColor", color)
+            views.setInt(textId, "setBackgroundColor", 0x00000000)
         }
     }
 
@@ -256,7 +287,22 @@ object CalendarWidgetViews {
                 .appendQueryParameter("homeWidget", "true")
                 .apply { if (date != null) appendQueryParameter("date", date.toString()) }
                 .build()
-        return HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, uri)
+        // Unique request codes: HomeWidgetLaunchIntent always uses 0, which would
+        // collapse every day/create tap onto the last PendingIntent.
+        // Skip ActivityOptions bundles — attaching one to every day cell balloons
+        // the RemoteViews parcel past Samsung One UI's practical binder limit.
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                this.action = HomeWidgetLaunchIntent.HOME_WIDGET_LAUNCH_ACTION
+                data = uri
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        var flags = PendingIntent.FLAG_UPDATE_CURRENT
+        if (Build.VERSION.SDK_INT >= 23) {
+            flags = flags or PendingIntent.FLAG_IMMUTABLE
+        }
+        val requestCode = (action.hashCode() * 31) + (date?.toEpochDay()?.toInt() ?: 0)
+        return PendingIntent.getActivity(context, requestCode, intent, flags)
     }
 
     private fun shiftIntent(
@@ -286,6 +332,19 @@ object CalendarWidgetViews {
         } else {
             CalendarMonthWidgetProvider::class.java
         }
+
+    private fun id(context: Context, name: String): Int =
+        context.resources.getIdentifier(name, "id", context.packageName)
+
+    private fun parcelSize(views: RemoteViews): Int {
+        val parcel = Parcel.obtain()
+        return try {
+            views.writeToParcel(parcel, 0)
+            parcel.dataSize()
+        } finally {
+            parcel.recycle()
+        }
+    }
 
     private fun localeFor(tag: String): Locale =
         if (tag.startsWith("uk")) Locale("uk", "UA") else Locale.ENGLISH

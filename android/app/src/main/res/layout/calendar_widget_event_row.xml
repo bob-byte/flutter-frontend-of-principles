@@ -7,7 +7,7 @@
     android:paddingTop="3dp"
     android:paddingBottom="3dp">
 
-    <View
+    <FrameLayout
         android:id="@+id/event_bar"
         android:layout_width="3dp"
         android:layout_height="12dp"

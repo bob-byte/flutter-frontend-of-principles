@@ -51,24 +51,31 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /** Pins the month calendar with a filled static preview (not the empty runtime shell). */
+    /** Pins the month calendar. Preview extras use the runtime shell (no `<include>`). */
     private fun requestPinCalendarWidget(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         val manager = AppWidgetManager.getInstance(this)
         if (!manager.isRequestPinAppWidgetSupported) return false
         val provider = ComponentName(this, CalendarMonthWidgetProvider::class.java)
+        // Do not pass month_preview here: its `<include>`s are fine for picker
+        // previewLayout inflation, but Samsung often rejects them as RemoteViews.
         val extras =
             Bundle().apply {
                 putParcelable(
                     AppWidgetManager.EXTRA_APPWIDGET_PREVIEW,
-                    RemoteViews(packageName, R.layout.calendar_widget_month_preview),
+                    RemoteViews(packageName, R.layout.calendar_widget_month),
                 )
             }
         return try {
             manager.requestPinAppWidget(provider, extras, null)
             true
         } catch (_: Exception) {
-            false
+            try {
+                manager.requestPinAppWidget(provider, null, null)
+                true
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 

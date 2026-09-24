@@ -25,8 +25,7 @@ abstract class CalendarWidgetProvider : HomeWidgetProvider() {
                 } else {
                     CalendarWidgetState.shiftMonth(context, widgetId, snapshot.today, delta)
                 }
-                AppWidgetManager.getInstance(context)
-                    .updateAppWidget(widgetId, CalendarWidgetViews.build(context, widgetId, kind, snapshot))
+                publish(context, AppWidgetManager.getInstance(context), widgetId, snapshot)
             }
         }
         super.onReceive(context, intent)
@@ -40,26 +39,41 @@ abstract class CalendarWidgetProvider : HomeWidgetProvider() {
     ) {
         val snapshot = parseSnapshot(widgetData)
         for (widgetId in appWidgetIds) {
+            publish(context, appWidgetManager, widgetId, snapshot)
+        }
+    }
+
+    private fun publish(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        widgetId: Int,
+        snapshot: CalendarSnapshot,
+    ) {
+        try {
+            appWidgetManager.updateAppWidget(
+                widgetId,
+                CalendarWidgetViews.build(context, widgetId, kind, snapshot),
+            )
+        } catch (e: Exception) {
+            // Binder / RemoteViews size failures leave the empty initialLayout;
+            // fall back to a compact static shell so the home screen is not blank.
+            Log.e(TAG, "Calendar widget update failed for $widgetId", e)
             try {
-                appWidgetManager.updateAppWidget(
-                    widgetId,
-                    CalendarWidgetViews.build(context, widgetId, kind, snapshot),
-                )
-            } catch (e: Exception) {
-                // Binder / RemoteViews size failures leave the empty initialLayout;
-                // fall back to a compact static preview so the home screen is not blank.
-                Log.e(TAG, "Calendar widget update failed for $widgetId", e)
                 appWidgetManager.updateAppWidget(widgetId, fallbackViews(context))
+            } catch (fallbackError: Exception) {
+                Log.e(TAG, "Calendar widget fallback failed for $widgetId", fallbackError)
             }
         }
     }
 
     private fun fallbackViews(context: Context): RemoteViews {
+        // Prefer the empty runtime shell over static previews — previews are for the
+        // picker only and must stay free of unsupported RemoteViews tags / includes.
         val layout =
             when (kind) {
-                CalendarWidgetKind.WEEK -> R.layout.calendar_widget_week_preview
-                CalendarWidgetKind.TODAY -> R.layout.calendar_widget_today_preview
-                CalendarWidgetKind.MONTH -> R.layout.calendar_widget_month_preview
+                CalendarWidgetKind.TODAY -> R.layout.calendar_widget_today
+                CalendarWidgetKind.WEEK -> R.layout.calendar_widget_week
+                CalendarWidgetKind.MONTH -> R.layout.calendar_widget_month
             }
         return RemoteViews(context.packageName, layout)
     }
