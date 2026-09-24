@@ -43,12 +43,16 @@ class EditHabitViewModel extends ChangeNotifier {
   final ServerRequiredRetry _serverRetry;
 
   int? editingHabitId;
+  int? editingServerId;
+  bool editingIsArchived = false;
   List<HabitProgressMark> _progressMarks = [];
   bool _shouldReloadRecommendedHabits = true;
 
   void init(Habit? habit) {
     if (habit != null) {
       editingHabitId = habit.id;
+      editingServerId = habit.serverId;
+      editingIsArchived = habit.isArchived;
       habitName = habit.name;
       targetGoal = habit.targetGoal;
       targetGoalId = habit.targetGoalId;
@@ -62,6 +66,8 @@ class EditHabitViewModel extends ChangeNotifier {
       constantReminder = habit.constantReminder;
     } else {
       editingHabitId = null;
+      editingServerId = null;
+      editingIsArchived = false;
       habitName = '';
       targetGoal = '';
       targetGoalId = null;
@@ -459,6 +465,10 @@ class EditHabitViewModel extends ChangeNotifier {
 
     try {
       final isNew = editingHabitId == null;
+      // Prefer the latest SQLite row so a mid-edit reassign/sync keeps serverId.
+      final existing = editingHabitId == null
+          ? null
+          : await _dbService.getHabitById(editingHabitId!);
       final newHabit = Habit(
         id: editingHabitId,
         name: habitName,
@@ -469,10 +479,12 @@ class EditHabitViewModel extends ChangeNotifier {
         difficulty: difficulty,
         notes: notes,
         reminders: reminders,
+        isArchived: existing?.isArchived ?? editingIsArchived,
         endDate: endDate,
         allDay: allDay,
         constantReminder: constantReminder,
         lastModified: DateTime.now().toUtc(),
+        serverId: existing?.serverId ?? editingServerId,
       );
 
       var localId = editingHabitId;

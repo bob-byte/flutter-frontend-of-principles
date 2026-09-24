@@ -205,7 +205,7 @@ class GoalService {
       }
       final serverId = isNew ? 0 : (goal.id ?? 0);
       final response = await _dio.post(
-        '${AuthService.baseUrl}${ApiEndpoints.goals}/$serverId',
+        '${AuthService.baseUrl}/api${ApiEndpoints.goals}/$serverId',
         data: {
           'id': serverId,
           'name': goal.name,
@@ -279,7 +279,7 @@ class GoalService {
       final token = await _authService.getToken();
       if (token == null) return;
       await _dio.delete(
-        '${AuthService.baseUrl}${ApiEndpoints.goals}/$id',
+        '${AuthService.baseUrl}/api${ApiEndpoints.goals}/$id',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     }

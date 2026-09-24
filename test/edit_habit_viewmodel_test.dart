@@ -136,18 +136,44 @@ void main() {
   });
 
   test('saveHabit updates an existing habit', () async {
-    final id = await db.insertHabit(Habit(name: 'Old name', difficulty: 3));
-    vm.init(Habit(id: id, name: 'Old name', difficulty: 3));
+    final id = await db.insertHabit(
+      Habit(name: 'Old name', difficulty: 3, serverId: 99),
+    );
+    vm.init(Habit(id: id, name: 'Old name', difficulty: 3, serverId: 99));
     vm.habitName = 'Renamed';
     vm.difficulty = 8;
 
     expect(await vm.saveHabit(), isTrue);
     expect(habits.pushed.single.isNew, isFalse);
+    expect(habits.pushed.single.habit.serverId, 99);
 
     final stored = await db.getHabitById(id);
     expect(stored?.name, 'Renamed');
     expect(stored?.difficulty, 8);
+    expect(stored?.serverId, 99);
   });
+
+  test(
+    'saveHabit keeps serverId so edit does not create a duplicate',
+    () async {
+      final id = await db.insertHabit(
+        Habit(id: 5, name: 'Walk', serverId: 142, difficulty: 4),
+      );
+      // Simulate a row whose local PK differs from the backend id.
+      vm.init(Habit(id: id, name: 'Walk', serverId: 142, difficulty: 4));
+      vm.habitName = 'Walk daily';
+
+      expect(await vm.saveHabit(), isTrue);
+      final pushed = habits.pushed.single;
+      expect(pushed.isNew, isFalse);
+      expect(pushed.habit.serverId, 142);
+      expect(confirmedServerHabitId(pushed.habit), 142);
+
+      final stored = await db.getHabitById(id);
+      expect(stored?.serverId, 142);
+      expect(stored?.name, 'Walk daily');
+    },
+  );
 }
 
 class _PushCall {

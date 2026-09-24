@@ -65,7 +65,7 @@ Map<String, dynamic> buildEditUserHabitDto(
   final resolvedGoalId = goalId ?? habit.targetGoalId ?? 0;
 
   return {
-    'id': isNew ? 0 : (habit.id ?? 0),
+    'id': isNew ? 0 : (confirmedServerHabitId(habit) ?? habit.id ?? 0),
     'name': habit.name.trim(),
     'type': habit.isFlexible ? kTypeOfHabitFlexible : kTypeOfHabitPrincipled,
     'areasOfLife': <Map<String, dynamic>>[],
@@ -818,6 +818,10 @@ class HabitService {
           fromHabitId: habit.id!,
           toHabitId: remoteId,
         );
+      } else if (habit.id != null &&
+          confirmedServerHabitId(habit) != remoteId) {
+        // Keep serverId when local PK already matches the backend id.
+        await _dbService.updateHabit(habit.copyWith(serverId: remoteId));
       }
       return remoteId;
     }
