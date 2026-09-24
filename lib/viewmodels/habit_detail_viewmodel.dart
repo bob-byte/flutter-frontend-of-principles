@@ -15,6 +15,7 @@ import '../models/habit_reminder.dart';
 import '../models/progress_value.dart';
 import '../services/database_service.dart';
 import '../services/habit_service.dart';
+import '../services/reminder_service.dart';
 
 class StreakStat {
   StreakStat({required this.start, required this.end, required this.days});
@@ -42,12 +43,17 @@ HabitStatus nextCalendarStatus(HabitStatus current) {
 }
 
 class HabitDetailViewModel extends ChangeNotifier {
-  HabitDetailViewModel({HabitService? habitService, DatabaseService? dbService})
-    : _habitService = habitService,
-      _dbService = dbService ?? DatabaseService();
+  HabitDetailViewModel({
+    HabitService? habitService,
+    DatabaseService? dbService,
+    ReminderService? reminderService,
+  }) : _habitService = habitService,
+       _dbService = dbService ?? DatabaseService(),
+       _reminderService = reminderService;
 
   final HabitService? _habitService;
   final DatabaseService _dbService;
+  final ReminderService? _reminderService;
 
   Habit? habit;
   bool isLoading = false;
@@ -220,6 +226,12 @@ class HabitDetailViewModel extends ChangeNotifier {
     final day = _dateOnly(date);
     final status = statusForDay(day);
     await _dbService.setHabitRecordStatus(habitId, day, status);
+    final current = habit;
+    if (current != null) {
+      unawaited(
+        _reminderService?.onHabitDayStatusChanged(current, day, status),
+      );
+    }
     unawaited(
       (_habitService?.pushProgress(habitId, day, status) ?? Future.value(true))
           .catchError((Object e) {

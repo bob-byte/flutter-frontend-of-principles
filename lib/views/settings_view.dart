@@ -4,6 +4,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../core/helpers/open_notification_settings.dart';
 import '../core/home_widget/home_widget_add_prompt.dart';
 import '../core/input/keyboard.dart';
 import '../core/launch_data_loader.dart';
@@ -188,6 +189,31 @@ class _SettingsBody extends StatelessWidget {
                   ],
                 ),
               ),
+              if (showHomeCalendarWidgetSettingsEntry()) ...[
+                const SizedBox(height: 12),
+                GlassGroupedSection(
+                  useOwnLayer: true,
+                  margin: _settingsSectionMargin,
+                  header: Text(l10n.calendarWidgetSettingsSection),
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: GlassListTile(
+                        contentPadding: _settingsTilePadding,
+                        leading: const Icon(Icons.calendar_month_outlined),
+                        title: Text(l10n.calendarWidgetSettingsTitle),
+                        subtitle: Text(
+                          l10n.calendarWidgetSettingsSubtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: GlassListTile.chevron,
+                        onTap: () => showAddHomeCalendarWidgetPrompt(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               GlassGroupedSection(
                 useOwnLayer: true,
@@ -265,31 +291,25 @@ class _SettingsBody extends StatelessWidget {
                   ),
                 ],
               ),
-              if (showHomeCalendarWidgetSettingsEntry()) ...[
+              if (!kIsWeb) ...[
                 const SizedBox(height: 12),
                 GlassGroupedSection(
                   useOwnLayer: true,
                   margin: _settingsSectionMargin,
-                  header: Text(l10n.calendarWidgetSettingsSection),
+                  header: Text(l10n.settingsRemindersTitle),
                   children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: GlassListTile(
-                        key: context
-                            .read<RoadGuideController>()
-                            .keys
-                            .settingsCalendarWidget,
-                        contentPadding: _settingsTilePadding,
-                        leading: const Icon(Icons.calendar_month_outlined),
-                        title: Text(l10n.calendarWidgetSettingsTitle),
-                        subtitle: Text(
-                          l10n.calendarWidgetSettingsSubtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: GlassListTile.chevron,
-                        onTap: () => showAddHomeCalendarWidgetPrompt(context),
+                    GlassListTile(
+                      key: const Key('settingsRemindersTile'),
+                      contentPadding: _settingsTilePadding,
+                      leading: const Icon(Icons.notifications_none),
+                      title: Text(l10n.settingsRemindersTitle),
+                      subtitle: Text(
+                        l10n.settingsRemindersSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      trailing: GlassListTile.chevron,
+                      onTap: openNotificationSettings,
                     ),
                   ],
                 ),
@@ -301,10 +321,6 @@ class _SettingsBody extends StatelessWidget {
                 header: Text(l10n.settingsSectionAbout),
                 children: [
                   GlassListTile(
-                    key: context
-                        .read<RoadGuideController>()
-                        .keys
-                        .settingsReplay,
                     contentPadding: _settingsTilePadding,
                     leading: const Icon(Icons.tour_outlined),
                     title: Text(l10n.roadGuideReplayLabel),

@@ -9,6 +9,12 @@ abstract final class NotificationPayloads {
   static const habitsReport = 'habits_report';
 }
 
+bool isConstantReminderPayload(String? payload) {
+  if (payload == null || payload.isEmpty) return false;
+  return payload.startsWith(NotificationPayloads.taskConstant) ||
+      payload.startsWith(NotificationPayloads.habitConstant);
+}
+
 DeepLinkAction? parseNotificationPayload(String? payload) {
   if (payload == null || payload.isEmpty) return null;
 

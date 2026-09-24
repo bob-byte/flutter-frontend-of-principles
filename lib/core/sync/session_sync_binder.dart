@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../launch_data_loader.dart';
 import '../road_guide/road_guide_controller.dart';
+import '../../services/reminder_service.dart';
 import 'sync_trigger.dart';
 
 /// Foreground catch-up so a device that stays open still sees other devices.
@@ -66,6 +67,11 @@ class _SessionSyncBinderState extends State<SessionSyncBinder>
     // A notification-permission sheet pauses the app. A full remesh on
     // Allow races reminder recovery and freezes the UI.
     unawaited(_sync(SyncTrigger.resume, skipIfRecent: true));
+    try {
+      unawaited(context.read<ReminderService>().reconcileConstantAlarms());
+    } on ProviderNotFoundException {
+      // Widget tests may omit reminders.
+    }
   }
 
   Future<void> _sync(SyncTrigger trigger, {bool skipIfRecent = false}) async {

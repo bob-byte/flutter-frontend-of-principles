@@ -11,16 +11,21 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../core/config/app_config.dart';
 import '../core/deep_link/notification_payload.dart';
+import '../core/habit_score.dart';
 import '../core/helpers/open_notification_settings.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/reminder/constant_reminder_alarm.dart';
 import '../core/reminder/reminder_restore_isolate.dart';
 import '../core/storage/local_db.dart';
 import '../core/sync/local_remote_executor.dart';
 import '../core/sync/operation_kind.dart';
 import '../core/sync/sync_handler_type.dart';
+import '../core/utils/date_helpers.dart';
 import '../models/habit.dart';
 import '../models/habit_reminder.dart';
+import '../models/habit_record.dart';
+import '../models/progress_value.dart';
 import '../models/reminder.dart';
 import '../models/schedule_reminder_offset.dart';
 import '../models/task.dart';
@@ -77,14 +82,9 @@ class ReminderService {
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const DarwinInitializationSettings initializationSettingsDarwin =
-        DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
-        );
+    const initializationSettingsDarwin = kReminderDarwinInitializationSettings;
 
-    const InitializationSettings initializationSettings =
+    final InitializationSettings initializationSettings =
         InitializationSettings(
           android: initializationSettingsAndroid,
           iOS: initializationSettingsDarwin,
@@ -94,6 +94,8 @@ class ReminderService {
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          onConstantReminderBackgroundResponse,
     );
     _isInitialized = true;
   }
@@ -102,6 +104,7 @@ class ReminderService {
   static const _constantHabitIdsKey = 'constant_habit_reminder_ids_v1';
 
   static void _onNotificationResponse(NotificationResponse response) {
+    unawaited(snoozeConstantAlarmIfActive(response));
     onNotificationOpened?.call(response.payload);
   }
 
@@ -155,19 +158,23 @@ class ReminderService {
     if (kIsWeb || forceLocalOnly) return;
     await cancelTaskNotifications(task);
     if (task.isDone || task.dueDate == null || task.reminders.isEmpty) {
-      await _setConstantTaskActive(task.id, false);
+      await _stopTaskConstantAlarm(task);
       return;
     }
     if (ensurePermission) {
-      final allowed = await requestPermissions();
+      final allowed = await requestPermissions(
+        forAlarmClock: task.constantReminder,
+      );
       if (!allowed) return;
     }
     final start = task.dueDate!;
+    final now = DateTime.now();
     for (final offset in task.reminders) {
       final id = offset.notificationRequestId;
       if (id == null) continue;
+      if (task.constantReminder && offset.offsetMinutes == 0) continue;
       var fire = start.subtract(Duration(minutes: offset.offsetMinutes));
-      if (!fire.isAfter(DateTime.now())) continue;
+      if (!fire.isAfter(now)) continue;
       await _zonedOneShot(
         id: id,
         title: task.title,
@@ -177,21 +184,19 @@ class ReminderService {
       );
     }
     if (task.constantReminder) {
-      await _setConstantTaskActive(task.id, true);
       final id = task.constantNotificationRequestId ?? allocateNotificationId();
-      var fire = start;
-      if (!fire.isAfter(DateTime.now())) {
-        fire = DateTime.now().add(const Duration(minutes: 5));
-      }
-      await _zonedOneShot(
-        id: id,
-        title: task.title,
-        body: task.description.isEmpty ? null : task.description,
-        when: fire,
-        payload: '${NotificationPayloads.taskConstant}${task.id}',
+      await scheduleConstantAlarm(
+        plugin: _notificationsPlugin,
+        entry: ConstantAlarmEntry(
+          notificationId: id,
+          title: task.title,
+          body: task.description.isEmpty ? null : task.description,
+          payload: taskConstantPayload(task.id),
+        ),
+        when: constantAlarmFireTime(scheduled: start, now: now),
       );
     } else {
-      await _setConstantTaskActive(task.id, false);
+      await _stopTaskConstantAlarm(task);
     }
   }
 
@@ -200,31 +205,34 @@ class ReminderService {
       final id = offset.notificationRequestId;
       if (id != null) await cancelNotification(id);
     }
-    final constantId = task.constantNotificationRequestId;
-    if (constantId != null) await cancelNotification(constantId);
+    await _stopTaskConstantAlarm(task);
   }
 
   Future<void> syncHabitNotifications(
     Habit habit, {
     bool ensurePermission = true,
+    bool? satisfiedToday,
   }) async {
     if (kIsWeb || forceLocalOnly) return;
     if (habit.reminders.isEmpty) {
-      await _setConstantHabitActive('${habit.id}', false);
+      await _stopHabitConstantAlarm(habit);
       return;
     }
-    if (ensurePermission) {
-      final allowed = await requestPermissions();
-      if (!allowed) return;
-    }
-
-    final habitPayload = habit.id == null
-        ? null
-        : '${NotificationPayloads.habit}${habit.id}';
-    var anyEnabled = false;
     var wantsConstant = habit.constantReminder;
     for (final reminder in habit.reminders) {
       wantsConstant = wantsConstant || reminder.constantReminder;
+    }
+    if (ensurePermission) {
+      final allowed = await requestPermissions(forAlarmClock: wantsConstant);
+      if (!allowed) return;
+    }
+
+    final habitId = habit.id;
+    final habitPayload = habitId == null
+        ? null
+        : '${NotificationPayloads.habit}$habitId';
+    var anyEnabled = false;
+    for (final reminder in habit.reminders) {
       if (!reminder.isEnabled) {
         for (final day in reminder.daysOfWeek) {
           await cancelNotification(day.userNotificationRequestId);
@@ -242,6 +250,8 @@ class ReminderService {
 
       for (final day in reminder.daysOfWeek) {
         for (final offset in offsets) {
+          // On-time slot is the alarm when Constant Reminder is on.
+          if (wantsConstant && offset.offsetMinutes == 0) continue;
           final adjustedMinutes =
               reminder.time.hour * 60 +
               reminder.time.minute -
@@ -263,7 +273,47 @@ class ReminderService {
         }
       }
     }
-    await _setConstantHabitActive('${habit.id}', anyEnabled && wantsConstant);
+
+    final doneToday =
+        satisfiedToday ??
+        (habitId == null
+            ? false
+            : await _isHabitSatisfiedOn(habitId, DateTime.now()));
+    if (habitId != null && anyEnabled && wantsConstant) {
+      await _startHabitConstantAlarm(habit, satisfiedToday: doneToday);
+    } else {
+      await _stopHabitConstantAlarm(habit);
+    }
+  }
+
+  Future<void> cancelHabitNotifications(Habit habit) async {
+    for (final reminder in habit.reminders) {
+      for (final day in reminder.daysOfWeek) {
+        await cancelNotification(day.userNotificationRequestId);
+      }
+      for (final offset in reminder.offsets) {
+        final id = offset.notificationRequestId;
+        if (id != null) await cancelNotification(id);
+      }
+    }
+    await _stopHabitConstantAlarm(habit);
+  }
+
+  /// Completing/skipping today silences the alarm; clearing it starts it again.
+  Future<void> onHabitDayStatusChanged(
+    Habit habit,
+    DateTime date,
+    HabitStatus status,
+  ) async {
+    if (kIsWeb || forceLocalOnly) return;
+    if (!isSameDay(date, DateTime.now())) return;
+    final satisfied =
+        status == HabitStatus.completed || status == HabitStatus.skipped;
+    await syncHabitNotifications(
+      habit,
+      ensurePermission: false,
+      satisfiedToday: satisfied,
+    );
   }
 
   Future<void> _zonedOneShot({
@@ -286,12 +336,151 @@ class ReminderService {
     );
   }
 
-  Future<void> _setConstantTaskActive(String taskId, bool active) async {
-    await _mutateIdSet(_constantTaskIdsKey, taskId, active);
+  Future<void> _stopTaskConstantAlarm(Task task) async {
+    await cancelConstantAlarm(
+      plugin: _notificationsPlugin,
+      payload: taskConstantPayload(task.id),
+      notificationId: task.constantNotificationRequestId,
+    );
+    await _mutateIdSet(_constantTaskIdsKey, task.id, false);
   }
 
-  Future<void> _setConstantHabitActive(String habitId, bool active) async {
-    await _mutateIdSet(_constantHabitIdsKey, habitId, active);
+  Future<void> _stopHabitConstantAlarm(Habit habit) async {
+    final habitId = habit.id;
+    if (habitId == null) return;
+    final stored = habit.reminders
+        .map((reminder) => reminder.constantNotificationRequestId)
+        .whereType<int>()
+        .where((id) => id > 0)
+        .firstOrNull;
+    await cancelConstantAlarm(
+      plugin: _notificationsPlugin,
+      payload: habitConstantPayload(habitId),
+      notificationId: habitConstantNotificationId(habitId, stored: stored),
+    );
+    await _mutateIdSet(_constantHabitIdsKey, '$habitId', false);
+  }
+
+  Future<void> _startHabitConstantAlarm(
+    Habit habit, {
+    required bool satisfiedToday,
+  }) async {
+    final habitId = habit.id;
+    if (habitId == null) return;
+    await init();
+    final stored = habit.reminders
+        .map((reminder) => reminder.constantNotificationRequestId)
+        .whereType<int>()
+        .where((id) => id > 0)
+        .firstOrNull;
+    final fire = nextConstantHabitFire(
+      reminders: habit.reminders,
+      now: DateTime.now(),
+      satisfiedToday: satisfiedToday,
+    );
+    if (fire == null) {
+      await _stopHabitConstantAlarm(habit);
+      return;
+    }
+    final title = habit.name.trim().isEmpty ? 'Reminder' : habit.name.trim();
+    await scheduleConstantAlarm(
+      plugin: _notificationsPlugin,
+      entry: ConstantAlarmEntry(
+        notificationId: habitConstantNotificationId(habitId, stored: stored),
+        title: title,
+        payload: habitConstantPayload(habitId),
+      ),
+      when: fire,
+    );
+    await _mutateIdSet(_constantHabitIdsKey, '$habitId', true);
+  }
+
+  Future<bool> _isHabitSatisfiedOn(int habitId, DateTime day) async {
+    if (!_useSqlite || _localDb == null) return false;
+    try {
+      final db = await _localDb.database;
+      final key = dateOnly(day).toIso8601String().substring(0, 10);
+      final rows = await db.query(
+        'habit_records',
+        where: 'habitId = ? AND date = ?',
+        whereArgs: [habitId, key],
+        limit: 1,
+      );
+      if (rows.isEmpty) return false;
+      final value = rows.first['value'];
+      final parsed = value is int
+          ? value
+          : int.tryParse('$value') ?? kProgressUnknown;
+      return isHabitSatisfiedValue(parsed) || parsed == kProgressSkip;
+    } catch (e) {
+      debugPrint('Read habit satisfaction failed: $e');
+      return false;
+    }
+  }
+
+  Future<Set<int>> _satisfiedHabitIdsOn(DateTime day) async {
+    if (!_useSqlite || _localDb == null) return {};
+    try {
+      final db = await _localDb.database;
+      final key = dateOnly(day).toIso8601String().substring(0, 10);
+      final rows = await db.query(
+        'habit_records',
+        columns: ['habitId', 'value'],
+        where: 'date = ?',
+        whereArgs: [key],
+      );
+      final ids = <int>{};
+      for (final row in rows) {
+        final habitId = row['habitId'];
+        if (habitId is! int) continue;
+        final value = row['value'];
+        final parsed = value is int
+            ? value
+            : int.tryParse('$value') ?? kProgressUnknown;
+        if (isHabitSatisfiedValue(parsed) || parsed == kProgressSkip) {
+          ids.add(habitId);
+        }
+      }
+      return ids;
+    } catch (e) {
+      debugPrint('Load satisfied habits failed: $e');
+      return {};
+    }
+  }
+
+  /// If a constant alarm already rang and was dismissed while the app was
+  /// away, schedule the next ring without waiting for the next due time.
+  Future<void> reconcileConstantAlarms() async {
+    if (kIsWeb || forceLocalOnly) return;
+    try {
+      await init();
+      final pending = await _notificationsPlugin.pendingNotificationRequests();
+      final pendingIds = pending.map((request) => request.id).toSet();
+      var activeIds = <int>{};
+      try {
+        final active = await _notificationsPlugin.getActiveNotifications();
+        activeIds = {
+          for (final notification in active)
+            if (notification.id != null) notification.id!,
+        };
+      } catch (_) {
+        // Some desktops do not expose delivered notifications.
+      }
+      final alarms = await loadConstantAlarms();
+      for (final entry in alarms.values) {
+        if (pendingIds.contains(entry.notificationId) ||
+            activeIds.contains(entry.notificationId)) {
+          continue;
+        }
+        await scheduleConstantAlarm(
+          plugin: _notificationsPlugin,
+          entry: entry,
+          when: DateTime.now().add(kConstantReminderSoon),
+        );
+      }
+    } catch (e) {
+      debugPrint('Reconcile constant alarms failed: $e');
+    }
   }
 
   Future<void> _mutateIdSet(String key, String id, bool active) async {
@@ -323,9 +512,13 @@ class ReminderService {
 
   /// One native permission sheet per session. A second iOS/macOS
   /// `requestPermissions` after Allow can hang the Flutter isolate.
-  Future<bool> requestPermissions() async {
+  Future<bool> requestPermissions({bool forAlarmClock = false}) async {
     if (kIsWeb || forceLocalOnly) return true;
-    return _permissionGate.run(_requestPermissionsNative);
+    final allowed = await _permissionGate.run(_requestPermissionsNative);
+    if (allowed && forAlarmClock) {
+      await _requestAlarmClockAccess();
+    }
+    return allowed;
   }
 
   Future<bool> _requestPermissionsNative() async {
@@ -350,6 +543,31 @@ class ReminderService {
     if (ios == false) return false;
     if (macOS == false) return false;
     return true;
+  }
+
+  static bool _alarmClockAccessRequested = false;
+
+  /// Android exact-alarm + full-screen intent for constant reminders.
+  ///
+  /// iOS has no Critical Alerts entitlement; constant reminders use
+  /// time-sensitive local notifications instead.
+  Future<void> _requestAlarmClockAccess() async {
+    if (_alarmClockAccessRequested) return;
+    final android = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android == null) return;
+    _alarmClockAccessRequested = true;
+    try {
+      final exact = await android.canScheduleExactNotifications();
+      if (exact != true) {
+        await android.requestExactAlarmsPermission();
+      }
+      await android.requestFullScreenIntentPermission();
+    } catch (e) {
+      debugPrint('Request Android alarm-clock access failed: $e');
+    }
   }
 
   /// Check without prompting (MAUI [AreNotificationsEnabledAsync]).
@@ -677,6 +895,7 @@ class ReminderService {
         generalReminders: enabledGeneral,
         habitReminders: enabledHabits,
         tasks: tasksWithReminders,
+        satisfiedHabitIds: await _satisfiedHabitIdsOn(DateTime.now()),
       );
     } catch (e) {
       debugPrint('Prepare reminder restore failed: $e');
@@ -707,6 +926,7 @@ class ReminderService {
         plugin: _notificationsPlugin,
         initializePlugin: false,
       );
+      await reconcileConstantAlarms();
     } catch (e) {
       debugPrint('Apply reminder restore failed: $e');
     }
@@ -889,6 +1109,7 @@ class ReminderService {
     await prefs.remove(prefsKey);
     await prefs.remove(_constantTaskIdsKey);
     await prefs.remove(_constantHabitIdsKey);
+    await prefs.remove(kConstantAlarmsPrefsKey);
     if (_useSqlite) {
       try {
         final db = await _localDb!.database;

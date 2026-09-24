@@ -8,6 +8,7 @@ import '../../models/reminder.dart';
 import '../../models/schedule_reminder_offset.dart';
 import '../../models/task.dart';
 import '../deep_link/notification_payload.dart';
+import 'constant_reminder_alarm.dart';
 
 /// Timezone used by [ReminderService.init] when scheduling.
 const kReminderRestoreTimezone = 'Europe/Kiev';
@@ -23,6 +24,7 @@ Map<String, Object?> buildReminderRestoreJob({
   required List<HabitReminder> habitReminders,
   required List<Task> tasks,
   DateTime? now,
+  Set<int> satisfiedHabitIds = const {},
   String timezoneLocation = kReminderRestoreTimezone,
 }) {
   final clock = now ?? DateTime.now();
@@ -77,6 +79,7 @@ Map<String, Object?> buildReminderRestoreJob({
       wantsConstant = wantsConstant || habitReminder.constantReminder;
       for (final day in habitReminder.daysOfWeek) {
         for (final offset in offsets) {
+          if (wantsConstant && offset.offsetMinutes == 0) continue;
           final adjustedMinutes =
               habitReminder.time.hour * 60 +
               habitReminder.time.minute -
@@ -103,10 +106,40 @@ Map<String, Object?> buildReminderRestoreJob({
     }
 
     if (habitId != null) {
+      final constantId = habitConstantNotificationId(
+        habitId,
+        stored: habitReminder.constantNotificationRequestId,
+      );
+      final active = anyEnabled && wantsConstant;
+      if (!active) {
+        ops.add({
+          'type': 'constantAlarm',
+          'id': constantId,
+          'payload': habitConstantPayload(habitId),
+          'active': false,
+        });
+      } else {
+        final fire = nextConstantHabitFire(
+          reminders: [habitReminder],
+          now: clock,
+          satisfiedToday: satisfiedHabitIds.contains(habitId),
+        );
+        if (fire != null) {
+          ops.add({
+            'type': 'constantAlarm',
+            'id': constantId,
+            'title': title,
+            'body': body,
+            'whenMs': fire.millisecondsSinceEpoch,
+            'payload': habitConstantPayload(habitId),
+            'active': true,
+          });
+        }
+      }
       ops.add({
         'type': 'constantHabit',
         'habitId': '$habitId',
-        'active': anyEnabled && wantsConstant,
+        'active': active,
       });
     }
   }
@@ -121,6 +154,14 @@ Map<String, Object?> buildReminderRestoreJob({
 
     if (task.isDone || task.dueDate == null || task.reminders.isEmpty) {
       ops.add({'type': 'constantTask', 'taskId': task.id, 'active': false});
+      if (constantId != null) {
+        ops.add({
+          'type': 'constantAlarm',
+          'id': constantId,
+          'payload': taskConstantPayload(task.id),
+          'active': false,
+        });
+      }
       continue;
     }
 
@@ -131,6 +172,7 @@ Map<String, Object?> buildReminderRestoreJob({
     for (final offset in task.reminders) {
       final id = offset.notificationRequestId;
       if (id == null) continue;
+      if (task.constantReminder && offset.offsetMinutes == 0) continue;
       var fire = start.subtract(Duration(minutes: offset.offsetMinutes));
       if (!fire.isAfter(clock)) continue;
       ops.add({
@@ -144,24 +186,30 @@ Map<String, Object?> buildReminderRestoreJob({
     }
 
     if (task.constantReminder) {
-      ops.add({'type': 'constantTask', 'taskId': task.id, 'active': true});
       final id =
           task.constantNotificationRequestId ??
           (100000 + (task.id.hashCode.abs() % 800000000));
-      var fire = start;
-      if (!fire.isAfter(clock)) {
-        fire = clock.add(const Duration(minutes: 5));
-      }
+      final fire = constantAlarmFireTime(scheduled: start, now: clock);
       ops.add({
-        'type': 'oneShot',
+        'type': 'constantAlarm',
         'id': id,
         'title': title,
         'body': body,
         'whenMs': fire.millisecondsSinceEpoch,
-        'payload': '${NotificationPayloads.taskConstant}${task.id}',
+        'payload': taskConstantPayload(task.id),
+        'active': true,
       });
+      ops.add({'type': 'constantTask', 'taskId': task.id, 'active': true});
     } else {
       ops.add({'type': 'constantTask', 'taskId': task.id, 'active': false});
+      if (constantId != null) {
+        ops.add({
+          'type': 'constantAlarm',
+          'id': constantId,
+          'payload': taskConstantPayload(task.id),
+          'active': false,
+        });
+      }
     }
   }
 
@@ -192,11 +240,7 @@ Future<void> executeReminderRestoreJob(
   final notifications = plugin ?? FlutterLocalNotificationsPlugin();
   if (initializePlugin) {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const darwin = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+    const darwin = kReminderDarwinInitializationSettings;
     await notifications.initialize(
       settings: const InitializationSettings(
         android: android,
@@ -245,6 +289,30 @@ Future<void> executeReminderRestoreJob(
         await _scheduleWeekly(notifications, habitDetails, op);
       case 'oneShot':
         await _scheduleOneShot(notifications, taskDetails, op);
+      case 'constantAlarm':
+        final payload = op['payload'] as String? ?? '';
+        final id = op['id'] as int?;
+        if (op['active'] == false) {
+          await cancelConstantAlarm(
+            plugin: notifications,
+            payload: payload,
+            notificationId: id,
+          );
+        } else if (id != null && id > 0) {
+          final whenMs = op['whenMs'] as int?;
+          if (whenMs != null) {
+            await scheduleConstantAlarm(
+              plugin: notifications,
+              entry: ConstantAlarmEntry(
+                notificationId: id,
+                title: op['title'] as String? ?? 'Reminder',
+                body: op['body'] as String?,
+                payload: payload,
+              ),
+              when: DateTime.fromMillisecondsSinceEpoch(whenMs),
+            );
+          }
+        }
       case 'constantHabit':
         await _mutateIdSet(
           _kConstantHabitIdsKey,

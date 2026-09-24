@@ -41,6 +41,15 @@ void main() {
     expect(opened, isTrue);
   });
 
+  test(
+    'openNotificationSettings falls back when the channel is missing',
+    () async {
+      // No mock handler → MissingPluginException → URI fallback (may fail in
+      // tests without a launcher plugin, but must not throw).
+      expect(await openNotificationSettings(), isA<bool>());
+    },
+  );
+
   test('clearDeliveredNotifications invokes the platform channel', () async {
     var cleared = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

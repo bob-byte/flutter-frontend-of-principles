@@ -25,6 +25,14 @@ void main() {
       expect(constant?.habitId, 12);
     });
 
+    test('identifies constant reminder payloads', () {
+      expect(isConstantReminderPayload('task_constant:1'), isTrue);
+      expect(isConstantReminderPayload('habit_constant:2'), isTrue);
+      expect(isConstantReminderPayload('task:1'), isFalse);
+      expect(isConstantReminderPayload('habit:2'), isFalse);
+      expect(isConstantReminderPayload(null), isFalse);
+    });
+
     test('parses habits report payload as Tasks today', () {
       final action = parseNotificationPayload('habits_report');
       expect(action?.kind, DeepLinkKind.openTasksTab);

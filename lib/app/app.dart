@@ -308,12 +308,14 @@ class PrinciplesApp extends StatelessWidget {
             appOpenTracker: ctx.read<AppOpenTrackerService>(),
             dbService: ctx.read<DatabaseService>(),
             dayChange: ctx.read<DayChangeNotifier>(),
+            reminderService: ctx.read<ReminderService>(),
           ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => HabitDetailViewModel(
             habitService: ctx.read<HabitService>(),
             dbService: ctx.read<DatabaseService>(),
+            reminderService: ctx.read<ReminderService>(),
           ),
         ),
         ChangeNotifierProvider(
@@ -346,15 +348,21 @@ class PrinciplesApp extends StatelessWidget {
           ),
         ),
         Provider(
-          create: (ctx) => LaunchDataLoader(
-            startup: ctx.read<StartupViewModel>(),
-            orchestrator: ctx.read<SyncOrchestrator>(),
-            goals: ctx.read<GoalsViewModel>(),
-            tasks: ctx.read<TasksViewModel>(),
-            habits: ctx.read<HabitProgressViewModel>(),
-            settings: ctx.read<SettingsViewModel>(),
-            helper: ctx.read<HelperViewModel>(),
-          ),
+          create: (ctx) {
+            final loader = LaunchDataLoader(
+              startup: ctx.read<StartupViewModel>(),
+              orchestrator: ctx.read<SyncOrchestrator>(),
+              goals: ctx.read<GoalsViewModel>(),
+              tasks: ctx.read<TasksViewModel>(),
+              habits: ctx.read<HabitProgressViewModel>(),
+              settings: ctx.read<SettingsViewModel>(),
+              helper: ctx.read<HelperViewModel>(),
+            );
+            // Prefer loader so restored connectivity also re-paints tab VMs.
+            ctx.read<NetworkService>().onConnectivityRestored = () =>
+                loader.syncAndHydrate(SyncTrigger.connectivityRestored);
+            return loader;
+          },
         ),
       ],
       child: Consumer2<ThemeController, LocaleController>(

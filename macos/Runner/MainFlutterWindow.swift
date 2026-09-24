@@ -60,13 +60,18 @@ class MainFlutterWindow: NSWindow {
     channel.setMethodCallHandler { call, result in
       switch call.method {
       case "openNotificationSettings":
-        let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")
-          ?? URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
-        guard let url else {
-          result(false)
-          return
+        // Prefer Notifications pane (Ventura+), then legacy System Preferences.
+        let candidates = [
+          URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension"),
+          URL(string: "x-apple.systempreferences:com.apple.preference.notifications"),
+        ].compactMap { $0 }
+        for url in candidates {
+          if NSWorkspace.shared.open(url) {
+            result(true)
+            return
+          }
         }
-        result(NSWorkspace.shared.open(url))
+        result(false)
       case "clearDeliveredNotifications":
         // Delivered Notification Center only — pending schedules stay.
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()

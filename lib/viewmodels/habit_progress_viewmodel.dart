@@ -15,6 +15,7 @@ import '../services/app_open_tracker_service.dart';
 import '../services/completion_feedback.dart';
 import '../services/database_service.dart';
 import '../services/habit_service.dart';
+import '../services/reminder_service.dart';
 
 /// Goal key + label for the Habits tab filter chips (not list sections).
 class HabitGoalFilterOption {
@@ -74,9 +75,11 @@ class HabitProgressViewModel extends ChangeNotifier {
     AppOpenTrackerService? appOpenTracker,
     DatabaseService? dbService,
     DayChangeNotifier? dayChange,
+    ReminderService? reminderService,
   }) : _appOpenTracker = appOpenTracker ?? AppOpenTrackerService(),
        _dbService = dbService ?? DatabaseService(),
-       _dayChange = dayChange {
+       _dayChange = dayChange,
+       _reminderService = reminderService {
     final today = dateOnly(DateTime.now());
     selectedDate = today;
     dates = habitProgressDates(now: today);
@@ -87,6 +90,7 @@ class HabitProgressViewModel extends ChangeNotifier {
   final AppOpenTrackerService _appOpenTracker;
   final DatabaseService _dbService;
   final DayChangeNotifier? _dayChange;
+  final ReminderService? _reminderService;
   DateTime? _lastMissedAppOpen;
 
   bool isLoading = false;
@@ -135,6 +139,21 @@ class HabitProgressViewModel extends ChangeNotifier {
     notifyListeners();
     // Widen/shift the SQLite window when the month rolls; ignore closed-DB tests.
     unawaited(_softReloadSessionRecords(today));
+    unawaited(_resyncConstantAlarms());
+  }
+
+  Future<void> _resyncConstantAlarms() async {
+    final reminders = _reminderService;
+    if (reminders == null) return;
+    for (final habit in habits) {
+      final wantsConstant =
+          habit.constantReminder ||
+          habit.reminders.any((reminder) => reminder.constantReminder);
+      if (!wantsConstant) continue;
+      unawaited(
+        reminders.syncHabitNotifications(habit, ensurePermission: false),
+      );
+    }
   }
 
   Future<void> _softReloadSessionRecords(DateTime today) async {
@@ -522,11 +541,24 @@ class HabitProgressViewModel extends ChangeNotifier {
         return false;
       }),
     );
+    Habit? habit;
+    for (final item in habits) {
+      if (item.id == habitId) {
+        habit = item;
+        break;
+      }
+    }
+    if (habit != null) {
+      unawaited(
+        _reminderService?.onHabitDayStatusChanged(habit, day, nextStatus),
+      );
+    }
   }
 
   Future<void> archiveHabit(Habit habit) async {
     final updatedHabit = habit.copyWith(isArchived: true);
     await _dbService.updateHabit(updatedHabit);
+    unawaited(_reminderService?.cancelHabitNotifications(updatedHabit));
     habits.removeWhere((h) => h.id == habit.id);
     if (habit.id != null) {
       _percentages.remove(habit.id);
@@ -550,6 +582,7 @@ class HabitProgressViewModel extends ChangeNotifier {
 
     final serverId = confirmedServerHabitId(habit);
     await _dbService.deleteHabit(habitId);
+    unawaited(_reminderService?.cancelHabitNotifications(habit));
     habits.removeWhere((h) => h.id == habitId);
     _percentages.remove(habitId);
     unawaited(_refreshStreak(preferSessionRecords: true));

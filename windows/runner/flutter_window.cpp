@@ -3,6 +3,9 @@
 #include <optional>
 #include <string>
 
+#include <shellapi.h>
+#include <windows.h>
+
 #include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -30,6 +33,7 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   RegisterAppIconChannel();
+  RegisterAppSettingsChannel();
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -66,6 +70,34 @@ void FlutterWindow::RegisterAppIconChannel() {
         }
         SetAppIcon(*name == "blue" ? IDI_APP_ICON_BLUE : IDI_APP_ICON);
         result->Success();
+      });
+}
+
+void FlutterWindow::RegisterAppSettingsChannel() {
+  app_settings_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(),
+          "com.set.principles/app_settings",
+          &flutter::StandardMethodCodec::GetInstance());
+
+  app_settings_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+             result) {
+        if (call.method_name() == "openNotificationSettings") {
+          // Opens Windows Settings → Notifications.
+          const auto hr = reinterpret_cast<INT_PTR>(ShellExecuteW(
+              nullptr, L"open", L"ms-settings:notifications", nullptr, nullptr,
+              SW_SHOWNORMAL));
+          result->Success(flutter::EncodableValue(hr > 32));
+          return;
+        }
+        if (call.method_name() == "clearDeliveredNotifications") {
+          // No reliable Win32 API for toast history from the runner; no-op.
+          result->Success();
+          return;
+        }
+        result->NotImplemented();
       });
 }
 

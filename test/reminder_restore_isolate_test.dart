@@ -73,4 +73,77 @@ void main() {
       isTrue,
     );
   });
+
+  test('constant habit restore uses alarm op instead of weekly on-time', () {
+    final now = DateTime(2026, 3, 9, 7, 0); // Monday before 8:00
+    final job = buildReminderRestoreJob(
+      generalReminders: const [],
+      habitReminders: [
+        HabitReminder(
+          id: 42,
+          title: 'Walk',
+          description: '',
+          time: const TimeOfDay(hour: 8, minute: 0),
+          isEnabled: true,
+          constantReminder: true,
+          constantNotificationRequestId: 77,
+          daysOfWeek: [
+            WeekDay(type: DateTime.monday, userNotificationRequestId: 101),
+          ],
+          offsets: const [ScheduleReminderOffset(offsetMinutes: 0)],
+        ),
+      ],
+      tasks: const [],
+      now: now,
+    );
+
+    final ops = (job['ops'] as List).cast<Map>();
+    expect(ops.any((op) => op['type'] == 'weekly'), isFalse);
+    expect(
+      ops.any(
+        (op) =>
+            op['type'] == 'constantAlarm' &&
+            op['active'] == true &&
+            op['id'] == 77 &&
+            op['payload'] == '${NotificationPayloads.habitConstant}42',
+      ),
+      isTrue,
+    );
+  });
+
+  test('constant task restore emits alarm at due time', () {
+    final now = DateTime(2026, 3, 9, 10, 0);
+    final due = now.add(const Duration(hours: 2));
+    final job = buildReminderRestoreJob(
+      generalReminders: const [],
+      habitReminders: const [],
+      tasks: [
+        Task(
+          id: 't2',
+          title: 'Focus',
+          createdAt: now,
+          dueDate: due,
+          reminders: const [
+            ScheduleReminderOffset(offsetMinutes: 0, notificationRequestId: 9),
+          ],
+          constantReminder: true,
+          constantNotificationRequestId: 88,
+        ),
+      ],
+      now: now,
+    );
+
+    final ops = (job['ops'] as List).cast<Map>();
+    expect(
+      ops.any(
+        (op) =>
+            op['type'] == 'constantAlarm' &&
+            op['id'] == 88 &&
+            op['active'] == true &&
+            op['payload'] == '${NotificationPayloads.taskConstant}t2' &&
+            op['whenMs'] == due.millisecondsSinceEpoch,
+      ),
+      isTrue,
+    );
+  });
 }
