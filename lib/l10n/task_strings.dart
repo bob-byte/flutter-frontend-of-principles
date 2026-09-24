@@ -252,7 +252,7 @@ class TaskStrings {
     taskUiThemeTooltip: 'Color theme',
     taskAiAssistTitle: 'AI task assistant',
     taskAiAssistHint:
-        'Example: “Buy groceries tomorrow, high priority, category home — don’t forget milk”',
+        'Example: “Buy groceries tomorrow at 6pm, remind me 30 minutes before — milk, bread, eggs”',
     taskAiPromptHint: 'Describe the task…',
     taskAiMicTooltip: 'Dictate',
     taskAiSendTooltip: 'Create draft',
@@ -334,7 +334,7 @@ class TaskStrings {
     taskUiThemeTooltip: 'Кольорова тема',
     taskAiAssistTitle: 'ШІ-помічник завдань',
     taskAiAssistHint:
-        'Наприклад: «Купити продукти завтра, пріоритет високий, категорія дім. Опис: не забути молоко»',
+        'Наприклад: «Купити продукти завтра о 18:00, нагадай за 30 хвилин — молоко, хліб, яйця»',
     taskAiPromptHint: 'Опишіть завдання…',
     taskAiMicTooltip: 'Диктувати',
     taskAiSendTooltip: 'Створити чернетку',

@@ -218,6 +218,18 @@ abstract class AppLocalizations {
   /// **'Ukrainian'**
   String get languageUkrainian;
 
+  /// Settings row that opens OS notification settings for Principles
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get settingsRemindersTitle;
+
+  /// Helper text for the Reminders settings row
+  ///
+  /// In en, this message translates to:
+  /// **'Manage notification permissions in system Settings'**
+  String get settingsRemindersSubtitle;
+
   /// Edit habit screen title
   ///
   /// In en, this message translates to:
@@ -695,7 +707,7 @@ abstract class AppLocalizations {
   /// Information shown from the AI helper screen's info button
   ///
   /// In en, this message translates to:
-  /// **'The AI-assistant knows your habits, goals, mission, gender, and slogan. So you can ask anything about them. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!'**
+  /// **'The AI-assistant knows your habits, goals, tasks, mission, gender, and slogan. So you can ask anything about them — including time management and how to connect habits to goals. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!'**
   String get helperWarning;
 
   /// Empty-state text shown below the AI helper animation
@@ -1907,7 +1919,7 @@ abstract class AppLocalizations {
   /// Popover explaining Constant Reminder on the reminder picker
   ///
   /// In en, this message translates to:
-  /// **'Keeps reminding you until you mark this as done.'**
+  /// **'Rings like an alarm until you mark this as done.'**
   String get scheduleConstantReminderExplanation;
 
   /// No description provided for @scheduleAllDay.
@@ -1961,7 +1973,7 @@ abstract class AppLocalizations {
   /// Settings subtitle for replaying the road guide
   ///
   /// In en, this message translates to:
-  /// **'Walk through goals, habits, tasks, and settings'**
+  /// **'A short walkthrough of goals, habits, tasks, and settings'**
   String get roadGuideReplaySubtitle;
 
   /// Badge on temporary demo items during the road guide
@@ -1988,209 +2000,77 @@ abstract class AppLocalizations {
   /// **'Book a training session'**
   String get roadGuideDemoTaskName;
 
-  /// No description provided for @roadGuideGoalsTabTitle.
+  /// Road guide step 1 title
   ///
   /// In en, this message translates to:
   /// **'Start with a goal'**
-  String get roadGuideGoalsTabTitle;
+  String get roadGuideGoalsTitle;
 
-  /// No description provided for @roadGuideGoalsTabBody.
+  /// Road guide step 1 body
   ///
   /// In en, this message translates to:
-  /// **'Principles automates goal achievement. Open Goals to define what you want to reach.'**
-  String get roadGuideGoalsTabBody;
+  /// **'Write the outcome you want. Habits that move you toward it are organized under each goal.'**
+  String get roadGuideGoalsBody;
 
-  /// No description provided for @roadGuideGoalsComposerTitle.
+  /// Road guide step 2 title
   ///
   /// In en, this message translates to:
-  /// **'Create your goal'**
-  String get roadGuideGoalsComposerTitle;
+  /// **'Add habits that get you there'**
+  String get roadGuideHabitsTitle;
 
-  /// No description provided for @roadGuideGoalsComposerBody.
+  /// Road guide step 2 body
   ///
   /// In en, this message translates to:
-  /// **'Write the outcome you want — habits will be organized under it.'**
-  String get roadGuideGoalsComposerBody;
+  /// **'Create habits and link them to a goal. On Add Habit, Recommended Habits can suggest ideas from your goal, mission, and slogan.'**
+  String get roadGuideHabitsBody;
 
-  /// No description provided for @roadGuideGoalsDemoTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Goals organize habits'**
-  String get roadGuideGoalsDemoTitle;
-
-  /// No description provided for @roadGuideGoalsDemoBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Each goal becomes a container for the habits that move you toward it.'**
-  String get roadGuideGoalsDemoBody;
-
-  /// No description provided for @roadGuideHabitsTabTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Habits get you there'**
-  String get roadGuideHabitsTabTitle;
-
-  /// No description provided for @roadGuideHabitsTabBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Habits are the repeating actions that automate progress toward your goal.'**
-  String get roadGuideHabitsTabBody;
-
-  /// No description provided for @roadGuideHabitsFabTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Add a habit to a goal'**
-  String get roadGuideHabitsFabTitle;
-
-  /// No description provided for @roadGuideHabitsFabBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Create habits and link them to a goal so every completion counts toward achievement.'**
-  String get roadGuideHabitsFabBody;
-
-  /// No description provided for @roadGuideRecommendTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Get habit recommendations'**
-  String get roadGuideRecommendTitle;
-
-  /// No description provided for @roadGuideRecommendBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap Recommended Habits here. AI suggests habits from your goal, mission, and slogan.'**
-  String get roadGuideRecommendBody;
-
-  /// No description provided for @roadGuideHabitsDemoTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Track habits under a goal'**
-  String get roadGuideHabitsDemoTitle;
-
-  /// No description provided for @roadGuideHabitsDemoBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete habits consistently — that is how goal achievement becomes automatic.'**
-  String get roadGuideHabitsDemoBody;
-
-  /// No description provided for @roadGuideHabitDetailTitle.
+  /// Road guide step 3 title
   ///
   /// In en, this message translates to:
   /// **'Habit details'**
   String get roadGuideHabitDetailTitle;
 
-  /// No description provided for @roadGuideHabitDetailBody.
+  /// Road guide step 3 body
   ///
   /// In en, this message translates to:
   /// **'Open a habit to see progress, streaks, and stability — how consistently you are following through.'**
   String get roadGuideHabitDetailBody;
 
-  /// No description provided for @roadGuideTasksTabTitle.
+  /// Road guide step 4 title
   ///
   /// In en, this message translates to:
-  /// **'Tasks free your head'**
-  String get roadGuideTasksTabTitle;
+  /// **'Tasks and today’s habits'**
+  String get roadGuideTasksTitle;
 
-  /// No description provided for @roadGuideTasksTabBody.
+  /// Road guide step 4 body
   ///
   /// In en, this message translates to:
-  /// **'Write down what you must not forget. Tasks hold the details so you can focus on habits and the goal.'**
-  String get roadGuideTasksTabBody;
+  /// **'Use + for one-off work. Today’s habits appear here with tasks, so the next action is always in front of you.'**
+  String get roadGuideTasksBody;
 
-  /// No description provided for @roadGuideTasksAddTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Add a task'**
-  String get roadGuideTasksAddTitle;
-
-  /// No description provided for @roadGuideTasksAddBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Use + for one-off work, reminders, and steps that sit beside your habits.'**
-  String get roadGuideTasksAddBody;
-
-  /// No description provided for @roadGuideTasksDemoTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Remember everything'**
-  String get roadGuideTasksDemoTitle;
-
-  /// No description provided for @roadGuideTasksDemoBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks hold the details habits do not cover — so nothing slips while you work toward the goal.'**
-  String get roadGuideTasksDemoBody;
-
-  /// No description provided for @roadGuideTasksHabitsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Habits stay obvious'**
-  String get roadGuideTasksHabitsTitle;
-
-  /// No description provided for @roadGuideTasksHabitsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Today’s habits appear here with tasks, so the next action is always in front of you.'**
-  String get roadGuideTasksHabitsBody;
-
-  /// No description provided for @roadGuideChatTabTitle.
+  /// Road guide step 5 title
   ///
   /// In en, this message translates to:
   /// **'AI Helper'**
-  String get roadGuideChatTabTitle;
+  String get roadGuideChatTitle;
 
-  /// No description provided for @roadGuideChatTabBody.
+  /// Road guide step 5 body
   ///
   /// In en, this message translates to:
-  /// **'The Helper is here for support — questions about habits, goals, time management, and building a plan. The AI Helper can also answer other kinds of questions.'**
-  String get roadGuideChatTabBody;
+  /// **'Ask anything — habits, goals, scheduling, a plan, or other questions. Helper is support — not the main way to get habit recommendations.'**
+  String get roadGuideChatBody;
 
-  /// No description provided for @roadGuideChatInputTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask anything about your plan'**
-  String get roadGuideChatInputTitle;
-
-  /// No description provided for @roadGuideChatInputBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Type a question or describe what you need: habits, goals, scheduling, or a plan to follow.'**
-  String get roadGuideChatInputBody;
-
-  /// No description provided for @roadGuideSettingsTabTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get roadGuideSettingsTabTitle;
-
-  /// No description provided for @roadGuideSettingsTabBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile, theme, language, home-screen calendar, password, and support live here. Slogan and mission also help AI recommend habits.'**
-  String get roadGuideSettingsTabBody;
-
-  /// No description provided for @roadGuideSettingsProfileTitle.
+  /// Road guide step 6 title
   ///
   /// In en, this message translates to:
   /// **'Profile fuels recommendations'**
-  String get roadGuideSettingsProfileTitle;
+  String get roadGuideSettingsTitle;
 
-  /// No description provided for @roadGuideSettingsProfileBody.
+  /// Road guide step 6 body
   ///
   /// In en, this message translates to:
-  /// **'Name, slogan, and mission describe who you are becoming — AI uses them when suggesting habits.'**
-  String get roadGuideSettingsProfileBody;
-
-  /// No description provided for @roadGuideSettingsReplayTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Replay anytime'**
-  String get roadGuideSettingsReplayTitle;
-
-  /// No description provided for @roadGuideSettingsReplayBody.
-  ///
-  /// In en, this message translates to:
-  /// **'You can run this road guide again from Settings → About. Theme, language, and the calendar widget are just above.'**
-  String get roadGuideSettingsReplayBody;
+  /// **'Name, slogan, and mission help AI suggest habits. Replay this guide anytime from Settings → About.'**
+  String get roadGuideSettingsBody;
 
   /// Home-screen calendar widget Today control
   ///
@@ -2245,18 +2125,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to Home Screen'**
   String get calendarWidgetAddToHome;
-
-  /// Road guide step title for the calendar widget Settings row
-  ///
-  /// In en, this message translates to:
-  /// **'Calendar on your Home Screen'**
-  String get roadGuideSettingsCalendarTitle;
-
-  /// No description provided for @roadGuideSettingsCalendarBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Add a month, week, or today widget from here so tasks and habits stay visible without opening the app.'**
-  String get roadGuideSettingsCalendarBody;
 }
 
 class _AppLocalizationsDelegate

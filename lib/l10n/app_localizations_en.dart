@@ -69,6 +69,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageUkrainian => 'Ukrainian';
 
   @override
+  String get settingsRemindersTitle => 'Reminders';
+
+  @override
+  String get settingsRemindersSubtitle =>
+      'Manage notification permissions in system Settings';
+
+  @override
   String get editHabitTitle => 'Edit Habit';
 
   @override
@@ -343,7 +350,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helperWarning =>
-      'The AI-assistant knows your habits, goals, mission, gender, and slogan. So you can ask anything about them. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!';
+      'The AI-assistant knows your habits, goals, tasks, mission, gender, and slogan. So you can ask anything about them — including time management and how to connect habits to goals. For example, “What should I set as my next goal?” Note that it can sometimes make mistakes. Check important information!';
 
   @override
   String get helperEmptyDescription =>
@@ -1008,7 +1015,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleConstantReminderExplanation =>
-      'Keeps reminding you until you mark this as done.';
+      'Rings like an alarm until you mark this as done.';
 
   @override
   String get scheduleAllDay => 'All Day';
@@ -1036,7 +1043,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roadGuideReplaySubtitle =>
-      'Walk through goals, habits, tasks, and settings';
+      'A short walkthrough of goals, habits, tasks, and settings';
 
   @override
   String get roadGuideExampleBadge => 'example';
@@ -1051,53 +1058,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roadGuideDemoTaskName => 'Book a training session';
 
   @override
-  String get roadGuideGoalsTabTitle => 'Start with a goal';
+  String get roadGuideGoalsTitle => 'Start with a goal';
 
   @override
-  String get roadGuideGoalsTabBody =>
-      'Principles automates goal achievement. Open Goals to define what you want to reach.';
+  String get roadGuideGoalsBody =>
+      'Write the outcome you want. Habits that move you toward it are organized under each goal.';
 
   @override
-  String get roadGuideGoalsComposerTitle => 'Create your goal';
+  String get roadGuideHabitsTitle => 'Add habits that get you there';
 
   @override
-  String get roadGuideGoalsComposerBody =>
-      'Write the outcome you want — habits will be organized under it.';
-
-  @override
-  String get roadGuideGoalsDemoTitle => 'Goals organize habits';
-
-  @override
-  String get roadGuideGoalsDemoBody =>
-      'Each goal becomes a container for the habits that move you toward it.';
-
-  @override
-  String get roadGuideHabitsTabTitle => 'Habits get you there';
-
-  @override
-  String get roadGuideHabitsTabBody =>
-      'Habits are the repeating actions that automate progress toward your goal.';
-
-  @override
-  String get roadGuideHabitsFabTitle => 'Add a habit to a goal';
-
-  @override
-  String get roadGuideHabitsFabBody =>
-      'Create habits and link them to a goal so every completion counts toward achievement.';
-
-  @override
-  String get roadGuideRecommendTitle => 'Get habit recommendations';
-
-  @override
-  String get roadGuideRecommendBody =>
-      'Tap Recommended Habits here. AI suggests habits from your goal, mission, and slogan.';
-
-  @override
-  String get roadGuideHabitsDemoTitle => 'Track habits under a goal';
-
-  @override
-  String get roadGuideHabitsDemoBody =>
-      'Complete habits consistently — that is how goal achievement becomes automatic.';
+  String get roadGuideHabitsBody =>
+      'Create habits and link them to a goal. On Add Habit, Recommended Habits can suggest ideas from your goal, mission, and slogan.';
 
   @override
   String get roadGuideHabitDetailTitle => 'Habit details';
@@ -1107,67 +1079,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open a habit to see progress, streaks, and stability — how consistently you are following through.';
 
   @override
-  String get roadGuideTasksTabTitle => 'Tasks free your head';
+  String get roadGuideTasksTitle => 'Tasks and today’s habits';
 
   @override
-  String get roadGuideTasksTabBody =>
-      'Write down what you must not forget. Tasks hold the details so you can focus on habits and the goal.';
+  String get roadGuideTasksBody =>
+      'Use + for one-off work. Today’s habits appear here with tasks, so the next action is always in front of you.';
 
   @override
-  String get roadGuideTasksAddTitle => 'Add a task';
+  String get roadGuideChatTitle => 'AI Helper';
 
   @override
-  String get roadGuideTasksAddBody =>
-      'Use + for one-off work, reminders, and steps that sit beside your habits.';
+  String get roadGuideChatBody =>
+      'Ask anything — habits, goals, scheduling, a plan, or other questions. Helper is support — not the main way to get habit recommendations.';
 
   @override
-  String get roadGuideTasksDemoTitle => 'Remember everything';
+  String get roadGuideSettingsTitle => 'Profile fuels recommendations';
 
   @override
-  String get roadGuideTasksDemoBody =>
-      'Tasks hold the details habits do not cover — so nothing slips while you work toward the goal.';
-
-  @override
-  String get roadGuideTasksHabitsTitle => 'Habits stay obvious';
-
-  @override
-  String get roadGuideTasksHabitsBody =>
-      'Today’s habits appear here with tasks, so the next action is always in front of you.';
-
-  @override
-  String get roadGuideChatTabTitle => 'AI Helper';
-
-  @override
-  String get roadGuideChatTabBody =>
-      'The Helper is here for support — questions about habits, goals, time management, and building a plan. The AI Helper can also answer other kinds of questions.';
-
-  @override
-  String get roadGuideChatInputTitle => 'Ask anything about your plan';
-
-  @override
-  String get roadGuideChatInputBody =>
-      'Type a question or describe what you need: habits, goals, scheduling, or a plan to follow.';
-
-  @override
-  String get roadGuideSettingsTabTitle => 'Settings';
-
-  @override
-  String get roadGuideSettingsTabBody =>
-      'Profile, theme, language, home-screen calendar, password, and support live here. Slogan and mission also help AI recommend habits.';
-
-  @override
-  String get roadGuideSettingsProfileTitle => 'Profile fuels recommendations';
-
-  @override
-  String get roadGuideSettingsProfileBody =>
-      'Name, slogan, and mission describe who you are becoming — AI uses them when suggesting habits.';
-
-  @override
-  String get roadGuideSettingsReplayTitle => 'Replay anytime';
-
-  @override
-  String get roadGuideSettingsReplayBody =>
-      'You can run this road guide again from Settings → About. Theme, language, and the calendar widget are just above.';
+  String get roadGuideSettingsBody =>
+      'Name, slogan, and mission help AI suggest habits. Replay this guide anytime from Settings → About.';
 
   @override
   String get calendarWidgetToday => 'Today';
@@ -1198,11 +1128,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarWidgetAddToHome => 'Add to Home Screen';
-
-  @override
-  String get roadGuideSettingsCalendarTitle => 'Calendar on your Home Screen';
-
-  @override
-  String get roadGuideSettingsCalendarBody =>
-      'Add a month, week, or today widget from here so tasks and habits stay visible without opening the app.';
 }

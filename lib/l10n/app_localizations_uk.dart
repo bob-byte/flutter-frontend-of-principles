@@ -70,6 +70,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageUkrainian => 'Українська';
 
   @override
+  String get settingsRemindersTitle => 'Нагадування';
+
+  @override
+  String get settingsRemindersSubtitle =>
+      'Керуйте дозволами сповіщень у системних Налаштуваннях';
+
+  @override
   String get editHabitTitle => 'Редагувати звичку';
 
   @override
@@ -345,7 +352,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get helperWarning =>
-      'ШІ-помічник знає ваші звички, цілі, місію, стать та гасло. Тому можете спитати щось стосовно них. Наприклад, “Яку поставити наступну ціль?” Зауважте: він може інколи помилятись. Перевіряйте важливу інформацію!';
+      'ШІ-помічник знає ваші звички, цілі, завдання, місію, стать та гасло. Тому можете спитати щось стосовно них — зокрема про тайм-менеджмент і як пов’язати звички з цілями. Наприклад, “Яку поставити наступну ціль?” Зауважте: він може інколи помилятись. Перевіряйте важливу інформацію!';
 
   @override
   String get helperEmptyDescription =>
@@ -1011,7 +1018,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get scheduleConstantReminderExplanation =>
-      'Продовжує нагадувати, доки ви не позначите це як виконане.';
+      'Дзвонить як будильник, доки ви не позначите це як виконане.';
 
   @override
   String get scheduleAllDay => 'Весь день';
@@ -1039,7 +1046,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get roadGuideReplaySubtitle =>
-      'Огляд цілей, звичок, завдань і налаштувань';
+      'Короткий огляд цілей, звичок, завдань і налаштувань';
 
   @override
   String get roadGuideExampleBadge => 'приклад';
@@ -1054,53 +1061,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get roadGuideDemoTaskName => 'Записатися на тренування';
 
   @override
-  String get roadGuideGoalsTabTitle => 'Почніть з цілі';
+  String get roadGuideGoalsTitle => 'Почніть з цілі';
 
   @override
-  String get roadGuideGoalsTabBody =>
-      'Principles автоматизує досягнення цілей. Відкрийте Цілі, щоб визначити, чого хочете досягти.';
+  String get roadGuideGoalsBody =>
+      'Опишіть результат, якого хочете. Звички, що ведуть до нього, групуються під кожною ціллю.';
 
   @override
-  String get roadGuideGoalsComposerTitle => 'Створіть ціль';
+  String get roadGuideHabitsTitle => 'Додайте звички до цілі';
 
   @override
-  String get roadGuideGoalsComposerBody =>
-      'Опишіть результат — під ним будуть згруповані звички, які ведуть до нього.';
-
-  @override
-  String get roadGuideGoalsDemoTitle => 'Цілі організовують звички';
-
-  @override
-  String get roadGuideGoalsDemoBody =>
-      'Кожна ціль стає контейнером для звичок, що наближають вас до результату.';
-
-  @override
-  String get roadGuideHabitsTabTitle => 'Звички ведуть до цілі';
-
-  @override
-  String get roadGuideHabitsTabBody =>
-      'Звички — це повторювані дії, які автоматизують прогрес до вашої цілі.';
-
-  @override
-  String get roadGuideHabitsFabTitle => 'Додайте звичку до цілі';
-
-  @override
-  String get roadGuideHabitsFabBody =>
-      'Створюйте звички й прив’язуйте їх до цілі — кожне виконання наближає досягнення.';
-
-  @override
-  String get roadGuideRecommendTitle => 'Отримайте рекомендації звичок';
-
-  @override
-  String get roadGuideRecommendBody =>
-      'Натисніть «Рекомендовані звички». ШІ запропонує звички на основі цілі, місії та гасла.';
-
-  @override
-  String get roadGuideHabitsDemoTitle => 'Відстежуйте звички під ціллю';
-
-  @override
-  String get roadGuideHabitsDemoBody =>
-      'Виконуйте звички стабільно — так досягнення цілі стає автоматичним.';
+  String get roadGuideHabitsBody =>
+      'Створюйте звички й прив’язуйте їх до цілі. У додаванні звички «Рекомендовані звички» запропонують ідеї з вашої цілі, місії та гасла.';
 
   @override
   String get roadGuideHabitDetailTitle => 'Деталі звички';
@@ -1110,67 +1082,25 @@ class AppLocalizationsUk extends AppLocalizations {
       'Відкрийте звичку, щоб бачити прогрес, серії та стабільність — наскільки послідовно ви її виконуєте.';
 
   @override
-  String get roadGuideTasksTabTitle => 'Завдання розвантажують голову';
+  String get roadGuideTasksTitle => 'Завдання і сьогоднішні звички';
 
   @override
-  String get roadGuideTasksTabBody =>
-      'Записуйте те, що не можна забути. Завдання тримають деталі, щоб ви зосередились на звичках і цілі.';
+  String get roadGuideTasksBody =>
+      'Кнопка + — для разових справ. Сьогоднішні звички з’являються тут разом із завданнями, тож наступна дія завжди перед очима.';
 
   @override
-  String get roadGuideTasksAddTitle => 'Додайте завдання';
+  String get roadGuideChatTitle => 'AI-помічник';
 
   @override
-  String get roadGuideTasksAddBody =>
-      'Кнопка + — для разових справ, нагадувань і кроків поруч зі звичками.';
+  String get roadGuideChatBody =>
+      'Запитуйте про що завгодно — звички, цілі, розклад, план чи інші питання. Помічник — це підтримка, а не головний спосіб отримати рекомендації звичок.';
 
   @override
-  String get roadGuideTasksDemoTitle => 'Нічого не забути';
+  String get roadGuideSettingsTitle => 'Профіль для рекомендацій';
 
   @override
-  String get roadGuideTasksDemoBody =>
-      'У завданнях те, чого не покривають звички — щоб ніщо не випало, поки ви йдете до цілі.';
-
-  @override
-  String get roadGuideTasksHabitsTitle => 'Звички завжди на видноті';
-
-  @override
-  String get roadGuideTasksHabitsBody =>
-      'Сьогоднішні звички з’являються тут разом із завданнями, тож наступна дія завжди перед очима.';
-
-  @override
-  String get roadGuideChatTabTitle => 'AI-помічник';
-
-  @override
-  String get roadGuideChatTabBody =>
-      'Помічник — це підтримка: відповіді про звички, цілі, тайм-менеджмент і створення плану. AI-помічник також може відповідати на інші різноманітні питання.';
-
-  @override
-  String get roadGuideChatInputTitle => 'Запитайте про свій план';
-
-  @override
-  String get roadGuideChatInputBody =>
-      'Напишіть питання або опишіть, що потрібно: звички, цілі, розклад чи план дій.';
-
-  @override
-  String get roadGuideSettingsTabTitle => 'Налаштування';
-
-  @override
-  String get roadGuideSettingsTabBody =>
-      'Тут профіль, тема, мова, віджет календаря на головному екрані, пароль і підтримка. Гасло та місія також допомагають ШІ рекомендувати звички.';
-
-  @override
-  String get roadGuideSettingsProfileTitle => 'Профіль для рекомендацій';
-
-  @override
-  String get roadGuideSettingsProfileBody =>
-      'Ім’я, гасло й місія описують, ким ви стаєте — ШІ бере їх, коли пропонує звички.';
-
-  @override
-  String get roadGuideSettingsReplayTitle => 'Запуск у будь-який час';
-
-  @override
-  String get roadGuideSettingsReplayBody =>
-      'Цей гід можна пройти знову в Налаштуваннях → Про застосунок. Тема, мова й віджет календаря — трохи вище.';
+  String get roadGuideSettingsBody =>
+      'Ім’я, гасло й місія допомагають ШІ пропонувати звички. Цей гід можна пройти знову в Налаштуваннях → Про застосунок.';
 
   @override
   String get calendarWidgetToday => 'Сьогодні';
@@ -1201,11 +1131,4 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get calendarWidgetAddToHome => 'Додати на головний екран';
-
-  @override
-  String get roadGuideSettingsCalendarTitle => 'Календар на головному екрані';
-
-  @override
-  String get roadGuideSettingsCalendarBody =>
-      'Додайте віджет місяця, тижня або сьогодні тут — завдання і звички будуть видно без відкриття застосунку.';
 }
