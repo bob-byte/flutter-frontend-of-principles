@@ -88,8 +88,9 @@ Future<Task?> showTaskEditSheet(
   return result;
 }
 
-/// Holds keyboard inset across brief focus transfers (e.g. add subtask) so
-/// the sheet does not jump when iOS momentarily reports viewInsets = 0.
+/// Pins the composer above the keyboard. Uses the live inset while the IME is
+/// open (so the suggestion bar does not leave a black gap), and only holds the
+/// last height across a brief focus handoff when iOS reports inset = 0.
 class _TaskEditSheetHost extends StatefulWidget {
   const _TaskEditSheetHost({required this.taskId, required this.theme});
 
@@ -112,8 +113,9 @@ class _TaskEditSheetHostState extends State<_TaskEditSheetHost> {
   }
 
   void _scheduleClearHeldInset() {
-    _clearInsetTimer?.cancel();
-    _clearInsetTimer = Timer(const Duration(milliseconds: 320), () {
+    if (_clearInsetTimer != null) return;
+    _clearInsetTimer = Timer(const Duration(milliseconds: 400), () {
+      _clearInsetTimer = null;
       if (!mounted) return;
       if (MediaQuery.viewInsetsOf(context).bottom > 0 || _focusIsInsideHost()) {
         return;
@@ -132,23 +134,32 @@ class _TaskEditSheetHostState extends State<_TaskEditSheetHost> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final inset = media.viewInsets.bottom;
+    final focusedInside = _focusIsInsideHost();
+
     if (inset > 0) {
+      // Follow the real keyboard (incl. suggestion bar) — never fight it.
       _heldInset = inset;
       _clearInsetTimer?.cancel();
       _clearInsetTimer = null;
-    } else if (!_focusIsInsideHost()) {
+    } else if (focusedInside) {
+      // Focus still in the sheet but inset briefly 0 during field handoff.
+      _clearInsetTimer?.cancel();
+      _clearInsetTimer = null;
+    } else {
       _scheduleClearHeldInset();
     }
 
-    // Keep last keyboard height through a short focus handoff gap.
     final bottomInset = inset > 0 ? inset : _heldInset;
     final maxHeight = media.size.height - bottomInset - media.padding.top - 24;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: Theme(
-        data: widget.theme,
-        child: TaskEditSheet(taskId: widget.taskId, maxHeight: maxHeight),
+      child: MediaQuery(
+        data: media.copyWith(viewInsets: EdgeInsets.zero),
+        child: Theme(
+          data: widget.theme,
+          child: TaskEditSheet(taskId: widget.taskId, maxHeight: maxHeight),
+        ),
       ),
     );
   }
@@ -194,7 +205,6 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
       _syncControllers(vm);
       if (widget.taskId == null) {
         _titleFocus.requestFocus();
-        SystemChannels.textInput.invokeMethod('TextInput.show');
       }
     });
   }
@@ -336,6 +346,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         focusNode: _titleFocus,
                         autofocus: widget.taskId == null,
                         onTapOutside: (_) {},
+                        scrollPadding: const EdgeInsets.symmetric(vertical: 8),
                         keyboardType: TextInputType.text,
                         textCapitalization: TextCapitalization.sentences,
                         enableSuggestions: true,
@@ -399,6 +410,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                         minLines: 1,
                         maxLines: 6,
                         onTapOutside: (_) {},
+                        scrollPadding: const EdgeInsets.symmetric(vertical: 8),
                         keyboardType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
                         enableSuggestions: true,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../core/theme/task_theme_palette.dart';
 import '../l10n/task_strings.dart';
@@ -27,7 +26,6 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
   final _controllers = <String, TextEditingController>{};
   final _focusNodes = <String, FocusNode>{};
   Set<String> _knownIds = {};
-  String? _autofocusId;
 
   static const _borderless = InputDecoration(
     border: InputBorder.none,
@@ -40,6 +38,9 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
     contentPadding: EdgeInsets.zero,
   );
 
+  /// Keep ensureVisible from fighting the host's keyboard padding.
+  static const _scrollPadding = EdgeInsets.symmetric(vertical: 8);
+
   @override
   void initState() {
     super.initState();
@@ -51,11 +52,6 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
   void didUpdateWidget(covariant TaskSubtasksEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncControllers(widget.vm.subtasks);
-    for (final item in widget.vm.subtasks) {
-      if (_knownIds.contains(item.id) || item.title.isNotEmpty) continue;
-      _autofocusId = item.id;
-      _queueKeyboardFocus(item.id);
-    }
     _knownIds = {for (final item in widget.vm.subtasks) item.id};
   }
 
@@ -80,26 +76,28 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
     }
   }
 
-  void _queueKeyboardFocus(String id) {
+  void _focusAfterBuild(String id) {
     void focus() {
       if (!mounted) return;
       final node = _focusNodes[id];
       if (node == null || !node.canRequestFocus) return;
-      node.requestFocus();
-      SystemChannels.textInput.invokeMethod('TextInput.show');
+      if (!node.hasFocus) node.requestFocus();
     }
 
-    // Run before and after the frame so iOS never sees a focus gap long
-    // enough to animate the keyboard away.
+    // Same-frame handoff: keep the IME connection alive across the rebuild.
     focus();
     WidgetsBinding.instance.addPostFrameCallback((_) => focus());
   }
 
   void _onAddSubtask() {
     if (widget.vm.isSaving) return;
-    // Show IME immediately in case focus briefly drops on the tap itself.
-    SystemChannels.textInput.invokeMethod('TextInput.show');
-    widget.vm.addSubtask();
+    final id = widget.vm.addSubtask();
+    // Create local controllers now so we can move focus in this turn —
+    // waiting for didUpdateWidget leaves a gap where iOS dismisses the IME.
+    _controllers.putIfAbsent(id, TextEditingController.new);
+    _focusNodes.putIfAbsent(id, FocusNode.new);
+    _knownIds = {..._knownIds, id};
+    _focusAfterBuild(id);
   }
 
   @override
@@ -127,20 +125,26 @@ class _TaskSubtasksEditorState extends State<TaskSubtasksEditor> {
           _SubtaskRow(
             key: ValueKey(items[i].id),
             item: items[i],
-            isLast: i == items.length - 1,
-            autofocus: items[i].id == _autofocusId,
             controller: _controllers[items[i].id]!,
             focusNode: _focusNodes[items[i].id]!,
             palette: palette,
             strings: strings,
             decoration: _borderless,
+            scrollPadding: _scrollPadding,
             onToggle: () => vm.toggleSubtaskDone(items[i].id),
             onTitleChanged: (value) => vm.setSubtaskTitle(items[i].id, value),
-            onSubmitted: () {
-              if (i == items.length - 1 &&
-                  _controllers[items[i].id]!.text.trim().isNotEmpty) {
+            onEditingComplete: () {
+              final isLast = i == items.length - 1;
+              final text = _controllers[items[i].id]!.text.trim();
+              if (isLast && text.isNotEmpty) {
+                // Replace default "unfocus" — add next row and keep IME up.
                 _onAddSubtask();
+                return;
               }
+              if (!isLast) {
+                _focusNodes[items[i + 1].id]?.requestFocus();
+              }
+              // Empty last row: stay focused so the keyboard does not dismiss.
             },
             onRemove: () => vm.removeSubtask(items[i].id),
           ),
@@ -179,30 +183,28 @@ class _SubtaskRow extends StatelessWidget {
   const _SubtaskRow({
     super.key,
     required this.item,
-    required this.isLast,
-    required this.autofocus,
     required this.controller,
     required this.focusNode,
     required this.palette,
     required this.strings,
     required this.decoration,
+    required this.scrollPadding,
     required this.onToggle,
     required this.onTitleChanged,
-    required this.onSubmitted,
+    required this.onEditingComplete,
     required this.onRemove,
   });
 
   final TaskSubtask item;
-  final bool isLast;
-  final bool autofocus;
   final TextEditingController controller;
   final FocusNode focusNode;
   final TasksUiPalette palette;
   final TaskStrings strings;
   final InputDecoration decoration;
+  final EdgeInsets scrollPadding;
   final VoidCallback onToggle;
   final ValueChanged<String> onTitleChanged;
-  final VoidCallback onSubmitted;
+  final VoidCallback onEditingComplete;
   final VoidCallback onRemove;
 
   @override
@@ -228,12 +230,13 @@ class _SubtaskRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
-              autofocus: autofocus,
               onTapOutside: (_) {},
+              scrollPadding: scrollPadding,
               textCapitalization: TextCapitalization.sentences,
-              textInputAction: isLast
-                  ? TextInputAction.done
-                  : TextInputAction.next,
+              // "Next" — never "Done", which dismisses the IME on iOS.
+              textInputAction: TextInputAction.next,
+              // Custom complete handler keeps focus in the checklist.
+              onEditingComplete: onEditingComplete,
               style: TextStyle(
                 fontSize: 15,
                 color: item.isDone ? palette.textMuted : palette.textPrimary,
@@ -248,7 +251,6 @@ class _SubtaskRow extends StatelessWidget {
                 ),
               ),
               onChanged: onTitleChanged,
-              onSubmitted: (_) => onSubmitted(),
             ),
           ),
           GestureDetector(
