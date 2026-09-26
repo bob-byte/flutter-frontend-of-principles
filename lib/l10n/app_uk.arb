@@ -9,6 +9,8 @@
   "@settingsSectionProfile": {"description": "Заголовок секції профілю на екрані налаштувань"},
   "settingsSectionAbout": "Про застосунок",
   "@settingsSectionAbout": {"description": "Заголовок секції інформації та підтримки на екрані налаштувань"},
+  "settingsAppVersion": "Версія",
+  "@settingsAppVersion": {"description": "Пункт «Про застосунок» з версією та номером збірки"},
   "settingsSectionAccount": "Обліковий запис",
   "@settingsSectionAccount": {"description": "Заголовок секції дій з обліковим записом на екрані налаштувань"},
   "logoutLabel": "Вийти",

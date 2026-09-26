@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSectionAbout => 'About';
 
   @override
+  String get settingsAppVersion => 'Version';
+
+  @override
   String get settingsSectionAccount => 'Account';
 
   @override

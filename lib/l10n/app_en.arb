@@ -9,6 +9,8 @@
   "@settingsSectionProfile": {"description": "Settings grouped-section header for profile fields"},
   "settingsSectionAbout": "About",
   "@settingsSectionAbout": {"description": "Settings grouped-section header for app information and support"},
+  "settingsAppVersion": "Version",
+  "@settingsAppVersion": {"description": "Settings About row showing the installed app version and build number"},
   "settingsSectionAccount": "Account",
   "@settingsSectionAccount": {"description": "Settings grouped-section header for account actions"},
   "logoutLabel": "Logout",

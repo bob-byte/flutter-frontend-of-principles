@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:principles_app/core/locale/locale_controller.dart';
 import 'package:principles_app/core/road_guide/main_shell_controller.dart';
 import 'package:principles_app/core/road_guide/road_guide_controller.dart';
@@ -78,6 +79,13 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
+    PackageInfo.setMockInitialValues(
+      appName: 'Principles',
+      packageName: 'com.set.principles',
+      version: '4.0.5',
+      buildNumber: '85',
+      buildSignature: '',
+    );
     SharedPreferences.setMockInitialValues({
       UserService.prefsKey: jsonEncode(
         User(
@@ -257,6 +265,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('User agreement', skipOffstage: false), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settingsAppVersionTile')),
+      200,
+    );
+    expect(find.text('Version', skipOffstage: false), findsOneWidget);
+    expect(find.text('4.0.5 (85)', skipOffstage: false), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Change password'), 200);
     expect(find.text('Change password', skipOffstage: false), findsOneWidget);
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -45,6 +46,7 @@ class SettingsViewModel extends ChangeNotifier {
   bool _isSavingProfile = false;
   bool _isDeletingAccount = false;
   String? _profileError;
+  String? _appVersionLabel;
 
   Locale? get localeOverride => _localeController.localeOverride;
 
@@ -58,9 +60,27 @@ class SettingsViewModel extends ChangeNotifier {
   bool get isSavingProfile => _isSavingProfile;
   bool get isDeletingAccount => _isDeletingAccount;
   String? get profileError => _profileError;
+  String? get appVersionLabel => _appVersionLabel;
 
   Future<void> load({bool silent = false}) async {
-    await Future.wait([loadLocale(), loadProfile(silent: silent)]);
+    await Future.wait([
+      loadLocale(),
+      loadProfile(silent: silent),
+      loadAppVersion(),
+    ]);
+  }
+
+  Future<void> loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final build = info.buildNumber.trim();
+      _appVersionLabel = build.isEmpty
+          ? info.version
+          : '${info.version} ($build)';
+    } catch (_) {
+      _appVersionLabel = null;
+    }
+    notifyListeners();
   }
 
   Future<void> loadLocale() async {

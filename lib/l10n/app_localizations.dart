@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'About'**
   String get settingsSectionAbout;
 
+  /// Settings About row showing the installed app version and build number
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsAppVersion;
+
   /// Settings grouped-section header for account actions
   ///
   /// In en, this message translates to:

@@ -44,8 +44,15 @@ class _SettingsViewState extends State<SettingsView> {
     // LaunchDataLoader often finished pre-auth and never hydrated profile.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (launchSessionAlreadyHydrated(context)) return;
-      context.read<SettingsViewModel>().load(silent: widget.embedded);
+      final vm = context.read<SettingsViewModel>();
+      if (launchSessionAlreadyHydrated(context)) {
+        // Profile may already be warm; still ensure version is available.
+        if (vm.appVersionLabel == null) {
+          vm.loadAppVersion();
+        }
+        return;
+      }
+      vm.load(silent: widget.embedded);
     });
   }
 
@@ -397,6 +404,14 @@ class _SettingsBody extends StatelessWidget {
                     trailing: GlassListTile.chevron,
                     onTap: vm.openUserAgreement,
                   ),
+                  if (vm.appVersionLabel != null)
+                    GlassListTile(
+                      key: const Key('settingsAppVersionTile'),
+                      contentPadding: _settingsTilePadding,
+                      leading: const Icon(Icons.tag_outlined),
+                      title: Text(l10n.settingsAppVersion),
+                      subtitle: Text(vm.appVersionLabel!),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),

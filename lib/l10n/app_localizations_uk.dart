@@ -21,6 +21,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get settingsSectionAbout => 'Про застосунок';
 
   @override
+  String get settingsAppVersion => 'Версія';
+
+  @override
   String get settingsSectionAccount => 'Обліковий запис';
 
   @override
