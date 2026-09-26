@@ -1,112 +1,128 @@
-# Principles App (Flutter)
+# Principles (Flutter)
 
-Flutter rewrite of the Principles app.
+Flutter rewrite of the Principles habit/goal app.
 
-Official install page (Android, macOS, iOS, iPadOS): <a href="https://principles.top" target="_blank" rel="noopener noreferrer">principles.top</a>
+Official install page (Android, macOS, iOS, iPadOS): [principles.top](https://principles.top)
 
-## Overview
+Backend is .NET 8 (`SET.WebAPI`) in [`backend/`](backend/).
 
-The app is built with a simple MVVM-style structure:
+## Core loop
 
-- `views/`: UI screens.
-- `viewmodels/`: state and presentation logic (`ChangeNotifier` + `provider`).
-- `services/`: business logic and API-facing services.
-- `models/`: app/domain models.
-- `core/`: shared infrastructure (network, storage, sync, and theme).
-- `app/`: root app wiring (`MultiProvider`, routes, themes).
+1. Define a **goal**
+2. Attach **habits** that automate progress (optionally via AI recommendations)
+3. Complete habits; inspect detail (progress, streaks, stability)
+4. Use **Tasks** for one-off work and to keep today's habits visible
+5. Use **AI Helper** for support — not the primary recommendation entry point
+6. Settings (profile, slogan, mission) feed AI habit recommendations
 
-Main entry point: `lib/main.dart`  
-Root app widget: `lib/app/app.dart`
+## Shell
 
-## Features (Current)
+Tab order: Chat · Goals · **Tasks** (center, default) · Habits · Settings
 
-- User startup and login flow.
-- Goals and habits management.
-- Habit details and progress tracking.
-- Settings and theme switching.
-- Local persistence/sync foundations (`sqflite`, secure storage).
-- AI helper and task assist via OpenAI (`gpt-5-nano`).
+- Pre-login: App Benefits carousel
+- Post-login: spotlight road guide once per device (replay from Settings → About)
+- Daily progress reminder (Tasks app bar): check-in for goals, habits, and tasks; notification opens Tasks today
+- Home-screen calendar widgets (month / week / today) show scheduled tasks and habits due that day
 
-## Tech Stack
+## Architecture
 
-- Flutter + Dart
-- `provider` for state management
-- `dio` for HTTP
-- `sqflite` + `path` for local storage
-- `flutter_secure_storage` and `shared_preferences` for settings/auth data
-- `intl` for formatting/localization helpers
+MVVM-style layout under `lib/`:
+
+| Folder | Role |
+|--------|------|
+| `views/` | Screens |
+| `viewmodels/` | State and presentation (`ChangeNotifier` + Provider) |
+| `services/` | Business logic and API-facing services |
+| `models/` | Domain models |
+| `core/` | Infra (network, storage, sync, theme, home widgets, deep links, reminders) |
+| `app/` | Root wiring (`MultiProvider`, routes, themes) |
+| `widgets/` | Shared UI |
+
+Entry: `lib/main.dart` → `lib/app/app.dart`
+
+Local SQLite (`sqflite`) plus a sync queue to the .NET WebAPI. Sync prefers incremental `GET /sync/changes?since=…` when a cursor exists; otherwise `GET /sync/bootstrap`. Offline-capable CRUD enqueues first, then syncs when online.
+
+## Features
+
+- Auth (email, Apple, Google) and startup / SyncGate bootstrap
+- Goals with nested habits; Habits tab as a flat filtered list
+- Habit detail (calendar, streaks, stability) and edit as normal pages
+- Tasks with checklists (subtasks), live-save while editing, repeats, and reminders
+- AI Helper chat history (synced) and task AI assist
+- Local notifications (including constant task/habit reminders) and deep links from widgets / notifications
+- Themes, alternate app icons, EN/UK localization
+- Completion celebration sound + burst animation
+
+## Tech stack
+
+- Flutter / Dart SDK `^3.10.8`
+- Provider, Dio, sqflite
+- `flutter_secure_storage`, `shared_preferences`
+- `flutter_local_notifications`, `home_widget`
+- `liquid_glass_widgets`, l10n via `lib/l10n/app_en.arb` and `app_uk.arb` (`flutter gen-l10n`)
+
+AI chat and task assist go through the backend (`POST /api/ai/chat`, `POST /api/ai/parse-task`). Set `AI_API_KEY` on the server only — no OpenAI key in the Flutter app.
 
 ## Prerequisites
 
-- Flutter SDK installed and available in `PATH`
-- Dart SDK (comes with Flutter)
-- Platform toolchains for your target (Android Studio/Xcode/web)
+- Flutter SDK on `PATH` (Dart comes with Flutter)
+- Platform toolchains for your target (Android Studio / Xcode)
 
-Project currently targets:
-
-- Dart SDK: `^3.10.8`
-
-## Getting Started
-
-1. Install dependencies:
+## Getting started
 
 ```bash
 flutter pub get
-```
-
-2. Verify your local Flutter setup:
-
-```bash
 flutter doctor
-```
-
-3. Run the app:
-
-```bash
 flutter run
 ```
 
-Useful variants:
+Useful targets:
 
 ```bash
 flutter run -d chrome
 flutter run -d ios
 flutter run -d android
+flutter run -d macos
 ```
 
-AI chat and task assist go through the backend (`POST /api/ai/chat`, `POST /api/ai/parse-task`). Set `AI_API_KEY` (or `AiApiKey`) on the server. No OpenAI key is needed in the Flutter app.
-
-## Testing
-
-Run the test suite:
+## Testing and analysis
 
 ```bash
 flutter test
-```
-
-Analyze code:
-
-```bash
 flutter analyze
 ```
 
-## Project Structure
+After editing ARB strings:
+
+```bash
+flutter gen-l10n
+```
+
+## Project structure
 
 ```text
 lib/
   app/
   core/
+    deep_link/
+    home_widget/
     network/
+    reminder/
     storage/
     sync/
     theme/
+  l10n/
   models/
   services/
   viewmodels/
   views/
+  widgets/
+backend/          # .NET WebAPI (separate git root)
 ```
 
 ## Notes
 
-- This app is not published to pub.dev (`publish_to: none`).
-- Generated platform folders (`android`, `ios`, `web`, `macos`, `windows`) are included.
+- Not published to pub.dev (`publish_to: none`).
+- Platform folders (`android`, `ios`, `macos`, `windows`, `web`) are included.
+- iOS/macOS home widgets need App Group `group.com.set.principles`.
+- Cursor project rules live in `.cursor/rules/`; agent skills in `.cursor/skills/`.

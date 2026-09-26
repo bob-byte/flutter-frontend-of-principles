@@ -1,29 +1,26 @@
 ---
 name: commit-changes
 description: >-
-  Commits uncommitted work in the Flutter or backend git roots, split by kind
-  of change. Use when the user says "Commit backend changes", "Commit Flutter
-  changes", "Commit frontend changes", or asks to commit with separated commits.
+  Commits uncommitted work in the Flutter git root, split by kind of change.
+  Use when the user says "Commit Flutter changes", "Commit frontend changes",
+  or asks to commit Flutter work with separated commits. For backend, use the
+  skill in backend/.cursor/skills/commit-changes instead.
 ---
 
-# Commit changes (Flutter / backend)
+# Commit Flutter changes
 
 ## Triggers
 
-- `Commit backend changes`
 - `Commit Flutter changes` / `Commit frontend changes`
-- Similar phrasing that names which repo and asks to commit
+- Similar phrasing that names Flutter/frontend and asks to commit
 
-## Repo roots
+For **`Commit backend changes`**, follow `backend/.cursor/skills/commit-changes/SKILL.md` (separate git root). Do not fold backend commits into this skill.
 
-Use `git -C <absolute-path>` (do not rely on Shell `working_directory` alone — nested `backend/` can resolve to the Flutter root).
+## Repo root
 
-| Phrase | Repo |
-|--------|------|
-| backend | Flutter workspace `backend/` (separate git root: Bitbucket `backend-of-principles-app`) |
-| Flutter / frontend | Flutter workspace root (GitHub `flutter-frontend-of-principles`) |
+Use `git -C <absolute-path-to-flutter-root> …` (do not rely on Shell `working_directory` alone — nested `backend/` is a different git root).
 
-Do not commit the MAUI repo unless the user names it.
+Do not commit backend or MAUI unless the user names those repos.
 
 ## Authorship (required)
 
@@ -33,7 +30,7 @@ Do not commit the MAUI repo unless the user names it.
 
 ## How to commit
 
-1. Status, full diff, and recent `git log` in that repo only (`git -C …`).
+1. Status, full diff, and recent `git log` in this repo only (`git -C …`).
 2. Group into **separate commits by kind** (feature vs fix vs refactor vs tests vs docs/rules vs config). Prefer focused commits over one dump. Keep a feature and its tests together when they are one unit.
 3. Stage only files for the current commit; use HEREDOC messages in this repo’s style (imperative, why-focused, ~1–2 sentences).
 4. No secrets (`.env`, real API keys, app passwords). Warn and skip those files.

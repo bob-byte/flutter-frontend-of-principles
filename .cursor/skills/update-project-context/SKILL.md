@@ -18,13 +18,13 @@ Update files when a decision should still be true in a future session (UX conven
 | Always-on product/architecture/stack | `.cursor/rules/*.mdc` with `alwaysApply: true` |
 | File-specific constraints | `.cursor/rules/*.mdc` with `globs` |
 | Multi-step workflow | `.cursor/skills/<name>/SKILL.md` |
-| Backend (.NET) conventions | `backend/.cursor/rules/*.mdc` (separate git root) |
+| Backend (.NET) conventions / skills | `backend/.cursor/` only (separate git root — never store backend rules/skills here) |
 
 Flutter always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `road-guide.mdc`.
 
-Backend always-on: `communication.mdc`, `project.mdc`, `architecture.mdc`, `stack.mdc`. File-specific: `api-controllers.mdc`, `ef-data.mdc`.
+Backend keeps its own `.cursor/rules/` and `.cursor/skills/` (see that repo’s `update-project-context` skill).
 
-Workflow skills: `flutter-feature`, `commit-changes` (phrase: “Commit backend/Flutter changes”; split by kind; never add agent as contributor).
+Workflow skills here: `flutter-feature`, `commit-changes` (Flutter only; phrase: “Commit Flutter/frontend changes”). Backend commits: `backend/.cursor/skills/commit-changes`.
 
 ## How
 
