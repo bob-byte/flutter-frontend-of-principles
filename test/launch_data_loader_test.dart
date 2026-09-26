@@ -166,6 +166,10 @@ void main() {
     expect(loader.isBootstrapComplete, isFalse);
     expect(loader.hasCompletedReminderRestore, isFalse);
     expect(loader.isSyncGateComplete, isFalse);
+    expect(loader.forceSyncGate, isTrue);
+
+    loader.markReminderRestoreDone();
+    expect(loader.forceSyncGate, isFalse);
   });
 
   test('pre-auth ensureLoaded does not mark session hydrated', () async {

@@ -9,8 +9,8 @@ import '../widgets/themed_lottie.dart';
 /// Full-screen gate while post-auth hydrate and reminder restore run.
 ///
 /// Matches MAUI [SyncGateView]: fire Lottie + "Loading content...".
-/// Shown only for full bootstrap (`since` null) or when `since` is ≥ 20 days
-/// old — see `requiresSyncGate` / `kSyncGateStaleSince`.
+/// Shown after interactive sign-in, for full bootstrap (`since` null), or when
+/// `since` is ≥ 20 days old — see `shouldShowSyncGate` / `kSyncGateStaleSince`.
 /// Reminder restore explain uses [DialogService] / [AppAlertDialog] (MAUI
 /// [ShowAlertAsync]), not inline copy on this gate.
 class SyncGateView extends StatefulWidget {

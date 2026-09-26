@@ -74,6 +74,9 @@ class _MainShellState extends State<MainShell> {
       _sessionReady = loader.isSyncGateComplete;
       if (_sessionReady) {
         _showSyncGate = false;
+      } else if (loader.forceSyncGate) {
+        // Interactive sign-in: show loading immediately (skip blank frame).
+        _showSyncGate = true;
       }
       WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
     }
@@ -313,12 +316,17 @@ class _MainShellState extends State<MainShell> {
     final loader = context.read<LaunchDataLoader>();
     final settings = context.read<SettingsService>();
 
-    // Full bootstrap (no since) or since ≥ 20 days → cover shell with SyncGate.
-    // Recent incremental catch-up paints the shell and syncs underneath.
+    // Interactive sign-in always covers with SyncGate. Cold start covers for
+    // full bootstrap (no since) or since ≥ 20 days; recent catch-up paints
+    // the shell and syncs underneath.
     // Capture before ensureLoaded — sync may write lastSuccessfulSyncAt.
     final since = await settings.getLastSuccessfulSyncAt();
     final isFirstBootstrap = since == null;
-    final showGate = !loader.isSyncGateComplete && requiresSyncGate(since);
+    final showGate = shouldShowSyncGate(
+      isSyncGateComplete: loader.isSyncGateComplete,
+      forceSyncGate: loader.forceSyncGate,
+      since: since,
+    );
     if (!mounted) return;
     if (_showSyncGate != showGate) {
       setState(() => _showSyncGate = showGate);

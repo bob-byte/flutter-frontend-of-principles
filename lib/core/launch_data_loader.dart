@@ -98,6 +98,11 @@ class LaunchDataLoader {
   /// True after SyncGate finished reminder restore for this session.
   bool _reminderRestoreDone = false;
 
+  /// True after [reset] (interactive sign-in / logout) until SyncGate finishes.
+  /// Forces the loading page even when a recent sync cursor would otherwise
+  /// paint the shell and sync underneath.
+  bool _forceSyncGate = false;
+
   /// Whether a full authenticated hydrate has completed.
   bool get isSessionHydrated => _sessionHydrated;
 
@@ -113,8 +118,12 @@ class LaunchDataLoader {
   /// SyncGate can dismiss only after bootstrap and reminder restore.
   bool get isSyncGateComplete => _bootstrapComplete && _reminderRestoreDone;
 
+  /// Whether MainShell must cover with SyncGate after interactive auth.
+  bool get forceSyncGate => _forceSyncGate;
+
   void markReminderRestoreDone() {
     _reminderRestoreDone = true;
+    _forceSyncGate = false;
   }
 
   /// Local SQLite/prefs paint only — does not wait for bootstrap merge.
@@ -156,7 +165,10 @@ class LaunchDataLoader {
     });
   }
 
-  /// Allows a fresh hydrate after logout / account switch.
+  /// Allows a fresh hydrate after logout / account switch / interactive sign-in.
+  ///
+  /// Sets [forceSyncGate] so MainShell shows the loading page while bootstrap
+  /// runs, matching MAUI post-login SyncGate even with a recent sync cursor.
   void reset() {
     _epoch++;
     _inFlight = null;
@@ -166,6 +178,7 @@ class LaunchDataLoader {
     _sessionHydrated = false;
     _bootstrapComplete = false;
     _reminderRestoreDone = false;
+    _forceSyncGate = true;
     if (_localReady != null && !_localReady!.isCompleted) {
       _localReady!.complete();
     }

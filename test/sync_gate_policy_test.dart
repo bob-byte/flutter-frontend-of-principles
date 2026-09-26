@@ -36,4 +36,40 @@ void main() {
       isTrue,
     );
   });
+
+  test('interactive sign-in forces SyncGate even with a recent since', () {
+    expect(
+      shouldShowSyncGate(
+        isSyncGateComplete: false,
+        forceSyncGate: true,
+        since: now.subtract(const Duration(days: 1)),
+        now: now,
+      ),
+      isTrue,
+    );
+  });
+
+  test('cold start with recent since skips SyncGate when not forced', () {
+    expect(
+      shouldShowSyncGate(
+        isSyncGateComplete: false,
+        forceSyncGate: false,
+        since: now.subtract(const Duration(days: 1)),
+        now: now,
+      ),
+      isFalse,
+    );
+  });
+
+  test('completed SyncGate never shows again', () {
+    expect(
+      shouldShowSyncGate(
+        isSyncGateComplete: true,
+        forceSyncGate: true,
+        since: null,
+        now: now,
+      ),
+      isFalse,
+    );
+  });
 }
