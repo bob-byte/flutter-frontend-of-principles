@@ -59,8 +59,6 @@ Local SQLite (`sqflite`) plus a sync queue to the .NET WebAPI. Sync prefers incr
 - `flutter_local_notifications`, `home_widget`
 - `liquid_glass_widgets`, l10n via `lib/l10n/app_en.arb` and `app_uk.arb` (`flutter gen-l10n`)
 
-AI chat and task assist go through the backend (`POST /api/ai/chat`, `POST /api/ai/parse-task`). Set `AI_API_KEY` on the server only — no OpenAI key in the Flutter app.
-
 ## Prerequisites
 
 - Flutter SDK on `PATH` (Dart comes with Flutter)
