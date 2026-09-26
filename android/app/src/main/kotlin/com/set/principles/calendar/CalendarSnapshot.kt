@@ -53,7 +53,8 @@ data class CalendarSnapshot(
         items
             .filter { it.occursOn(day) }
             .sortedWith(
-                compareBy<CalendarItem> { it.done }
+                compareBy<CalendarItem> { kindRank(it.kind) }
+                    .thenBy { it.done }
                     .thenByDescending { it.allDay }
                     .thenBy { it.title.lowercase() },
             )
@@ -174,6 +175,14 @@ fun applyAlpha(color: Int, fraction: Float): Int {
     val alpha = ((Color.alpha(color) * fraction).toInt()).coerceIn(0, 255)
     return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
 }
+
+/** Tasks before habits; anything else after both. */
+private fun kindRank(kind: String): Int =
+    when (kind) {
+        "task" -> 0
+        "habit" -> 1
+        else -> 2
+    }
 
 fun monthGrid(month: LocalDate, weekStartsOn: Int = 1): List<LocalDate> {
     val first = month.withDayOfMonth(1)

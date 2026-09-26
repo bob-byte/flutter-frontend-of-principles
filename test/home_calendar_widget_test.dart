@@ -85,7 +85,7 @@ void main() {
       habits: [
         Habit(
           id: 7,
-          name: 'Morning run',
+          name: 'Apple a day',
           frequency: const FrequencyConfig(type: FrequencyType.daily),
         ),
       ],
@@ -108,10 +108,12 @@ void main() {
     final onEighth = snapshot.itemsOn(DateTime(2026, 9, 8));
     expect(
       onEighth.map((i) => i.title),
-      containsAll(['Bring keys', 'Morning run']),
+      containsAll(['Bring keys', 'Apple a day']),
     );
+    // Alphabetically "Apple a day" would precede "Bring keys"; tasks stay first.
+    expect(onEighth.map((i) => i.kind).toList(), ['task', 'habit']);
     expect(onEighth.firstWhere((i) => i.title == 'Bring keys').timed, isTrue);
-    expect(onEighth.firstWhere((i) => i.title == 'Morning run').done, isTrue);
+    expect(onEighth.firstWhere((i) => i.title == 'Apple a day').done, isTrue);
 
     final tripDays = [
       for (final day in [
@@ -123,6 +125,38 @@ void main() {
     ];
     expect(tripDays, [true, true, true]);
     expect(snapshot.items.any((i) => i.title == 'Inbox only'), isFalse);
+
+    final unthemed = snapshot.itemsOn(DateTime(2026, 9, 10)).firstWhere(
+      (i) => i.title == 'All-day trip',
+    );
+    expect(unthemed.color, homeCalendarArgbHex(palette.primary.toARGB32()));
+  });
+
+  test('unthemed tasks follow the selected UI primary color', () {
+    final orange = TasksUiPalette.of(TasksUiTheme.darkOrange);
+    final blue = TasksUiPalette.of(TasksUiTheme.darkBlue);
+    Task bare(DateTime due) => Task(
+      id: 'bare',
+      title: 'No theme',
+      createdAt: DateTime(2026, 9, 1),
+      dueDate: due,
+    );
+
+    String itemColorHex(TasksUiPalette p) {
+      final snapshot = buildHomeCalendarSnapshot(
+        tasks: [bare(DateTime(2026, 9, 8))],
+        themeColors: const {},
+        habits: const [],
+        records: const [],
+        palette: p,
+        locale: const Locale('en'),
+        now: DateTime(2026, 9, 8),
+      );
+      return snapshot.items.single.color;
+    }
+
+    expect(itemColorHex(orange), homeCalendarArgbHex(orange.primary.toARGB32()));
+    expect(itemColorHex(blue), homeCalendarArgbHex(blue.primary.toARGB32()));
   });
 
   test('upcoming prefers incomplete items from today onward', () {

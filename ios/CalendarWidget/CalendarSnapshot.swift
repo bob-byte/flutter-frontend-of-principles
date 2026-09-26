@@ -59,6 +59,9 @@ struct CalendarSnapshot {
     items
       .filter { $0.occurs(on: day, calendar: calendar) }
       .sorted { lhs, rhs in
+        let lhsKind = kindRank(lhs.kind)
+        let rhsKind = kindRank(rhs.kind)
+        if lhsKind != rhsKind { return lhsKind < rhsKind }
         if lhs.done != rhs.done { return !lhs.done && rhs.done }
         if lhs.allDay != rhs.allDay { return lhs.allDay && !rhs.allDay }
         return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
@@ -86,6 +89,75 @@ struct CalendarSnapshot {
     let defaults = UserDefaults(suiteName: calendarAppGroupId)
     let raw = defaults?.string(forKey: calendarSnapshotKey)
     return parse(raw)
+  }
+
+  /// Lightweight sample for WidgetKit gallery / placeholder — no App Group I/O.
+  static var preview: CalendarSnapshot {
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+    let primary = Color(red: 1, green: 0.42, blue: 0)
+    let accent = Color(red: 0, green: 0.48, blue: 1)
+    return CalendarSnapshot(
+      locale: "en",
+      today: today,
+      weekStartsOn: 1,
+      theme: CalendarTheme(
+        isDark: true,
+        background: Color(red: 0.07, green: 0.07, blue: 0.07),
+        text: .white,
+        textMuted: Color.white.opacity(0.5),
+        primary: primary,
+        onPrimary: Color(red: 0.09, green: 0.05, blue: 0.02),
+        divider: Color(white: 0.13),
+        sunday: primary,
+        todayFill: .white,
+        todayText: Color(white: 0.1)
+      ),
+      labels: CalendarLabels(
+        today: "Today",
+        add: "Add",
+        empty: "No tasks or habits",
+        monthNames: defaultMonths,
+        monthNamesShort: defaultMonthsShort,
+        weekdays: defaultWeekdays
+      ),
+      items: [
+        CalendarItem(
+          id: "preview-task-1",
+          kind: "task",
+          title: "Morning run",
+          start: today,
+          end: today,
+          allDay: false,
+          timed: true,
+          color: accent,
+          done: false
+        ),
+        CalendarItem(
+          id: "preview-task-2",
+          kind: "task",
+          title: "Read 20 min",
+          start: today,
+          end: today,
+          allDay: false,
+          timed: true,
+          color: primary,
+          done: false
+        ),
+        CalendarItem(
+          id: "preview-task-3",
+          kind: "task",
+          title: "Plan week",
+          start: tomorrow,
+          end: tomorrow,
+          allDay: true,
+          timed: false,
+          color: primary,
+          done: false
+        ),
+      ]
+    )
   }
 
   static func parse(_ raw: String?) -> CalendarSnapshot {
@@ -177,6 +249,15 @@ func startOffset(for date: Date, calendar: Calendar, weekStartsOn: Int) -> Int {
   let iso = isoWeekday(from: date, calendar: calendar)
   // floorMod so Sunday-first (weekStartsOn=7) works when iso < weekStartsOn
   return ((iso - weekStartsOn) % 7 + 7) % 7
+}
+
+/// Tasks before habits; anything else after both.
+private func kindRank(_ kind: String) -> Int {
+  switch kind {
+  case "task": return 0
+  case "habit": return 1
+  default: return 2
+  }
 }
 
 func monthGrid(month: Date, calendar: Calendar, weekStartsOn: Int = 1) -> [Date] {

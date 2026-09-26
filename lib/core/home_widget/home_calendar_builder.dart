@@ -33,7 +33,7 @@ HomeCalendarSnapshot buildHomeCalendarSnapshot({
   );
 
   final items = <HomeCalendarItem>[
-    ..._taskItems(tasks, themeColors, rangeStart, rangeEnd),
+    ..._taskItems(tasks, themeColors, palette, rangeStart, rangeEnd),
     ..._habitItems(habits, records, palette, rangeStart, rangeEnd),
   ];
 
@@ -97,6 +97,7 @@ HomeCalendarSnapshot buildHomeCalendarSnapshot({
 Iterable<HomeCalendarItem> _taskItems(
   List<Task> tasks,
   Map<String, int> themeColors,
+  TasksUiPalette palette,
   DateTime rangeStart,
   DateTime rangeEnd,
 ) sync* {
@@ -114,7 +115,7 @@ Iterable<HomeCalendarItem> _taskItems(
     final color = stored != null
         ? Color(stored)
         : (theme == null || theme.isEmpty
-              ? const Color(0xFF007BFF)
+              ? palette.primary
               : fallbackThemeColor(theme));
 
     yield HomeCalendarItem(

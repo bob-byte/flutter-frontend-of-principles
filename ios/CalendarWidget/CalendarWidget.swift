@@ -8,11 +8,14 @@ struct CalendarEntry: TimelineEntry {
 
 struct CalendarProvider: TimelineProvider {
   func placeholder(in context: Context) -> CalendarEntry {
-    CalendarEntry(date: Date(), snapshot: .load())
+    // Gallery / loading shell — never touch App Group or real items.
+    CalendarEntry(date: Date(), snapshot: .preview)
   }
 
   func getSnapshot(in context: Context, completion: @escaping (CalendarEntry) -> Void) {
-    completion(CalendarEntry(date: Date(), snapshot: .load()))
+    // `isPreview` is the widget gallery; keep it instant with fake data.
+    let snapshot = context.isPreview ? CalendarSnapshot.preview : .load()
+    completion(CalendarEntry(date: Date(), snapshot: snapshot))
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<CalendarEntry>) -> Void) {
@@ -82,6 +85,9 @@ struct MonthWidgetView: View {
         }
       }
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    .padding(.top, 16)
+    .padding(.bottom, 16)
   }
 
   private var weekdayRow: some View {

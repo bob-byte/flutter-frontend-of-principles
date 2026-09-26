@@ -172,6 +172,8 @@ class HomeCalendarSnapshot {
   List<HomeCalendarItem> itemsOn(DateTime day) {
     final matches = items.where((item) => item.occursOn(day)).toList();
     matches.sort((a, b) {
+      final kindCmp = _kindRank(a.kind).compareTo(_kindRank(b.kind));
+      if (kindCmp != 0) return kindCmp;
       if (a.done != b.done) return a.done ? 1 : -1;
       if (a.allDay != b.allDay) return a.allDay ? -1 : 1;
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
@@ -231,6 +233,13 @@ class HomeCalendarSnapshot {
     );
   }
 }
+
+/// Tasks before habits; anything else after both.
+int _kindRank(String kind) => switch (kind) {
+  'task' => 0,
+  'habit' => 1,
+  _ => 2,
+};
 
 List<String> _stringList(Object? raw, List<String> fallback) {
   if (raw is! List || raw.length < fallback.length) return fallback;
