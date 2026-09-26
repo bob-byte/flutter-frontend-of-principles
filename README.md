@@ -4,8 +4,6 @@ Flutter rewrite of the Principles habit/goal app.
 
 Official install page (Android, macOS, iOS, iPadOS): [principles.top](https://principles.top)
 
-Backend is .NET 8 (`SET.WebAPI`) in [`backend/`](backend/).
-
 ## Core loop
 
 1. Define a **goal**
