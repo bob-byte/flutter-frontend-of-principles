@@ -588,6 +588,9 @@ const _kShellTabPillHeight = 58.0;
 /// [TasksGlassBottomBar] already adds 16px bottom padding inside the bar.
 const _kEmbeddedTabBarGap = 8.0;
 
+/// Android sits 5px closer to the shell pill than desktop.
+const _kEmbeddedTabBarGapAndroid = _kEmbeddedTabBarGap - 5.0;
+
 /// [GlassTabBar] preferred height: barHeight 58 + verticalPadding 20×2.
 const _kMainShellTabBarHeight = 98.0;
 const _kTasksListClearanceGap = 24.0;
@@ -607,13 +610,13 @@ double _embeddedTasksBarClearance(BuildContext context) {
   }
   // Shared SafeArea baseline on Android; window bottom on desktop.
   // [TasksGlassBottomBar] already pads 16px below the panel — subtract that
-  // so the visual gap above the pill is only [_kEmbeddedTabBarGap].
+  // so the visual gap above the pill is only the platform gap.
   const tabBarBottomPad = 20.0;
   const tasksBarBottomPad = 16.0;
-  return tabBarBottomPad +
-      _kShellTabPillHeight +
-      _kEmbeddedTabBarGap -
-      tasksBarBottomPad;
+  final gap = Theme.of(context).platform == TargetPlatform.android
+      ? _kEmbeddedTabBarGapAndroid
+      : _kEmbeddedTabBarGap;
+  return tabBarBottomPad + _kShellTabPillHeight + gap - tasksBarBottomPad;
 }
 
 double _tasksListBottomPadding(BuildContext context, {required bool embedded}) {
