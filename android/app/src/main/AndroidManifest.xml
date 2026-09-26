@@ -20,6 +20,11 @@
         <service
             android:name="com.solusibejo.flutter_dynamic_icon_plus.FlutterDynamicIconPlusService"
             android:stopWithTask="false"/>
+        <!--
+          Launcher icons live only on activity-aliases. MainActivity stays enabled
+          with no LAUNCHER filter so icon swaps never disable the real activity
+          (which breaks flutter run / deep resumes on several OEMs including Samsung).
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -39,10 +44,6 @@
               android:resource="@style/NormalTheme"
               />
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.LAUNCH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
@@ -54,10 +55,29 @@
             </intent-filter>
         </activity>
         <activity-alias
+            android:name=".icon_orange"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:label="Principles"
+            android:taskAffinity=""
+            android:targetActivity=".MainActivity">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
             android:name=".icon_1"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_blue"
+            android:roundIcon="@mipmap/ic_launcher_blue"
             android:label="Principles"
             android:taskAffinity=""
             android:targetActivity=".MainActivity">

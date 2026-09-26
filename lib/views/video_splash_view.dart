@@ -93,8 +93,12 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
   static const _audioChannel = MethodChannel('com.set.principles/splash_audio');
 
   bool get _useNativeSplashAudio =>
+      defaultTargetPlatform == TargetPlatform.android ||
       defaultTargetPlatform == TargetPlatform.iOS ||
       defaultTargetPlatform == TargetPlatform.macOS;
+
+  /// Path relative to `assets/` for [AssetSource] (audioplayers prefix).
+  static const _splashAudioAssetSource = 'splash/epic_start.wav';
 
   VideoPlayerController? _controller;
   AudioPlayer? _audio;
@@ -168,8 +172,9 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
         _finish,
       );
       // Mount the player before play() so the first frames are visible.
+      // Audio must not block video — BytesSource prepare can hang on Android.
       setState(() => _initialized = true);
-      await _playSplashAudio();
+      unawaited(_playSplashAudio());
       if (!mounted || _finishing) return;
       await controller.play();
       if (!mounted) return;
@@ -183,29 +188,44 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
 
   Future<void> _playSplashAudio() async {
     try {
-      final data = await rootBundle.load(TasksUiTheme.splashAudioAsset);
-      final bytes = data.buffer.asUint8List(
-        data.offsetInBytes,
-        data.lengthInBytes,
-      );
       if (_useNativeSplashAudio) {
-        await _audioChannel.invokeMethod<void>('play', bytes);
-        return;
+        try {
+          await _playNativeSplashAudio();
+          return;
+        } catch (error, stackTrace) {
+          // Android: fall back to AssetSource (file-backed) if the channel fails.
+          if (defaultTargetPlatform != TargetPlatform.android) {
+            rethrow;
+          }
+          AppLog.error(
+            'epic_start native audio failed, trying AssetSource',
+            error,
+            stackTrace,
+          );
+        }
       }
       if (kIsWeb) return;
-      await AudioPlayer.global.setAudioContext(
-        AudioContext(
-          iOS: AudioContextIOS(category: AVAudioSessionCategory.playback),
-        ),
-      );
-      final audio = AudioPlayer();
-      _audio = audio;
-      await audio.setReleaseMode(ReleaseMode.stop);
-      await audio.setVolume(1);
-      await audio.play(BytesSource(bytes, mimeType: 'audio/wav'));
+      await _playAssetSplashAudio();
     } catch (error, stackTrace) {
       AppLog.error('epic_start audio failed', error, stackTrace);
     }
+  }
+
+  Future<void> _playNativeSplashAudio() async {
+    final data = await rootBundle.load(TasksUiTheme.splashAudioAsset);
+    final bytes = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
+    await _audioChannel.invokeMethod<void>('play', bytes);
+  }
+
+  Future<void> _playAssetSplashAudio() async {
+    final audio = AudioPlayer();
+    _audio = audio;
+    await audio.setReleaseMode(ReleaseMode.stop);
+    await audio.setVolume(1);
+    await audio.play(AssetSource(_splashAudioAssetSource));
   }
 
   Future<void> _stopSplashAudio() async {
@@ -213,7 +233,6 @@ class _VideoSplashOverlayState extends State<VideoSplashOverlay>
       try {
         await _audioChannel.invokeMethod<void>('stop');
       } catch (_) {}
-      return;
     }
     final audio = _audio;
     _audio = null;

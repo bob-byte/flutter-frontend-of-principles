@@ -27,13 +27,41 @@ class MainActivity : FlutterActivity() {
         AppCompatDelegate.setApplicationLocales(
             LocaleListCompat.forLanguageTags("uk-UA,en-US")
         )
+        // Re-enable MainActivity after older icon-plugin builds that disabled it,
+        // and repair dual-alias states from the upgrade to icon_orange / icon_1.
+        AppIconSwitcher.migrateIfNeeded(this)
         super.onCreate(savedInstanceState)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        SplashAudioPlayer(this).register(messenger)
         MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
+            messenger,
+            "com.set.principles/app_icon",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setIcon" -> {
+                    val icon = call.arguments as? String
+                    if (icon == null) {
+                        result.error("bad_args", "Expected orange|blue", null)
+                        return@setMethodCallHandler
+                    }
+                    // Queue only — apply when Flutter reports background so One UI
+                    // does not kick the user to the home screen mid-session.
+                    AppIconSwitcher.setDesired(this, icon)
+                    result.success(null)
+                }
+                "applyPendingIcon" -> {
+                    AppIconSwitcher.applyPending(this)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        MethodChannel(
+            messenger,
             "com.set.principles/app_settings",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
