@@ -6,8 +6,8 @@ import '../../models/user_goal.dart';
 import '../../services/dialog_service.dart';
 import '../../services/goal_service.dart';
 import '../../viewmodels/add_edit_goal_viewmodel.dart';
-import '../../widgets/app_alert_dialog.dart';
-import '../../widgets/completion_burst.dart';
+import '../common/app_alert_dialog.dart';
+import '../common/completion_burst.dart';
 
 class AddEditGoalDialogWidget extends StatelessWidget {
   final UserGoal? existingGoal;
@@ -36,6 +36,7 @@ class _AddEditGoalDialogContent extends StatefulWidget {
 
 class _AddEditGoalDialogContentState extends State<_AddEditGoalDialogContent> {
   late TextEditingController _controller;
+  late TextEditingController _notesController;
 
   @override
   void initState() {
@@ -43,11 +44,13 @@ class _AddEditGoalDialogContentState extends State<_AddEditGoalDialogContent> {
     final vm = context.read<AddEditGoalViewModel>();
     _controller = TextEditingController(text: vm.text)
       ..selection = TextSelection.collapsed(offset: vm.text.length);
+    _notesController = TextEditingController(text: vm.notes);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -111,6 +114,25 @@ class _AddEditGoalDialogContentState extends State<_AddEditGoalDialogContent> {
               ),
               onChanged: vm.updateText,
               maxLength: 255,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) {
+                FocusScope.of(context).nextFocus();
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('goalDialogNotesInput'),
+              controller: _notesController,
+              decoration: InputDecoration(
+                labelText: l10n.goalNotes,
+                prefixIcon: const Icon(Icons.notes),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onChanged: vm.updateNotes,
+              minLines: 2,
+              maxLines: 4,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
                 if (vm.text.trim().isNotEmpty) {

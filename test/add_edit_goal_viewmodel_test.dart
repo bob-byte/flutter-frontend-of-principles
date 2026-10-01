@@ -28,6 +28,7 @@ void main() {
 
   test('edit mode loads existing goal fields', () {
     expect(editVm.text, 'Read');
+    expect(editVm.notes, isEmpty);
     expect(editVm.canToggleCompleted, isTrue);
     expect(editVm.isCompleted, isFalse);
   });
@@ -37,6 +38,11 @@ void main() {
     expect(createVm.text, 'New goal');
   });
 
+  test('updateNotes notifies and stores value', () {
+    createVm.updateNotes('Why this matters');
+    expect(createVm.notes, 'Why this matters');
+  });
+
   test('saveGoal does nothing for blank text', () async {
     await createVm.saveGoal();
     expect(goals.saved, isEmpty);
@@ -44,14 +50,18 @@ void main() {
 
   test('saveGoal creates a new goal when editing none', () async {
     createVm.updateText('  Fitness  ');
+    createVm.updateNotes('  Stay healthy  ');
     await createVm.saveGoal();
     expect(goals.saved.single.name, 'Fitness');
+    expect(goals.saved.single.notes, 'Stay healthy');
   });
 
   test('saveGoal updates existing goal', () async {
     editVm.updateText('Read daily');
+    editVm.updateNotes('Before bed');
     await editVm.saveGoal();
     expect(goals.updated.single.name, 'Read daily');
+    expect(goals.updated.single.notes, 'Before bed');
   });
 }
 

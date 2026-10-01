@@ -12,7 +12,7 @@ class LocalDb {
   static final LocalDb instance = LocalDb();
 
   static const fileName = 'principles.db';
-  static const schemaVersion = 10;
+  static const schemaVersion = 11;
   static const _legacyMigratedKey = 'local_db_legacy_migrated_v2';
 
   final String? pathOverride;
@@ -104,6 +104,9 @@ class LocalDb {
           await db.execute(
             'CREATE INDEX IF NOT EXISTS idx_habits_serverId ON habits (serverId)',
           );
+        }
+        if (oldVersion < 11) {
+          await _addColumnIfMissing(db, 'user_goals', 'notes', 'TEXT');
         }
       },
     );
@@ -231,6 +234,7 @@ class LocalDb {
         localId INTEGER PRIMARY KEY AUTOINCREMENT,
         id INTEGER,
         name TEXT NOT NULL,
+        notes TEXT,
         isCompleted INTEGER NOT NULL DEFAULT 0,
         lastModified TEXT
       )
@@ -538,6 +542,7 @@ class LocalDb {
               await db.insert('user_goals', {
                 'id': map['id'],
                 'name': map['name'],
+                'notes': map['notes'],
                 'isCompleted':
                     map['isCompleted'] == true || map['isCompleted'] == 1
                     ? 1

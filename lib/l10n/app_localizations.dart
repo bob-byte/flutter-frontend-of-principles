@@ -656,6 +656,12 @@ abstract class AppLocalizations {
   /// **'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.'**
   String get goalExamplesHint;
 
+  /// Optional notes field label on the add/edit goal dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get goalNotes;
+
   /// Title of the delete-goal confirmation dialog
   ///
   /// In en, this message translates to:

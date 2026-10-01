@@ -316,6 +316,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.';
 
   @override
+  String get goalNotes => 'Notes';
+
+  @override
   String get deleteGoalQuestion => 'Delete goal?';
 
   @override

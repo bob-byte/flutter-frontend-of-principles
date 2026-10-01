@@ -201,6 +201,8 @@
   "@editGoalTitle": {"description": "Title of the dialog used to rename a goal"},
   "goalExamplesHint": "Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.",
   "@goalExamplesHint": {"description": "Hint text in the add/edit goal dialog"},
+  "goalNotes": "Notes",
+  "@goalNotes": {"description": "Optional notes field label on the add/edit goal dialog"},
   "deleteGoalQuestion": "Delete goal?",
   "@deleteGoalQuestion": {"description": "Title of the delete-goal confirmation dialog"},
   "deleteGoalMessage": "The goal will be deleted permanently. This action cannot be undone.",

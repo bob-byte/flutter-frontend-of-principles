@@ -9,12 +9,14 @@ class AddEditGoalViewModel extends ChangeNotifier {
 
   final UserGoal? existingGoal;
   String text = '';
+  String notes = '';
   bool isCompleted = false;
   bool _completionChanged = false;
 
   AddEditGoalViewModel(this._goalService, {this.existingGoal}) {
     if (existingGoal != null) {
       text = existingGoal!.name;
+      notes = existingGoal!.notes;
       isCompleted = existingGoal!.isCompleted;
     }
   }
@@ -23,6 +25,11 @@ class AddEditGoalViewModel extends ChangeNotifier {
 
   void updateText(String newText) {
     text = newText;
+    notifyListeners();
+  }
+
+  void updateNotes(String newNotes) {
+    notes = newNotes;
     notifyListeners();
   }
 
@@ -37,6 +44,7 @@ class AddEditGoalViewModel extends ChangeNotifier {
       existingGoal!,
       existingGoal!.copyWith(
         name: name,
+        notes: notes.trim(),
         isCompleted: isCompleted,
         lastModified: DateTime.now().toUtc(),
       ),
@@ -52,12 +60,13 @@ class AddEditGoalViewModel extends ChangeNotifier {
         existingGoal!,
         existingGoal!.copyWith(
           name: trimmed,
+          notes: notes.trim(),
           isCompleted: isCompleted,
           lastModified: DateTime.now().toUtc(),
         ),
       );
     } else {
-      final newGoal = UserGoal(name: trimmed);
+      final newGoal = UserGoal(name: trimmed, notes: notes.trim());
       await _goalService.saveGoal(newGoal);
     }
 

@@ -353,6 +353,33 @@ class DatabaseService {
     return deleted;
   }
 
+  /// Drops local habits whose [Habit.serverId] or primary [Habit.id] is in
+  /// [serverIds] (tombstones from `/sync/changes` use server ids).
+  ///
+  /// Returns the rows removed so callers can cancel their notifications.
+  Future<List<Habit>> deleteHabitsByServerIds(Iterable<int> serverIds) async {
+    final unique = serverIds.where((id) => id != 0).toSet();
+    if (unique.isEmpty) return const [];
+    final matches = [
+      for (final habit in await getAllHabits(isArchived: null))
+        if (_habitMatchesServerIds(habit, unique)) habit,
+    ];
+    await deleteHabitsByIds([
+      for (final habit in matches)
+        if (habit.id != null) habit.id!,
+    ]);
+    return matches;
+  }
+
+  static bool _habitMatchesServerIds(Habit habit, Set<int> serverIds) {
+    final serverId = habit.serverId;
+    if (serverId != null && serverId != 0 && serverIds.contains(serverId)) {
+      return true;
+    }
+    final id = habit.id;
+    return id != null && serverIds.contains(id);
+  }
+
   // --- HABIT RECORDS (Відмітки) ---
 
   Future<void> setHabitRecordStatus(
@@ -585,6 +612,7 @@ class DatabaseService {
         final row = {
           'id': goal.id,
           'name': goal.name,
+          'notes': goal.notes.trim().isEmpty ? null : goal.notes.trim(),
           'isCompleted': goal.isCompleted ? 1 : 0,
           'lastModified': goal.lastModified.toUtc().toIso8601String(),
         };

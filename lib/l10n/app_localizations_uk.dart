@@ -316,6 +316,9 @@ class AppLocalizationsUk extends AppLocalizations {
       'Приклади цілей спрямованих на вашу ідентичність: бути олімпійським чемпіоном, бути впевненим в собі, бути вільним від куріння.';
 
   @override
+  String get goalNotes => 'Нотатки';
+
+  @override
   String get deleteGoalQuestion => 'Видалити ціль?';
 
   @override

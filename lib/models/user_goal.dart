@@ -3,6 +3,7 @@ class UserGoal {
     this.localId,
     this.id,
     required this.name,
+    this.notes = '',
     this.isCompleted = false,
     DateTime? lastModified,
   }) : lastModified = lastModified ?? DateTime.now().toUtc();
@@ -10,6 +11,7 @@ class UserGoal {
   final int? localId;
   final int? id;
   final String name;
+  final String notes;
   final bool isCompleted;
   final DateTime lastModified;
 
@@ -17,6 +19,7 @@ class UserGoal {
     int? localId,
     int? id,
     String? name,
+    String? notes,
     bool? isCompleted,
     DateTime? lastModified,
   }) {
@@ -24,6 +27,7 @@ class UserGoal {
       localId: localId ?? this.localId,
       id: id ?? this.id,
       name: name ?? this.name,
+      notes: notes ?? this.notes,
       isCompleted: isCompleted ?? this.isCompleted,
       lastModified: lastModified ?? this.lastModified,
     );
@@ -33,6 +37,7 @@ class UserGoal {
     if (localId != null) 'localId': localId,
     'id': id,
     'name': name,
+    'notes': notes.trim().isEmpty ? null : notes.trim(),
     'isCompleted': isCompleted,
     'lastModified': lastModified.toUtc().toIso8601String(),
   };
@@ -42,6 +47,7 @@ class UserGoal {
       localId: _asInt(map['localId']),
       id: _asInt(map['id'] ?? map['Id']),
       name: '${map['name'] ?? map['Name'] ?? ''}',
+      notes: '${map['notes'] ?? map['Notes'] ?? ''}',
       isCompleted: _asBool(map['isCompleted'] ?? map['IsCompleted']),
       lastModified: _asDate(map['lastModified'] ?? map['LastModified']),
     );
