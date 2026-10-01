@@ -11,6 +11,14 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.tmp_py/
+devtools_options.yaml
+
+# Local scratch / one-off debug scripts
+/tool/
+
+# Generated App Store preview media (rebuild via store/app-store/build_preview_video.py)
+/store/app-store/app-preview-*
 
 # IntelliJ related
 *.iml
