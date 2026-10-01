@@ -25,3 +25,4 @@ Flutter rewrite of the Principles habit/goal app (install: https://principles.to
 - Post-login: spotlight road guide once per device; replay from Settings → About
 - After login/signup, navigate to `HelperView` / `MainShell` so the road guide can run
 - Daily progress reminder (Tasks app bar; API still `habitsreport`): check-in for goals, habits, and tasks; notification opens Tasks today
+- Flutter iOS has **no ads / no ATT** (unlike MAUI AdMob). App Store Connect Privacy must not mark Advertising Data or Device ID as used for tracking; `ios/Runner/PrivacyInfo.xcprivacy` sets `NSPrivacyTracking` false. Do not add `NSUserTrackingUsageDescription` unless tracking is reintroduced.

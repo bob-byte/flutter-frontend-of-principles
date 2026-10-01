@@ -20,6 +20,7 @@
 		A11C0B1E02A10001AA000013 /* AppIconBlue~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001AA000003 /* AppIconBlue~ipad.png */; };
 		A11C0B1E02A10001AA000014 /* AppIconBlue@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001AA000004 /* AppIconBlue@2x~ipad.png */; };
 		A11C0B1E02A10001AA000015 /* AppIconBlue-83.5@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001AA000005 /* AppIconBlue-83.5@2x~ipad.png */; };
+		A11C0B1E02A10001AA000021 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001AA000020 /* PrivacyInfo.xcprivacy */; };
 		B1A7E302888DAEF5DA4358A5 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07FFB8C3474288435A0B2B9B /* Pods_RunnerTests.framework */; };
 		C4A100011000000000000001 /* CalendarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A100021000000000000001 /* CalendarWidget.swift */; };
 		C4A100011000000000000002 /* CalendarSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A100021000000000000002 /* CalendarSnapshot.swift */; };
@@ -100,6 +101,7 @@
 		A11C0B1E02A10001AA000003 /* AppIconBlue~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue~ipad.png"; sourceTree = "<group>"; };
 		A11C0B1E02A10001AA000004 /* AppIconBlue@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue@2x~ipad.png"; sourceTree = "<group>"; };
 		A11C0B1E02A10001AA000005 /* AppIconBlue-83.5@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "AppIconBlue-83.5@2x~ipad.png"; sourceTree = "<group>"; };
+		A11C0B1E02A10001AA000020 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A3B62EB295C2BC43C768A348 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4A100021000000000000001 /* CalendarWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarWidget.swift; sourceTree = "<group>"; };
 		C4A100021000000000000002 /* CalendarSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSnapshot.swift; sourceTree = "<group>"; };
@@ -210,6 +212,7 @@
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
+				A11C0B1E02A10001AA000020 /* PrivacyInfo.xcprivacy */,
 				7E4A91C02B5D4F1A8C3E9D60 /* Runner.entitlements */,
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
@@ -379,6 +382,7 @@
 				A11C0B1E02A10001AA000013 /* AppIconBlue~ipad.png in Resources */,
 				A11C0B1E02A10001AA000014 /* AppIconBlue@2x~ipad.png in Resources */,
 				A11C0B1E02A10001AA000015 /* AppIconBlue-83.5@2x~ipad.png in Resources */,
+				A11C0B1E02A10001AA000021 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
