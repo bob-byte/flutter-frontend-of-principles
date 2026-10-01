@@ -69,6 +69,8 @@ dependencies:
   audioplayers: ^6.7.1
   upgrader: ^13.7.0
   home_widget: ^0.9.4
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 
 dev_dependencies:
   flutter_test:

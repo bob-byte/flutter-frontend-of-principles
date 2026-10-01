@@ -9,6 +9,7 @@ import '../app/task_navigation.dart';
 import '../core/deep_link/deep_link_action.dart';
 import '../core/deep_link/deep_link_controller.dart';
 import '../core/launch_data_loader.dart';
+import '../core/push/push_sync_binder.dart';
 import '../core/road_guide/main_shell_controller.dart';
 import '../core/road_guide/main_shell_metrics.dart';
 import '../core/road_guide/road_guide_controller.dart';
@@ -24,8 +25,8 @@ import '../services/task_service.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
-import '../widgets/app_liquid_background.dart';
-import '../widgets/lazy_shell_tab_stack.dart';
+import 'common/app_liquid_background.dart';
+import 'common/lazy_shell_tab_stack.dart';
 import 'edit_habit_view.dart';
 import 'goals_view.dart';
 import 'habit_detail_view.dart';
@@ -518,45 +519,50 @@ class _MainShellState extends State<MainShell> {
     );
 
     return SessionSyncBinder(
-      child: GlassScaffold(
-        extendBody: true,
-        contentAwareBrightness: true,
-        statusBarStyle: GlassStatusBarStyle.auto,
-        resizeToAvoidBottomInset: true,
-        background: const AppLiquidBackground(),
-        bottomBar: _KeyboardAwareTabBar(
-          hidden: keyboardOpen || sidebarOpen,
-          child: tabBar,
-        ),
-        body: Material(
-          type: MaterialType.transparency,
-          child: LazyShellTabStack(
-            index: index,
-            itemCount: 5,
-            initialMountedIndexes: const {MainShellTab.tasks},
-            disposeWhenInactive: const {MainShellTab.settings},
-            builder: (context, tabIndex, isActive) {
-              switch (tabIndex) {
-                case MainShellTab.chat:
-                  return HelperView(
-                    embedded: true,
-                    isActive: isActive,
-                    bottomBarClearance: keyboardOpen || sidebarOpen
-                        ? 0
-                        : mainShellEmbeddedBottomClearance(context),
-                  );
-                case MainShellTab.goals:
-                  return const GoalsView(embedded: true);
-                case MainShellTab.tasks:
-                  return TasksView(embedded: true, isActive: isActive);
-                case MainShellTab.habits:
-                  return HabitProgressView(embedded: true, isActive: isActive);
-                case MainShellTab.settings:
-                  return const SettingsView(embedded: true);
-                default:
-                  return const SizedBox.shrink();
-              }
-            },
+      child: PushSyncBinder(
+        child: GlassScaffold(
+          extendBody: true,
+          contentAwareBrightness: true,
+          statusBarStyle: GlassStatusBarStyle.auto,
+          resizeToAvoidBottomInset: true,
+          background: const AppLiquidBackground(),
+          bottomBar: _KeyboardAwareTabBar(
+            hidden: keyboardOpen || sidebarOpen,
+            child: tabBar,
+          ),
+          body: Material(
+            type: MaterialType.transparency,
+            child: LazyShellTabStack(
+              index: index,
+              itemCount: 5,
+              initialMountedIndexes: const {MainShellTab.tasks},
+              disposeWhenInactive: const {MainShellTab.settings},
+              builder: (context, tabIndex, isActive) {
+                switch (tabIndex) {
+                  case MainShellTab.chat:
+                    return HelperView(
+                      embedded: true,
+                      isActive: isActive,
+                      bottomBarClearance: keyboardOpen || sidebarOpen
+                          ? 0
+                          : mainShellEmbeddedBottomClearance(context),
+                    );
+                  case MainShellTab.goals:
+                    return const GoalsView(embedded: true);
+                  case MainShellTab.tasks:
+                    return TasksView(embedded: true, isActive: isActive);
+                  case MainShellTab.habits:
+                    return HabitProgressView(
+                      embedded: true,
+                      isActive: isActive,
+                    );
+                  case MainShellTab.settings:
+                    return const SettingsView(embedded: true);
+                  default:
+                    return const SizedBox.shrink();
+                }
+              },
+            ),
           ),
         ),
       ),

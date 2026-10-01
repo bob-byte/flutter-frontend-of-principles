@@ -28,7 +28,8 @@ class TaskService {
 
   bool get _useRemote => !AppConfig.useLocalData;
 
-  Future<List<Task>> getTasks({bool? isDone}) => _local.getTasks(isDone: isDone);
+  Future<List<Task>> getTasks({bool? isDone}) =>
+      _local.getTasks(isDone: isDone);
 
   Future<List<Task>> getSessionTasks({
     required DateTime rangeStart,
@@ -189,7 +190,11 @@ class TaskService {
     return _local.saveTask(task.copyWith(serverId: serverId), isNew: false);
   }
 
-  Future<void> mergeRemoteTask(TaskItemDto dto) async {
+  /// Upserts a server task. Returns the local row before the merge (null when
+  /// new here) and the stored result so callers can rebuild notifications.
+  Future<({Task? previous, Task merged})> mergeRemoteTask(
+    TaskItemDto dto,
+  ) async {
     final existing = await _local.getTask(dto.id.toString());
     final merged = dto
         .toTask(
@@ -209,29 +214,40 @@ class TaskService {
 
     // Collapse L… + "2" pairs left by older create/bootstrap races.
     await _local.deleteTasksByServerId(dto.id, exceptId: merged.id);
+    return (previous: existing, merged: merged);
   }
 
   /// Drops local copies of server tasks that another device deleted.
   ///
   /// Rows with no [Task.serverId] (still uploading) are kept. [retainServerIds]
   /// covers in-flight local edits/deletes so bootstrap cannot clobber them.
-  Future<void> discardLocalTasksAbsentFromRemote(
+  /// Returns the removed rows so their notifications can be cancelled.
+  Future<List<Task>> discardLocalTasksAbsentFromRemote(
     Set<int> remoteServerIds, {
     Set<int> retainServerIds = const {},
   }) async {
+    final removed = <Task>[];
     for (final task in await _local.getTasks()) {
       final serverId = task.serverId ?? int.tryParse(task.id) ?? 0;
       if (serverId == 0) continue;
       if (remoteServerIds.contains(serverId)) continue;
       if (retainServerIds.contains(serverId)) continue;
       await _local.deleteTask(task.id);
+      removed.add(task);
     }
+    return removed;
   }
 
   /// Applies a single remote delete from GET `/sync/changes` tombstones.
-  Future<void> discardRemoteDeletedTask(int serverId) async {
-    if (serverId == 0) return;
+  /// Returns the removed rows so their notifications can be cancelled.
+  Future<List<Task>> discardRemoteDeletedTask(int serverId) async {
+    if (serverId == 0) return const [];
+    final removed = [
+      for (final task in await _local.getTasks())
+        if ((task.serverId ?? int.tryParse(task.id) ?? 0) == serverId) task,
+    ];
     await _local.deleteTasksByServerId(serverId);
+    return removed;
   }
 
   Future<Map<String, int>> getThemeColors() => _local.getThemeColors();

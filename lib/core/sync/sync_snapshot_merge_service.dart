@@ -3,6 +3,7 @@ import '../../models/habit.dart';
 import '../../models/habit_record.dart';
 import '../../models/habit_reminder.dart';
 import '../../models/progress_value.dart';
+import '../../models/task.dart';
 import '../../models/user.dart';
 import '../../models/user_goal.dart';
 import '../../services/ai_conversation_service.dart';
@@ -11,6 +12,9 @@ import '../../services/habit_service.dart';
 import '../../services/reminder_service.dart';
 import '../../services/task_service.dart';
 import '../../services/user_service.dart';
+import '../push/reminder_target_index.dart';
+import '../reminder/reminder_schedule_change.dart';
+import '../reminder/reminder_targets.dart';
 import 'pending_sync_index.dart';
 import 'sync_bootstrap_snapshot.dart';
 import 'sync_handler_type.dart';
@@ -36,15 +40,88 @@ class SyncSnapshotMergeService {
   Future<void> merge(SyncBootstrapSnapshot snapshot) async {
     if (snapshot.requiresFullBootstrap) return;
     final pending = PendingSyncIndex(await queue.getBlockingItems());
+    final changes = _ReminderChanges();
     await _mergeUser(snapshot, pending);
     await _mergeGoals(snapshot, pending);
-    await _mergeHabits(snapshot, pending);
+    await _mergeHabits(snapshot, pending, changes);
     await _mergeReminder(snapshot, pending);
-    await _mergeTasks(snapshot, pending);
+    await _mergeTasks(snapshot, pending, changes);
     await _mergeConversations(snapshot, pending);
     if (snapshot.isDelta) {
-      await _applyDeletedIds(snapshot, pending);
+      await _applyDeletedIds(snapshot, pending, changes);
     }
+    await _applyReminderChanges(snapshot, changes);
+  }
+
+  /// Rows added or rescheduled on another device get their local
+  /// notifications rebuilt. Rows new on a full bootstrap are left to the
+  /// SyncGate restore job, which owns the permission prompt.
+  bool _shouldReschedule(SyncBootstrapSnapshot snapshot, Object? previous) =>
+      previous != null || snapshot.isDelta;
+
+  /// Local notifications outlive the SQLite rows: rebuild them for habits and
+  /// tasks whose schedule changed elsewhere, cancel them for rows another
+  /// device deleted/archived, then sweep any whose target is gone, done, or
+  /// archived (covers ids this device never stored).
+  Future<void> _applyReminderChanges(
+    SyncBootstrapSnapshot snapshot,
+    _ReminderChanges changes,
+  ) async {
+    for (final change in changes.rescheduledHabits) {
+      final previous = change.previous;
+      if (previous != null) {
+        await reminderService.cancelHabitNotifications(previous);
+      }
+      await reminderService.syncHabitNotifications(
+        change.next,
+        ensurePermission: false,
+      );
+    }
+    for (final change in changes.rescheduledTasks) {
+      final previous = change.previous;
+      if (previous != null) {
+        await reminderService.cancelTaskNotifications(previous);
+      }
+      await reminderService.syncTaskNotifications(
+        change.merged,
+        ensurePermission: false,
+      );
+    }
+    for (final habit in changes.silencedHabits) {
+      await reminderService.cancelHabitNotifications(habit);
+    }
+    for (final task in changes.silencedTasks) {
+      await reminderService.cancelTaskNotifications(task);
+    }
+    final touchesTargets =
+        !snapshot.isDelta ||
+        snapshot.tasks.isNotEmpty ||
+        snapshot.activeHabits.isNotEmpty ||
+        snapshot.archivedHabits.isNotEmpty ||
+        snapshot.deletedHabitIds.isNotEmpty ||
+        snapshot.deletedTaskIds.isNotEmpty;
+    if (!touchesTargets) return;
+    List<Task>? openTasks;
+    List<Habit>? activeHabits;
+    Future<void> loadTargets() async {
+      openTasks ??= await taskService.getTasks(isDone: false);
+      activeHabits ??= await databaseService.getAllHabits();
+    }
+
+    await reminderService.cancelOrphanedNotifications(() async {
+      await loadTargets();
+      return ReminderTargets.from(
+        openTasks: openTasks!,
+        activeHabits: activeHabits!,
+      );
+    });
+    // A silent push may arrive while the app is not running; the background
+    // isolate resolves deleted server ids through this copy (no SQLite there).
+    await loadTargets();
+    await ReminderTargetIndex.save(
+      openTasks: openTasks!,
+      activeHabits: activeHabits!,
+    );
   }
 
   Future<void> _mergeUser(
@@ -138,6 +215,7 @@ class SyncSnapshotMergeService {
   Future<void> _mergeHabits(
     SyncBootstrapSnapshot snapshot,
     PendingSyncIndex pending,
+    _ReminderChanges changes,
   ) async {
     final remoteServerIds = <int>{};
     for (final item in snapshot.activeHabits) {
@@ -203,9 +281,12 @@ class SyncSnapshotMergeService {
           isArchived: false,
         );
         final localId = local?.id ?? backendId;
-        habitsToUpsert.add(
-          remoteHabit.copyWith(id: localId, serverId: backendId),
-        );
+        final next = remoteHabit.copyWith(id: localId, serverId: backendId);
+        habitsToUpsert.add(next);
+        if (_shouldReschedule(snapshot, local) &&
+            habitReminderScheduleChanged(local, next)) {
+          changes.rescheduledHabits.add((previous: local, next: next));
+        }
         if (local?.id != null) existingHabitIds.add(local!.id!);
       }
 
@@ -234,6 +315,7 @@ class SyncSnapshotMergeService {
       if (local != null && local.isArchived) continue;
       final targetId = local?.id ?? archived.id;
       archivedToUpsert.add((id: targetId, name: archived.name));
+      if (local != null) changes.silencedHabits.add(local);
       if (local?.id != null) archivedExistingIds.add(local!.id!);
     }
 
@@ -258,6 +340,7 @@ class SyncSnapshotMergeService {
       }
       if (pending.habitHasPendingProgress(serverId, local.id)) continue;
       toDelete.add(local.id ?? serverId);
+      changes.silencedHabits.add(local);
     }
     await databaseService.deleteHabitsByIds(toDelete);
   }
@@ -418,6 +501,7 @@ class SyncSnapshotMergeService {
   Future<void> _applyDeletedIds(
     SyncBootstrapSnapshot snapshot,
     PendingSyncIndex pending,
+    _ReminderChanges changes,
   ) async {
     final goalDeletes = [
       for (final id in snapshot.deletedGoalIds)
@@ -433,13 +517,16 @@ class SyncSnapshotMergeService {
         final local = maps.lookup(id);
         if (pending.pendingHabit(serverId: id, localId: local?.id)) continue;
         habitDeletes.add(local?.id ?? id);
+        if (local != null) changes.silencedHabits.add(local);
       }
       await databaseService.deleteHabitsByIds(habitDeletes);
     }
 
     for (final id in snapshot.deletedTaskIds) {
       if (pending.pendingTask(id)) continue;
-      await taskService.discardRemoteDeletedTask(id);
+      changes.silencedTasks.addAll(
+        await taskService.discardRemoteDeletedTask(id),
+      );
     }
     final conversations = conversationService;
     if (conversations == null) return;
@@ -452,6 +539,7 @@ class SyncSnapshotMergeService {
   Future<void> _mergeTasks(
     SyncBootstrapSnapshot snapshot,
     PendingSyncIndex pending,
+    _ReminderChanges changes,
   ) async {
     for (var i = 0; i < snapshot.tasks.length; i++) {
       final dto = snapshot.tasks[i];
@@ -459,16 +547,22 @@ class SyncSnapshotMergeService {
           pending.pendingTaskSaves.contains(dto.id)) {
         continue;
       }
-      await taskService.mergeRemoteTask(dto);
+      final change = await taskService.mergeRemoteTask(dto);
+      if (_shouldReschedule(snapshot, change.previous) &&
+          taskReminderScheduleChanged(change.previous, change.merged)) {
+        changes.rescheduledTasks.add(change);
+      }
     }
 
     if (!snapshot.tasksTrustedForPrune) return;
-    await taskService.discardLocalTasksAbsentFromRemote(
-      {for (final dto in snapshot.tasks) dto.id},
-      retainServerIds: {
-        ...pending.pendingTaskDeletes,
-        ...pending.pendingTaskSaves,
-      },
+    changes.silencedTasks.addAll(
+      await taskService.discardLocalTasksAbsentFromRemote(
+        {for (final dto in snapshot.tasks) dto.id},
+        retainServerIds: {
+          ...pending.pendingTaskDeletes,
+          ...pending.pendingTaskSaves,
+        },
+      ),
     );
   }
 
@@ -514,6 +608,14 @@ class SyncSnapshotMergeService {
 }
 
 String _habitDateKey(DateTime date) => date.toIso8601String().substring(0, 10);
+
+/// Rows whose local notifications this merge must rebuild or stop.
+class _ReminderChanges {
+  final rescheduledHabits = <({Habit? previous, Habit next})>[];
+  final rescheduledTasks = <({Task? previous, Task merged})>[];
+  final silencedHabits = <Habit>[];
+  final silencedTasks = <Task>[];
+}
 
 class _HabitMaps {
   _HabitMaps(List<Habit> habits) {

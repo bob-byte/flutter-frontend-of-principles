@@ -31,6 +31,12 @@ class SyncOrchestrator {
   Future<SyncRunResult> run(SyncTrigger trigger) async {
     final existing = _inFlight;
     if (existing != null) {
+      // A silent push must not reuse a pull that may have started before the
+      // remote delete/edit landed — callers retry after skippedAlreadyRunning.
+      if (trigger == SyncTrigger.remotePush) {
+        await existing;
+        return const SyncRunResult(status: SyncRunStatus.skippedAlreadyRunning);
+      }
       return existing;
     }
 

@@ -153,6 +153,7 @@ class HabitDetailViewModel extends ChangeNotifier {
     }
 
     await _dbService.deleteHabit(localId);
+    unawaited(_reminderService?.cancelHabitNotifications(habit!));
     habit = null;
     _resetStats();
     notifyListeners();
@@ -166,6 +167,17 @@ class HabitDetailViewModel extends ChangeNotifier {
     await _dbService.updateHabit(updated);
     habit = updated;
     notifyListeners();
+    final reminders = _reminderService;
+    if (reminders != null) {
+      unawaited(
+        updated.isArchived
+            ? reminders.cancelHabitNotifications(updated)
+            : reminders.syncHabitNotifications(
+                updated,
+                ensurePermission: false,
+              ),
+      );
+    }
     final service = _habitService;
     if (service == null) return;
     service.setArchiveStatus(updated).catchError((Object e) {

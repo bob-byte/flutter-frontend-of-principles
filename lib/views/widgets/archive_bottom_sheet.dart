@@ -8,12 +8,13 @@ import '../../core/theme/theme_controller.dart';
 import '../../models/habit.dart';
 import '../../services/database_service.dart';
 import '../../services/habit_service.dart';
+import '../../services/reminder_service.dart';
 import '../../viewmodels/archive_viewmodel.dart';
-import '../../widgets/app_alert_dialog.dart';
-import '../../widgets/app_loading_indicator.dart';
-import '../../widgets/context_menu_overlay.dart';
-import '../../widgets/expandable_bottom_sheet.dart';
-import '../../widgets/themed_lottie.dart';
+import '../common/app_alert_dialog.dart';
+import '../common/app_loading_indicator.dart';
+import '../common/context_menu_overlay.dart';
+import '../common/expandable_bottom_sheet.dart';
+import '../common/themed_lottie.dart';
 import '../edit_habit_view.dart';
 import '../habit_detail_view.dart';
 
@@ -26,6 +27,7 @@ class ArchiveBottomSheet extends StatelessWidget {
       create: (ctx) => ArchiveViewModel(
         ctx.read<DatabaseService>(),
         ctx.read<HabitService>(),
+        reminderService: ctx.read<ReminderService>(),
       ),
       child: const _ArchiveBottomSheetShell(),
     );

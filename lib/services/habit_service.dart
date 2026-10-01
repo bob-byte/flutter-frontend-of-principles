@@ -672,12 +672,18 @@ class HabitService {
     } catch (_) {
       existing = null;
     }
+    // Prefer an explicit/confirmed server id; fall back to the local primary
+    // key for legacy rows where id was assigned from the backend and serverId
+    // was never populated — otherwise the delete never reaches the API and
+    // peers keep showing the habit forever.
     final remoteId =
         serverId ??
-        (existing != null ? confirmedServerHabitId(existing) : habitId);
+        (existing != null ? confirmedServerHabitId(existing) : null) ??
+        existing?.id ??
+        habitId;
 
     Future<void> remote() async {
-      if (remoteId == null || remoteId == 0) return;
+      if (remoteId == 0) return;
       await deleteHabitRemote(remoteId);
     }
 
@@ -687,8 +693,8 @@ class HabitService {
         remoteCall: remote,
         handlerType: SyncHandlerType.userHabit,
         operation: OperationKind.delete,
-        payload: {'id': remoteId ?? 0},
-        entityId: remoteId,
+        payload: {'id': remoteId},
+        entityId: remoteId == 0 ? null : remoteId,
         entityLocalId: habitId,
       );
       return true;
@@ -703,8 +709,8 @@ class HabitService {
         await _queue?.addToQueue(
           handlerType: SyncHandlerType.userHabit,
           operation: OperationKind.delete,
-          payload: {'id': remoteId ?? 0},
-          entityId: remoteId,
+          payload: {'id': remoteId},
+          entityId: remoteId == 0 ? null : remoteId,
           entityLocalId: habitId,
         );
       } catch (e) {
@@ -712,8 +718,8 @@ class HabitService {
         await _queue?.addToQueue(
           handlerType: SyncHandlerType.userHabit,
           operation: OperationKind.delete,
-          payload: {'id': remoteId ?? 0},
-          entityId: remoteId,
+          payload: {'id': remoteId},
+          entityId: remoteId == 0 ? null : remoteId,
           entityLocalId: habitId,
         );
       }
@@ -723,8 +729,8 @@ class HabitService {
     await _queue?.addToQueue(
       handlerType: SyncHandlerType.userHabit,
       operation: OperationKind.delete,
-      payload: {'id': remoteId ?? 0},
-      entityId: remoteId,
+      payload: {'id': remoteId},
+      entityId: remoteId == 0 ? null : remoteId,
       entityLocalId: habitId,
     );
     return true;

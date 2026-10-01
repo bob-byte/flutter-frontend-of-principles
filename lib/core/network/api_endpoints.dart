@@ -26,6 +26,7 @@ class ApiEndpoints {
   static const habitsArchive = '$habits/archive';
   static const habitArchiveStatus = '$habits/archivestatus';
   static const progressesOfHabit = '/progressesofhabit';
+  static const devicePushToken = '/device/push-token';
   static const sync = '/sync';
   static const syncPing = '$sync/ping';
   static const syncBootstrap = '$sync/bootstrap';

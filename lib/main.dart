@@ -13,6 +13,7 @@ import 'core/storage/secure_store.dart';
 import 'models/frequency_config.dart';
 import 'models/user_goal.dart';
 import 'services/dialog_service.dart';
+import 'services/push_sync_service.dart';
 import 'services/reminder_service.dart';
 import 'views/widgets/add_edit_goal_dialog.dart';
 import 'views/widgets/archive_bottom_sheet.dart';
@@ -67,6 +68,7 @@ Future<void> main() async {
   await initializeDateFormatting('uk');
   await LiquidGlassWidgets.initialize();
   await ReminderService().init();
+  await PushSyncService.initialize();
   _setupDialogService();
   if (!kIsWeb) {
     await HomeCalendarWidgetService.ensureInitialized();

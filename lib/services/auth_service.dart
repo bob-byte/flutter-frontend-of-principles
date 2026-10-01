@@ -12,6 +12,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../core/config/app_config.dart';
 import '../core/helpers/password_changer.dart';
+import '../core/push/device_identity.dart';
 import '../core/storage/secure_store.dart';
 
 class AuthService {
@@ -58,6 +59,17 @@ class AuthService {
     }
     dio.interceptors.add(
       InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          if (!kIsWeb) {
+            try {
+              options.headers[DeviceIdentity.header] =
+                  await DeviceIdentity.id();
+            } catch (_) {
+              // Only used to skip the sync push back to this device.
+            }
+          }
+          handler.next(options);
+        },
         onError: (error, handler) async {
           if (error.response?.statusCode == 401) {
             await logout();

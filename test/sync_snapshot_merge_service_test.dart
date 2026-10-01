@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/network/api_client.dart';
+import 'package:principles_app/core/push/reminder_target_index.dart';
+import 'package:principles_app/core/reminder/reminder_targets.dart';
 import 'package:principles_app/core/storage/local_db.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/sync/operation_kind.dart';
@@ -10,6 +13,8 @@ import 'package:principles_app/core/sync/sync_handler_type.dart';
 import 'package:principles_app/core/sync/sync_queue_service.dart';
 import 'package:principles_app/core/sync/sync_snapshot_merge_service.dart';
 import 'package:principles_app/models/habit.dart';
+import 'package:principles_app/models/schedule_reminder_offset.dart';
+import 'package:principles_app/models/task.dart';
 import 'package:principles_app/models/task_item_dto.dart';
 import 'package:principles_app/models/user.dart';
 import 'package:principles_app/models/user_goal.dart';
@@ -408,6 +413,267 @@ void main() {
     expect(archived.single.id, 9);
   });
 
+  group('reminders of rows removed by another device', () {
+    late _RecordingReminderService reminders;
+
+    setUp(() {
+      reminders = _RecordingReminderService();
+      merge = SyncSnapshotMergeService(
+        queue: queue,
+        databaseService: db,
+        userService: users,
+        reminderService: reminders,
+        taskService: tasks,
+      );
+    });
+
+    test('cancels a habit deleted via /changes tombstone', () async {
+      await db.insertOrUpdateHabitWithBackendId(
+        Habit(id: 43, serverId: 43, name: 'Drop'),
+      );
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, deletedHabitIds: [43]),
+      );
+
+      expect(reminders.cancelledHabitIds, [43]);
+      expect(reminders.sweeps, 1);
+    });
+
+    test('cancels a habit pruned from full bootstrap', () async {
+      await db.insertOrUpdateHabitWithBackendId(
+        Habit(id: 43, serverId: 43, name: 'Drop'),
+      );
+
+      await merge.merge(const SyncBootstrapSnapshot());
+
+      expect(reminders.cancelledHabitIds, [43]);
+    });
+
+    test('cancels a habit archived on another device', () async {
+      await db.insertOrUpdateHabitWithBackendId(
+        Habit(id: 9, serverId: 9, name: 'Read'),
+      );
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(
+          isDelta: true,
+          archivedHabits: [SyncBootstrapArchivedHabit(id: 9, name: 'Read')],
+        ),
+      );
+
+      expect(reminders.cancelledHabitIds, [9]);
+    });
+
+    test('cancels tasks removed by a /changes tombstone', () async {
+      tasks.remoteDeleted = [
+        Task(id: '7', title: 'Call', createdAt: DateTime(2026, 9, 1)),
+      ];
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, deletedTaskIds: [7]),
+      );
+
+      expect(reminders.cancelledTaskIds, ['7']);
+    });
+
+    test('keeps a habit with a pending local save', () async {
+      await db.insertOrUpdateHabitWithBackendId(
+        Habit(id: 43, serverId: 43, name: 'Edited'),
+      );
+      await queue.addToQueue(
+        handlerType: SyncHandlerType.userHabit,
+        operation: OperationKind.save,
+        payload: {'id': 43},
+        entityId: 43,
+        entityLocalId: 43,
+      );
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, deletedHabitIds: [43]),
+      );
+
+      expect(reminders.cancelledHabitIds, isEmpty);
+    });
+
+    test('saves the push target index after a merge', () async {
+      await db.insertOrUpdateHabitWithBackendId(
+        Habit(id: 42, serverId: 42, name: 'Walk'),
+      );
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          isDelta: true,
+          activeHabits: [
+            {'id': 42, 'name': 'Walk', 'complexity': 5, 'type': 1},
+          ],
+        ),
+      );
+
+      final index = await ReminderTargetIndex.load();
+      expect(index.habits, {
+        42: {42},
+      });
+    });
+
+    test('skips the orphan sweep for an empty delta', () async {
+      await merge.merge(const SyncBootstrapSnapshot(isDelta: true));
+
+      expect(reminders.sweeps, 0);
+    });
+  });
+
+  group('reminders of rows rescheduled by another device', () {
+    late _RecordingReminderService reminders;
+
+    const remindedDto = TaskItemDto(
+      id: 7,
+      name: 'Call',
+      date: '2026-10-02',
+      time: '10:00:00',
+      reminders: [
+        ScheduleReminderOffset(offsetMinutes: 15, notificationRequestId: 71),
+      ],
+    );
+
+    Task localCopy({required DateTime due}) => Task(
+      id: 'L7',
+      serverId: 7,
+      title: 'Call',
+      createdAt: DateTime(2026, 9, 1),
+      dueDate: due,
+      reminders: const [
+        ScheduleReminderOffset(offsetMinutes: 15, notificationRequestId: 71),
+      ],
+    );
+
+    Map<String, dynamic> habitJson({required String time}) => {
+      'id': 42,
+      'name': 'Walk',
+      'complexity': 5,
+      'type': 1,
+      'lastModified': '2026-09-30T10:00:00.000Z',
+      'reminders': [
+        {
+          'id': 300,
+          'title': 'Walk',
+          'time': time,
+          'isEnabled': true,
+          'daysOfWeek': [
+            {'type': 1, 'userNotificationRequestId': 501},
+          ],
+        },
+      ],
+    };
+
+    setUp(() {
+      reminders = _RecordingReminderService();
+      merge = SyncSnapshotMergeService(
+        queue: queue,
+        databaseService: db,
+        userService: users,
+        reminderService: reminders,
+        taskService: tasks,
+      );
+    });
+
+    test('reschedules a task whose time changed elsewhere', () async {
+      tasks.localByServerId[7] = localCopy(due: DateTime(2026, 10, 2, 9));
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, tasks: [remindedDto]),
+      );
+
+      expect(reminders.cancelledTaskIds, ['L7']);
+      expect(reminders.syncedTasks.single.id, 'L7');
+      expect(reminders.syncedTasks.single.dueDate, DateTime(2026, 10, 2, 10));
+    });
+
+    test('leaves an unchanged task alone', () async {
+      tasks.localByServerId[7] = localCopy(due: DateTime(2026, 10, 2, 10));
+
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, tasks: [remindedDto]),
+      );
+
+      expect(reminders.cancelledTaskIds, isEmpty);
+      expect(reminders.syncedTasks, isEmpty);
+    });
+
+    test('schedules a new task from /changes', () async {
+      await merge.merge(
+        const SyncBootstrapSnapshot(isDelta: true, tasks: [remindedDto]),
+      );
+
+      expect(reminders.syncedTasks.single.id, '7');
+    });
+
+    test('leaves new full-bootstrap tasks to the restore job', () async {
+      await merge.merge(const SyncBootstrapSnapshot(tasks: [remindedDto]));
+
+      expect(reminders.syncedTasks, isEmpty);
+    });
+
+    test('reschedules a habit whose reminder time changed elsewhere', () async {
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          activeHabits: [
+            {
+              ...habitJson(time: '08:00:00'),
+              'lastModified': '2026-09-29T00:00:00.000Z',
+            },
+          ],
+        ),
+      );
+      expect(reminders.syncedHabits, isEmpty);
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          isDelta: true,
+          activeHabits: [habitJson(time: '09:30:00')],
+        ),
+      );
+
+      expect(reminders.cancelledHabitIds, [42]);
+      final synced = reminders.syncedHabits.single;
+      expect(synced.id, 42);
+      expect(
+        synced.reminders.single.time,
+        const TimeOfDay(hour: 9, minute: 30),
+      );
+    });
+
+    test('does not reschedule a habit when only progress changed', () async {
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          activeHabits: [
+            {
+              ...habitJson(time: '08:00:00'),
+              'lastModified': '2026-09-29T00:00:00.000Z',
+            },
+          ],
+        ),
+      );
+
+      await merge.merge(
+        SyncBootstrapSnapshot(
+          isDelta: true,
+          activeHabits: [
+            {
+              ...habitJson(time: '08:00:00'),
+              'progresses': [
+                {'date': '2026-09-30', 'value': 3},
+              ],
+            },
+          ],
+        ),
+      );
+
+      expect(reminders.syncedHabits, isEmpty);
+      expect(reminders.cancelledHabitIds, isEmpty);
+    });
+  });
+
   test('merges remote tasks when queue is clear', () async {
     await merge.merge(
       SyncBootstrapSnapshot(
@@ -454,24 +720,91 @@ void main() {
   });
 }
 
+class _RecordingReminderService extends ReminderService {
+  _RecordingReminderService() : super(forceLocalOnly: true);
+
+  final cancelledHabitIds = <int?>[];
+  final cancelledTaskIds = <String>[];
+  final syncedTasks = <Task>[];
+  final syncedHabits = <Habit>[];
+  var sweeps = 0;
+
+  @override
+  Future<void> syncTaskNotifications(
+    Task task, {
+    bool ensurePermission = true,
+  }) async {
+    expect(ensurePermission, isFalse);
+    syncedTasks.add(task);
+  }
+
+  @override
+  Future<void> syncHabitNotifications(
+    Habit habit, {
+    bool ensurePermission = true,
+    bool? satisfiedToday,
+  }) async {
+    expect(ensurePermission, isFalse);
+    syncedHabits.add(habit);
+  }
+
+  @override
+  Future<void> cancelHabitNotifications(Habit habit) async {
+    cancelledHabitIds.add(habit.id);
+  }
+
+  @override
+  Future<void> cancelTaskNotifications(Task task) async {
+    cancelledTaskIds.add(task.id);
+  }
+
+  @override
+  Future<void> cancelOrphanedNotifications(
+    Future<ReminderTargets> Function() loadTargets,
+  ) async {
+    sweeps++;
+    await loadTargets();
+  }
+}
+
 class _FakeTaskService extends TaskService {
   _FakeTaskService(ApiClient apiClient) : super(apiClient: apiClient);
 
   final mergedTitles = <String>[];
   Set<int> discardedRemoteIds = {};
   Set<int> retainedServerIds = {};
+  List<Task> remoteDeleted = const [];
 
   @override
-  Future<void> mergeRemoteTask(TaskItemDto dto) async {
+  Future<List<Task>> discardRemoteDeletedTask(int serverId) async =>
+      remoteDeleted;
+
+  /// Local rows keyed by server id, returned as `previous` on merge.
+  final localByServerId = <int, Task>{};
+
+  @override
+  Future<({Task? previous, Task merged})> mergeRemoteTask(
+    TaskItemDto dto,
+  ) async {
     mergedTitles.add(dto.name);
+    final previous = localByServerId[dto.id];
+    final merged = dto.toTask().copyWith(
+      id: previous?.id ?? '${dto.id}',
+      serverId: dto.id,
+    );
+    return (previous: previous, merged: merged);
   }
 
   @override
-  Future<void> discardLocalTasksAbsentFromRemote(
+  Future<List<Task>> discardLocalTasksAbsentFromRemote(
     Set<int> remoteServerIds, {
     Set<int> retainServerIds = const {},
   }) async {
     discardedRemoteIds = remoteServerIds;
     retainedServerIds = retainServerIds;
+    return const [];
   }
+
+  @override
+  Future<List<Task>> getTasks({bool? isDone}) async => const [];
 }

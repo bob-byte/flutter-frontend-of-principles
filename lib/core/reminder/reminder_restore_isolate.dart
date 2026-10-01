@@ -16,15 +16,42 @@ const kReminderRestoreTimezone = 'Europe/Kiev';
 const _kConstantTaskIdsKey = 'constant_task_reminder_ids_v1';
 const _kConstantHabitIdsKey = 'constant_habit_reminder_ids_v1';
 
+/// OS notification id for one weekday × offset slot of a habit reminder.
+int habitSlotNotificationId(WeekDay day, ScheduleReminderOffset offset) {
+  final offsetId = offset.notificationRequestId;
+  final id = offsetId == null
+      ? day.userNotificationRequestId
+      : offsetId + day.type;
+  return id.abs() % 2000000000;
+}
+
+/// Every OS id a habit reminder may occupy on this device.
+Set<int> habitReminderNotificationIds(HabitReminder reminder) {
+  final offsets = reminder.offsets.isEmpty
+      ? const [ScheduleReminderOffset(offsetMinutes: 0)]
+      : reminder.offsets;
+  return {
+    for (final day in reminder.daysOfWeek) ...[
+      day.userNotificationRequestId,
+      for (final offset in offsets) habitSlotNotificationId(day, offset),
+    ],
+  };
+}
+
 /// Builds a sendable job for [runReminderRestoreIsolate].
 ///
 /// Pure Dart — safe to call from the UI isolate before spawning.
+///
+/// Server habit reminders carry their own row id, not the habit id.
+/// [habitIdByReminderId] maps them back so payloads and constant alarms use
+/// the same habit id as in-app scheduling (and cancel on delete).
 Map<String, Object?> buildReminderRestoreJob({
   required List<Reminder> generalReminders,
   required List<HabitReminder> habitReminders,
   required List<Task> tasks,
   DateTime? now,
   Set<int> satisfiedHabitIds = const {},
+  Map<int, int> habitIdByReminderId = const {},
   String timezoneLocation = kReminderRestoreTimezone,
 }) {
   final clock = now ?? DateTime.now();
@@ -49,7 +76,10 @@ Map<String, Object?> buildReminderRestoreJob({
   }
 
   for (final habitReminder in habitReminders) {
-    final habitId = habitReminder.id;
+    final reminderId = habitReminder.id;
+    final habitId = reminderId == null
+        ? null
+        : habitIdByReminderId[reminderId] ?? reminderId;
     final payload = habitId == null
         ? null
         : '${NotificationPayloads.habit}$habitId';
@@ -67,12 +97,8 @@ Map<String, Object?> buildReminderRestoreJob({
     var wantsConstant = habitReminder.constantReminder;
 
     if (!habitReminder.isEnabled) {
-      for (final day in habitReminder.daysOfWeek) {
-        ops.add({'type': 'cancel', 'id': day.userNotificationRequestId});
-      }
-      for (final offset in offsets) {
-        final id = offset.notificationRequestId;
-        if (id != null) ops.add({'type': 'cancel', 'id': id});
+      for (final id in habitReminderNotificationIds(habitReminder)) {
+        ops.add({'type': 'cancel', 'id': id});
       }
     } else {
       anyEnabled = true;
@@ -87,12 +113,9 @@ Map<String, Object?> buildReminderRestoreJob({
           final wrapped = adjustedMinutes.remainder(24 * 60);
           final hour = wrapped ~/ 60;
           final minute = wrapped % 60;
-          final id = offset.notificationRequestId == null
-              ? day.userNotificationRequestId
-              : offset.notificationRequestId! + day.type;
           ops.add({
             'type': 'weekly',
-            'id': id.abs() % 2000000000,
+            'id': habitSlotNotificationId(day, offset),
             'title': title,
             'body': body,
             'hour': hour,

@@ -23,9 +23,12 @@ class TaskSyncHandler implements SyncQueueHandler {
   Future<void> handle(SyncQueueItem item) async {
     final operation = OperationKind.normalize(item.operation);
     if (operation == OperationKind.delete) {
-      final id = await _resolveServerId(item);
-      if (id != 0) {
-        await _apiClient.delete('${ApiEndpoints.tasks}/$id');
+      // Prefer the queued server id: the local row is already gone when the
+      // queue drains, so payload/local lookup is a fallback only.
+      final id = item.entityId ?? 0;
+      final resolved = id != 0 ? id : await _resolveServerId(item);
+      if (resolved != 0) {
+        await _apiClient.delete('${ApiEndpoints.tasks}/$resolved');
       }
       return;
     }

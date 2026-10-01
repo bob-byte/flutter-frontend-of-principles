@@ -149,6 +149,17 @@ void main() {
     expect(syncService.calls, 1);
   });
 
+  test('remotePush does not join an in-flight sync', () async {
+    syncService.delay = const Duration(milliseconds: 80);
+    final a = orchestrator();
+    final first = a.run(SyncTrigger.resume);
+    final second = a.run(SyncTrigger.remotePush);
+    final results = await Future.wait([first, second]);
+    expect(results[0].status, SyncRunStatus.succeeded);
+    expect(results[1].status, SyncRunStatus.skippedAlreadyRunning);
+    expect(syncService.calls, 1);
+  });
+
   test('maps SyncAuthenticationException to failedAuthentication', () async {
     syncService.error = SyncAuthenticationException();
     final result = await orchestrator().run(SyncTrigger.resume);

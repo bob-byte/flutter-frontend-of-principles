@@ -15,8 +15,11 @@ import '../core/habit_score.dart';
 import '../core/helpers/open_notification_settings.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/push/reminder_target_index.dart';
+import '../core/push/remote_delete_reminders.dart' as remote_delete;
 import '../core/reminder/constant_reminder_alarm.dart';
 import '../core/reminder/reminder_restore_isolate.dart';
+import '../core/reminder/reminder_targets.dart';
 import '../core/storage/local_db.dart';
 import '../core/sync/local_remote_executor.dart';
 import '../core/sync/operation_kind.dart';
@@ -201,6 +204,7 @@ class ReminderService {
   }
 
   Future<void> cancelTaskNotifications(Task task) async {
+    if (kIsWeb || forceLocalOnly) return;
     for (final offset in task.reminders) {
       final id = offset.notificationRequestId;
       if (id != null) await cancelNotification(id);
@@ -234,12 +238,8 @@ class ReminderService {
     var anyEnabled = false;
     for (final reminder in habit.reminders) {
       if (!reminder.isEnabled) {
-        for (final day in reminder.daysOfWeek) {
-          await cancelNotification(day.userNotificationRequestId);
-        }
-        for (final offset in reminder.offsets) {
-          final id = offset.notificationRequestId;
-          if (id != null) await cancelNotification(id);
+        for (final id in habitReminderNotificationIds(reminder)) {
+          await cancelNotification(id);
         }
         continue;
       }
@@ -258,14 +258,11 @@ class ReminderService {
               offset.offsetMinutes;
           final wrapped = adjustedMinutes.remainder(24 * 60);
           final adjusted = TimeOfDay(hour: wrapped ~/ 60, minute: wrapped % 60);
-          final id = offset.notificationRequestId == null
-              ? day.userNotificationRequestId
-              : offset.notificationRequestId! + day.type;
           await addNotificationToDeviceAsync(
             reminder.copyWith(time: adjusted),
             WeekDay(
               type: day.type,
-              userNotificationRequestId: id.abs() % 2000000000,
+              userNotificationRequestId: habitSlotNotificationId(day, offset),
             ),
             payload: habitPayload,
             ensurePermission: false,
@@ -287,16 +284,78 @@ class ReminderService {
   }
 
   Future<void> cancelHabitNotifications(Habit habit) async {
+    if (kIsWeb || forceLocalOnly) return;
     for (final reminder in habit.reminders) {
-      for (final day in reminder.daysOfWeek) {
-        await cancelNotification(day.userNotificationRequestId);
-      }
-      for (final offset in reminder.offsets) {
-        final id = offset.notificationRequestId;
-        if (id != null) await cancelNotification(id);
+      for (final id in habitReminderNotificationIds(reminder)) {
+        await cancelNotification(id);
       }
     }
     await _stopHabitConstantAlarm(habit);
+  }
+
+  /// Silent push while the app runs: cancels reminders of tasks/habits another
+  /// device deleted (by server id) before the follow-up sync reaches SQLite.
+  Future<void> cancelRemoteDeletedReminders({
+    Iterable<int> taskIds = const [],
+    Iterable<int> habitIds = const [],
+  }) async {
+    if (kIsWeb || forceLocalOnly) return;
+    await init();
+    await remote_delete.cancelRemoteDeletedReminders(
+      plugin: _notificationsPlugin,
+      taskIds: taskIds,
+      habitIds: habitIds,
+    );
+  }
+
+  /// Cancels pending/delivered reminders and stored constant alarms whose
+  /// task or habit is gone, done, or archived on this device (e.g. another
+  /// device deleted it and sync removed the local row).
+  ///
+  /// [loadTargets] runs after the OS snapshot is read, so anything scheduled
+  /// meanwhile already has its row saved and is not treated as an orphan.
+  Future<void> cancelOrphanedNotifications(
+    Future<ReminderTargets> Function() loadTargets,
+  ) async {
+    if (kIsWeb || forceLocalOnly) return;
+    try {
+      await init();
+      final payloadById = <int, String?>{
+        for (final request
+            in await _notificationsPlugin.pendingNotificationRequests())
+          request.id: request.payload,
+      };
+      try {
+        for (final notification
+            in await _notificationsPlugin.getActiveNotifications()) {
+          final id = notification.id;
+          if (id != null)
+            payloadById.putIfAbsent(id, () => notification.payload);
+        }
+      } catch (_) {
+        // Some desktops do not expose delivered notifications.
+      }
+      final alarms = await loadConstantAlarms();
+      if (payloadById.isEmpty && alarms.isEmpty) return;
+
+      final targets = await loadTargets();
+      for (final alarm in alarms.values) {
+        if (!targets.isOrphanPayload(alarm.payload)) continue;
+        await cancelConstantAlarm(
+          plugin: _notificationsPlugin,
+          payload: alarm.payload,
+          notificationId: alarm.notificationId,
+        );
+        payloadById.remove(alarm.notificationId);
+      }
+      for (final entry in payloadById.entries) {
+        if (targets.isOrphanPayload(entry.value)) {
+          await cancelNotification(entry.key);
+        }
+      }
+    } catch (e) {
+      debugPrint('Cancel orphaned notifications failed: $e');
+    }
   }
 
   /// Completing/skipping today silences the alarm; clearing it starts it again.
@@ -896,6 +955,9 @@ class ReminderService {
         habitReminders: enabledHabits,
         tasks: tasksWithReminders,
         satisfiedHabitIds: await _satisfiedHabitIdsOn(DateTime.now()),
+        habitIdByReminderId: habitIdsByReminderId(
+          knownHabits ?? const <Habit>[],
+        ),
       );
     } catch (e) {
       debugPrint('Prepare reminder restore failed: $e');
@@ -975,6 +1037,17 @@ class ReminderService {
   @visibleForTesting
   Future<void> markSeenRestoreRemindersExplainForTest() =>
       _markSeenRestoreRemindersExplain();
+
+  /// Server reminder row id → local habit id, for restore-job payloads.
+  @visibleForTesting
+  static Map<int, int> habitIdsByReminderId(List<Habit> habits) {
+    return {
+      for (final habit in habits)
+        if (habit.id != null)
+          for (final reminder in habit.reminders)
+            if (reminder.id != null) reminder.id!: habit.id!,
+    };
+  }
 
   /// Prefer API habit reminders; fill gaps from habits already in memory.
   @visibleForTesting
@@ -1110,6 +1183,7 @@ class ReminderService {
     await prefs.remove(_constantTaskIdsKey);
     await prefs.remove(_constantHabitIdsKey);
     await prefs.remove(kConstantAlarmsPrefsKey);
+    await prefs.remove(ReminderTargetIndex.prefsKey);
     if (_useSqlite) {
       try {
         final db = await _localDb!.database;

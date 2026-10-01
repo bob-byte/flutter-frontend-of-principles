@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
+import '../push/device_identity.dart';
 import '../storage/secure_store.dart';
 
 class ApiClient {
@@ -37,6 +39,14 @@ class ApiClient {
             final token = await _secureStore.read(AppConfig.tokenStorageKey);
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
+            }
+          }
+          if (!kIsWeb) {
+            try {
+              options.headers[DeviceIdentity.header] =
+                  await DeviceIdentity.id();
+            } catch (_) {
+              // Only used to skip the sync push back to this device.
             }
           }
           handler.next(options);

@@ -166,6 +166,8 @@ NotificationDetails constantAlarmNotificationDetails() {
 
 Future<Map<String, ConstantAlarmEntry>> loadConstantAlarms() async {
   final prefs = await SharedPreferences.getInstance();
+  // Background isolates (alarm dismiss, silent push) edit this key too.
+  await prefs.reload();
   final raw = prefs.getString(kConstantAlarmsPrefsKey);
   if (raw == null || raw.isEmpty) return {};
   try {

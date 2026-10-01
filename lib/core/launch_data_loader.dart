@@ -193,19 +193,19 @@ class LaunchDataLoader {
     SyncTrigger trigger, {
     bool skipIfRecent = false,
   }) async {
+    // Bootstrap may still be pulling when a silent push / tab focus asks for
+    // catch-up. Wait for it, then fall through and pull again — returning
+    // "succeeded" here skipped tombstones that landed during that first sync.
     final loading = _inFlight;
     if (loading != null) {
       await loading;
-      if (_sessionHydrated) {
-        return const SyncRunResult(status: SyncRunStatus.succeeded);
-      }
     }
 
     if (!_sessionHydrated) {
       await ensureLoaded();
-      return _sessionHydrated
-          ? const SyncRunResult(status: SyncRunStatus.succeeded)
-          : const SyncRunResult(status: SyncRunStatus.skippedNoAuth);
+      if (!_sessionHydrated) {
+        return const SyncRunResult(status: SyncRunStatus.skippedNoAuth);
+      }
     }
 
     if (skipIfRecent && _recentlySynced) {

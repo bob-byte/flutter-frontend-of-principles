@@ -49,6 +49,7 @@ import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
 import '../services/progress_service.dart';
+import '../services/push_sync_service.dart';
 import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
 import '../services/task_service.dart';
@@ -82,7 +83,7 @@ import '../views/startup_view.dart';
 import '../views/tasks_view.dart';
 import '../views/main_shell.dart';
 import '../views/video_splash_view.dart';
-import '../widgets/app_update_alert.dart';
+import '../views/common/app_update_alert.dart';
 import 'router.dart';
 
 /// Survives [MaterialApp] rebuilds when [ThemeController] finishes restore.
@@ -230,6 +231,9 @@ class PrinciplesApp extends StatelessWidget {
           },
         ),
         Provider(
+          create: (ctx) => PushSyncService(apiClient: ctx.read<ApiClient>()),
+        ),
+        Provider(
           create: (ctx) => LocalDataCleaner(
             localDb: ctx.read<LocalDb>(),
             userService: ctx.read<UserService>(),
@@ -237,6 +241,7 @@ class PrinciplesApp extends StatelessWidget {
             reminderService: ctx.read<ReminderService>(),
             goalService: ctx.read<GoalService>(),
             secureStore: ctx.read<SecureStore>(),
+            pushSyncService: ctx.read<PushSyncService>(),
           ),
         ),
         Provider(

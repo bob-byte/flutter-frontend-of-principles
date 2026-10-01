@@ -3,18 +3,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/habit.dart';
 import '../services/database_service.dart';
 import '../services/habit_service.dart';
+import '../services/reminder_service.dart';
 import '../services/dialog_service.dart';
 
 class ArchiveViewModel extends ChangeNotifier {
   final DatabaseService _dbService;
   final HabitService _habitService;
+  final ReminderService? _reminderService;
   final DialogService _dialogService = DialogService();
 
   List<Habit> archivedHabits = [];
   bool isLoading = true;
   bool showInfoBanner = false;
 
-  ArchiveViewModel(this._dbService, this._habitService) {
+  ArchiveViewModel(
+    this._dbService,
+    this._habitService, {
+    ReminderService? reminderService,
+  }) : _reminderService = reminderService {
     loadHabits();
   }
 
@@ -57,6 +63,11 @@ class ArchiveViewModel extends ChangeNotifier {
     await _dbService.updateHabit(updatedHabit);
     archivedHabits.removeWhere((h) => h.id == habit.id);
     notifyListeners();
+    _reminderService
+        ?.syncHabitNotifications(updatedHabit, ensurePermission: false)
+        .catchError((Object e) {
+          debugPrint('Failed to reschedule unarchived habit: $e');
+        });
 
     // Background push
     _habitService.setArchiveStatus(updatedHabit).catchError((e) {
