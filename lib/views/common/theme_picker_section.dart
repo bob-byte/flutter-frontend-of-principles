@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../l10n/task_strings.dart';
+import '../../l10n/task_strings.dart';
 import 'theme_color_picker.dart';
 
 enum ThemePickerMode { none, existing, newTheme }

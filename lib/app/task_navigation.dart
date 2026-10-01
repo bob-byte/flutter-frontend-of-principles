@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/ai_task_draft.dart';
 import '../models/task.dart';
-import '../widgets/task_edit_sheet.dart';
-import '../widgets/tasks_list_menu_sheet.dart';
+import '../views/common/task_edit_sheet.dart';
+import '../views/common/tasks_list_menu_sheet.dart';
 
 /// Навігація всередині модуля завдань.
 class TasksNavigation {

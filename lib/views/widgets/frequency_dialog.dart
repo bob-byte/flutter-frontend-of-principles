@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/frequency_config.dart';
 import '../../viewmodels/frequency_dialog_viewmodel.dart';
-import '../../widgets/app_alert_dialog.dart';
+import '../common/app_alert_dialog.dart';
 
 class FrequencyDialogWidget extends StatelessWidget {
   final FrequencyConfig initialConfig;

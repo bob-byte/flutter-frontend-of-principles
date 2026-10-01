@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../l10n/task_strings.dart';
-import '../models/ai_task_draft.dart';
-import '../services/ai_chat_service.dart';
-import '../viewmodels/tasks_viewmodel.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../l10n/task_strings.dart';
+import '../../models/ai_task_draft.dart';
+import '../../services/ai_chat_service.dart';
+import '../../viewmodels/tasks_viewmodel.dart';
 import 'expandable_bottom_sheet.dart';
 import 'tasks_glass.dart';
 

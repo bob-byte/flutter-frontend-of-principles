@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../core/utils/date_helpers.dart';
-import '../l10n/task_strings.dart';
-import '../viewmodels/tasks_viewmodel.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/utils/date_helpers.dart';
+import '../../l10n/task_strings.dart';
+import '../../viewmodels/tasks_viewmodel.dart';
 import 'expandable_bottom_sheet.dart';
 import 'task_calendar_sheet.dart';
 import 'tasks_glass.dart';

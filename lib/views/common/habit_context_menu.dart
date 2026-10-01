@@ -3,11 +3,11 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../models/habit.dart';
-import '../viewmodels/habit_progress_viewmodel.dart';
-import '../views/edit_habit_view.dart';
-import '../views/habit_detail_view.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../models/habit.dart';
+import '../../viewmodels/habit_progress_viewmodel.dart';
+import '../edit_habit_view.dart';
+import '../habit_detail_view.dart';
 import 'context_menu_overlay.dart';
 
 Color _primarySoft(TasksUiPalette palette) =>

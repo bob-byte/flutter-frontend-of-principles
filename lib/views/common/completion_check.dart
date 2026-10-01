@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/task_theme_palette.dart';
+import '../../core/theme/task_theme_palette.dart';
 import 'completion_burst.dart';
 
 /// Circular check used on tasks, subtasks, and habit task tiles.

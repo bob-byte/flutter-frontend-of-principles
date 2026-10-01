@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../core/theme/theme_controller.dart';
-import '../l10n/task_strings.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/theme/theme_controller.dart';
+import '../../l10n/task_strings.dart';
 
 /// Theme switcher wired to the app-wide [ThemeController].
 class AppThemeSwitcher extends StatelessWidget {

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../core/theme/task_theme_palette.dart';
+import '../../core/theme/task_theme_palette.dart';
 
 /// iOS-style liquid glass для модуля завдань.
 class TasksGlassBackground extends StatelessWidget {

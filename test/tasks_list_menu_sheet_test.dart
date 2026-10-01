@@ -7,7 +7,7 @@ import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/services/task_service.dart';
 import 'package:principles_app/viewmodels/tasks_viewmodel.dart';
-import 'package:principles_app/widgets/tasks_list_menu_sheet.dart';
+import 'package:principles_app/views/common/tasks_list_menu_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

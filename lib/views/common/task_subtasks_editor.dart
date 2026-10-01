@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../l10n/task_strings.dart';
-import '../models/task_subtask.dart';
-import '../viewmodels/edit_task_viewmodel.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../l10n/task_strings.dart';
+import '../../models/task_subtask.dart';
+import '../../viewmodels/edit_task_viewmodel.dart';
 import 'completion_check.dart';
 
 class TaskSubtasksEditor extends StatefulWidget {

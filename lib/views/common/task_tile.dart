@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../core/utils/date_helpers.dart';
-import '../core/theme/task_theme_palette.dart';
-import '../l10n/task_strings.dart';
-import '../models/task.dart';
-import '../views/widgets/schedule/schedule_format.dart';
+import '../../core/utils/date_helpers.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../l10n/task_strings.dart';
+import '../../models/task.dart';
+import '../widgets/schedule/schedule_format.dart';
 import 'completion_burst.dart';
 import 'completion_check.dart';
 import 'tasks_glass.dart';

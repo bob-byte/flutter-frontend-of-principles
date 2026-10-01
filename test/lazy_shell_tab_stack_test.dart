@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:principles_app/widgets/lazy_shell_tab_stack.dart';
+import 'package:principles_app/views/common/lazy_shell_tab_stack.dart';
 
 void main() {
   testWidgets('mounts tabs on first visit and keeps them alive', (

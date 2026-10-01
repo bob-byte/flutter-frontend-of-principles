@@ -5,7 +5,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 
 import '../core/helpers/open_notification_settings.dart';
 import '../core/input/keyboard.dart';
-import '../widgets/app_alert_dialog.dart';
+import '../views/common/app_alert_dialog.dart';
 
 enum DialogType { frequencyConfig, addEditGoal }
 

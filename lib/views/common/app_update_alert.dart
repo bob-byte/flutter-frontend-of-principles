@@ -4,8 +4,8 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:upgrader/upgrader.dart';
 
-import '../core/network/network_service.dart';
-import '../core/upgrader/principles_upgrader.dart';
+import '../../core/network/network_service.dart';
+import '../../core/upgrader/principles_upgrader.dart';
 
 /// Store update prompt (package `upgrader`), deferred until the splash ends.
 ///

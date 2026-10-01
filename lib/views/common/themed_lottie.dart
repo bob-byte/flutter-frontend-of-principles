@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../core/theme/theme_controller.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/theme/theme_controller.dart';
 
 /// Lottie that follows the active orange/blue × dark/light theme.
 class ThemedLottie extends StatelessWidget {

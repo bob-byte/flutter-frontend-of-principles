@@ -4,7 +4,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/theme_controller.dart';
-import '../widgets/themed_lottie.dart';
+import 'common/themed_lottie.dart';
 
 /// Full-screen gate while post-auth hydrate and reminder restore run.
 ///

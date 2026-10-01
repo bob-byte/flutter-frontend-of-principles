@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../core/input/keyboard.dart';
-import '../models/ai_conversation.dart';
-import '../viewmodels/helper_viewmodel.dart';
+import '../../core/input/keyboard.dart';
+import '../../models/ai_conversation.dart';
+import '../../viewmodels/helper_viewmodel.dart';
 import 'app_alert_dialog.dart';
 
 /// ChatGPT-style left sidebar listing persisted AI Helper conversations.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../models/habit.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../models/habit.dart';
 import 'completion_check.dart';
 import 'tasks_glass.dart';
 

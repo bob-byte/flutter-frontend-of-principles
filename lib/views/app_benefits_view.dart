@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/app_benefits_viewmodel.dart';
-import '../widgets/themed_lottie.dart';
-import '../widgets/ui_theme_switcher.dart';
+import 'common/themed_lottie.dart';
+import 'common/ui_theme_switcher.dart';
 
 import 'startup_view.dart';
 

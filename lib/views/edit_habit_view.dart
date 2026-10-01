@@ -10,7 +10,7 @@ import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../viewmodels/schedule_draft.dart';
-import '../widgets/app_liquid_background.dart';
+import 'common/app_liquid_background.dart';
 import 'widgets/recommended_habits_sheet.dart';
 import 'widgets/schedule/schedule_bottom_sheet.dart';
 import 'widgets/schedule/schedule_format.dart';

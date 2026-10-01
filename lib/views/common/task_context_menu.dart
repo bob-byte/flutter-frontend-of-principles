@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../app/task_navigation.dart';
-import '../core/theme/task_theme_palette.dart';
-import '../core/utils/date_helpers.dart';
-import '../l10n/task_strings.dart';
-import '../models/task.dart';
-import '../viewmodels/tasks_viewmodel.dart';
+import '../../app/task_navigation.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/utils/date_helpers.dart';
+import '../../l10n/task_strings.dart';
+import '../../models/task.dart';
+import '../../viewmodels/tasks_viewmodel.dart';
 import 'context_menu_overlay.dart';
 
 void showTaskContextMenu({

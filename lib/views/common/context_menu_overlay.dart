@@ -3,8 +3,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-import '../core/input/keyboard.dart';
-import '../core/theme/task_theme_palette.dart';
+import '../../core/input/keyboard.dart';
+import '../../core/theme/task_theme_palette.dart';
 import 'app_alert_dialog.dart';
 
 /// Long-press context menu with animated blur, scale, fade, and slide.

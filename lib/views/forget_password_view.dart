@@ -8,7 +8,7 @@ import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
-import '../widgets/app_alert_dialog.dart';
+import 'common/app_alert_dialog.dart';
 
 class ForgetPasswordView extends StatefulWidget {
   final String? initialEmail;

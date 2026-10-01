@@ -14,10 +14,10 @@ import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
-import '../widgets/app_alert_dialog.dart';
-import '../widgets/app_liquid_background.dart';
-import '../widgets/app_loading_indicator.dart';
-import '../widgets/ui_theme_switcher.dart';
+import 'common/app_alert_dialog.dart';
+import 'common/app_liquid_background.dart';
+import 'common/app_loading_indicator.dart';
+import 'common/ui_theme_switcher.dart';
 import 'forget_password_view.dart';
 import 'startup_view.dart';
 

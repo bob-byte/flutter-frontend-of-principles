@@ -6,8 +6,8 @@ import '../../core/theme/task_theme_palette.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../models/recommended_habit.dart';
 import '../../viewmodels/edit_habit_viewmodel.dart';
-import '../../widgets/expandable_bottom_sheet.dart';
-import '../../widgets/themed_lottie.dart';
+import '../common/expandable_bottom_sheet.dart';
+import '../common/themed_lottie.dart';
 
 class RecommendedHabitsSheet {
   static Future<RecommendedHabit?> show(BuildContext context) {

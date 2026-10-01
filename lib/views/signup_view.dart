@@ -9,8 +9,8 @@ import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/signup_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
-import '../widgets/ui_theme_switcher.dart';
-import '../widgets/themed_lottie.dart';
+import 'common/ui_theme_switcher.dart';
+import 'common/themed_lottie.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 

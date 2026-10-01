@@ -12,11 +12,11 @@ import '../models/habit.dart';
 import '../models/user_goal.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
-import '../widgets/app_liquid_background.dart';
-import '../widgets/app_loading_indicator.dart';
-import '../widgets/completion_burst.dart';
-import '../widgets/context_menu_overlay.dart';
-import '../widgets/themed_lottie.dart';
+import 'common/app_liquid_background.dart';
+import 'common/app_loading_indicator.dart';
+import 'common/completion_burst.dart';
+import 'common/context_menu_overlay.dart';
+import 'common/themed_lottie.dart';
 import 'habit_detail_view.dart';
 
 class GoalsView extends StatefulWidget {

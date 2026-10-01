@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../core/input/keyboard.dart';
-import '../core/theme/task_theme_palette.dart';
-import '../core/theme/theme_controller.dart';
+import '../../core/input/keyboard.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/theme/theme_controller.dart';
 import 'app_logo.dart';
 
 TasksUiPalette appAlertPaletteOf(

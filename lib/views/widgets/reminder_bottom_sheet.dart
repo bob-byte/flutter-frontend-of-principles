@@ -10,7 +10,7 @@ import '../../models/habit_reminder.dart';
 import '../../services/dialog_service.dart';
 import '../../services/reminder_service.dart';
 import '../../models/habit.dart'; // Needed if we want to pass Habit
-import '../../widgets/expandable_bottom_sheet.dart';
+import '../common/expandable_bottom_sheet.dart';
 
 class ReminderBottomSheet extends StatefulWidget {
   final HabitReminder? initialReminder;

@@ -5,9 +5,9 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/l10n/task_strings.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/services/completion_feedback.dart';
-import 'package:principles_app/widgets/completion_burst.dart';
-import 'package:principles_app/widgets/completion_check.dart';
-import 'package:principles_app/widgets/task_tile.dart';
+import 'package:principles_app/views/common/completion_burst.dart';
+import 'package:principles_app/views/common/completion_check.dart';
+import 'package:principles_app/views/common/task_tile.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

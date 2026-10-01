@@ -9,11 +9,11 @@ import '../../services/goal_service.dart';
 import '../../viewmodels/edit_habit_viewmodel.dart';
 import '../../viewmodels/goal_selection_viewmodel.dart';
 import '../../viewmodels/goals_viewmodel.dart';
-import '../../widgets/app_loading_indicator.dart';
-import '../../widgets/completion_burst.dart';
-import '../../widgets/context_menu_overlay.dart';
-import '../../widgets/expandable_bottom_sheet.dart';
-import '../../widgets/themed_lottie.dart';
+import '../common/app_loading_indicator.dart';
+import '../common/completion_burst.dart';
+import '../common/context_menu_overlay.dart';
+import '../common/expandable_bottom_sheet.dart';
+import '../common/themed_lottie.dart';
 
 class GoalSelectionSheetWidget extends StatelessWidget {
   final String currentTargetGoal;

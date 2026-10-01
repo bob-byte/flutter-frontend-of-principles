@@ -10,10 +10,10 @@ import '../core/road_guide/road_guide_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../services/dialog_service.dart';
 import '../viewmodels/helper_viewmodel.dart';
-import '../widgets/app_alert_dialog.dart';
-import '../widgets/context_menu_overlay.dart';
-import '../widgets/helper_chat_sidebar.dart';
-import '../widgets/themed_lottie.dart';
+import 'common/app_alert_dialog.dart';
+import 'common/context_menu_overlay.dart';
+import 'common/helper_chat_sidebar.dart';
+import 'common/themed_lottie.dart';
 import 'edit_habit_view.dart';
 
 class HelperView extends StatefulWidget {

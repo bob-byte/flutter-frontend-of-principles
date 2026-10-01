@@ -15,7 +15,7 @@ import '../services/dialog_service.dart';
 import '../services/reminder_service.dart';
 import '../services/task_service.dart';
 import '../viewmodels/schedule_draft.dart';
-import '../widgets/theme_picker_section.dart';
+import '../views/common/theme_picker_section.dart';
 
 class EditTaskViewModel extends ChangeNotifier {
   EditTaskViewModel(this._taskService, {ReminderService? reminderService})

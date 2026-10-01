@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../core/theme/theme_controller.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/theme/theme_controller.dart';
 
 /// App mark that follows the active orange/blue theme.
 class AppLogo extends StatelessWidget {

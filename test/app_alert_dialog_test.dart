@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/theme/task_theme_palette.dart';
 import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
-import 'package:principles_app/widgets/app_alert_dialog.dart';
+import 'package:principles_app/views/common/app_alert_dialog.dart';
 import 'package:provider/provider.dart';
 
 void main() {

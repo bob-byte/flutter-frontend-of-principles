@@ -19,7 +19,7 @@ import 'package:principles_app/models/task_subtask.dart';
 import 'package:principles_app/services/task_service.dart';
 import 'package:principles_app/viewmodels/edit_task_viewmodel.dart';
 import 'package:principles_app/viewmodels/tasks_viewmodel.dart';
-import 'package:principles_app/widgets/task_tile.dart';
+import 'package:principles_app/views/common/task_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

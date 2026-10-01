@@ -3,8 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/theme/task_theme_palette.dart';
-import '../core/theme/theme_controller.dart';
+import '../../core/theme/task_theme_palette.dart';
+import '../../core/theme/theme_controller.dart';
 
 /// Soft orbs behind glass chrome so Liquid Glass can refract real color.
 class AppLiquidBackground extends StatelessWidget {

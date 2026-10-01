@@ -12,10 +12,10 @@ import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
 import '../viewmodels/habit_detail_viewmodel.dart';
-import '../widgets/app_alert_dialog.dart';
-import '../widgets/completion_burst.dart';
-import '../widgets/app_liquid_background.dart';
-import '../widgets/app_loading_indicator.dart';
+import 'common/app_alert_dialog.dart';
+import 'common/completion_burst.dart';
+import 'common/app_liquid_background.dart';
+import 'common/app_loading_indicator.dart';
 import 'edit_habit_view.dart';
 
 class HabitDetailView extends StatefulWidget {

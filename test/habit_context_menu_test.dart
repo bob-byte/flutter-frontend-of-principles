@@ -8,8 +8,8 @@ import 'package:principles_app/models/habit.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/habit_service.dart';
 import 'package:principles_app/viewmodels/habit_progress_viewmodel.dart';
-import 'package:principles_app/widgets/habit_context_menu.dart';
-import 'package:principles_app/widgets/habit_task_tile.dart';
+import 'package:principles_app/views/common/habit_context_menu.dart';
+import 'package:principles_app/views/common/habit_task_tile.dart';
 import 'package:provider/provider.dart';
 
 void main() {

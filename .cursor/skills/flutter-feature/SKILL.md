@@ -7,7 +7,7 @@ description: Implements Flutter features in Principles following MVVM folders, d
 
 ## Placement
 
-- UI → `lib/views/` (or `lib/widgets/` for shared)
+- UI → `lib/views/` (screens), `lib/views/common/` (shared widgets), `lib/views/widgets/` (feature sheets/dialogs)
 - State → `lib/viewmodels/` (`ChangeNotifier` + Provider)
 - API/business → `lib/services/`
 - Domain types → `lib/models/`

@@ -9,9 +9,9 @@ import '../../services/dialog_service.dart';
 import '../../services/reminder_service.dart';
 import '../../services/user_service.dart';
 import '../../viewmodels/global_reminder_viewmodel.dart';
-import '../../widgets/app_loading_indicator.dart';
-import '../../widgets/expandable_bottom_sheet.dart';
-import '../../widgets/tasks_glass.dart';
+import '../common/app_loading_indicator.dart';
+import '../common/expandable_bottom_sheet.dart';
+import '../common/tasks_glass.dart';
 
 class GlobalReminderBottomSheet {
   const GlobalReminderBottomSheet._();

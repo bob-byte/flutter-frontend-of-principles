@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/task_theme_palette.dart';
+import '../../core/theme/task_theme_palette.dart';
 
 class ThemeColorPicker extends StatelessWidget {
   const ThemeColorPicker({

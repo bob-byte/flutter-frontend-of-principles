@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../services/completion_feedback.dart';
+import '../../services/completion_feedback.dart';
 
 const kCompletionBurstDuration = kCompletionCelebrationDuration;
 
