@@ -396,7 +396,7 @@ class _TasksBody extends StatelessWidget {
                             taskId: task.id,
                           );
                           if (!context.mounted || saved == null) return;
-                          await context.read<TasksViewModel>().upsertTask(
+                          await context.read<TasksViewModel>().upsertEditedTask(
                             saved,
                           );
                         },

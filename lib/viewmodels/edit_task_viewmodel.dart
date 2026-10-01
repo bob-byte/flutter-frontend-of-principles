@@ -570,6 +570,12 @@ class EditTaskViewModel extends ChangeNotifier {
         final existing = await _taskService.getTask(editingId!);
         if (existing == null) return null;
 
+        final preparedSubtasks = _preparedSubtasks();
+        final autoComplete =
+            !existing.isDone &&
+            preparedSubtasks.isNotEmpty &&
+            preparedSubtasks.every((item) => item.isDone);
+
         saved = existing.copyWith(
           title: trimmedTitle,
           description: description.trim(),
@@ -587,7 +593,9 @@ class EditTaskViewModel extends ChangeNotifier {
           repeat: hasDueDate ? repeat : const TaskRepeatConfig(),
           constantNotificationRequestId: constantNotificationRequestId,
           clearConstantNotificationRequestId: !hasDueDate,
-          subtasks: _preparedSubtasks(),
+          subtasks: preparedSubtasks,
+          isDone: autoComplete ? true : null,
+          completedAt: autoComplete ? DateTime.now() : null,
         );
         saved =
             await _reminderService?.prepareTaskNotifications(saved) ?? saved;

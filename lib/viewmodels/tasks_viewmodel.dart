@@ -408,6 +408,23 @@ class TasksViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Upserts an edit-sheet save and runs completion side effects when the
+  /// task newly becomes done (e.g. all checklist items checked).
+  Future<void> upsertEditedTask(Task task) async {
+    final previous = _findTask(task.id);
+    final becameDone = task.isDone && previous != null && !previous.isDone;
+    await upsertTask(task);
+    if (!becameDone) return;
+
+    _holdCompletedTask(task.id);
+    _completedTasks = null;
+    await _reminderService?.cancelTaskNotifications(task);
+    await _reminderService?.syncTaskNotifications(task.copyWith(isDone: true));
+    if (!task.repeat.isNone && task.dueDate != null) {
+      await _spawnNextOccurrence(task);
+    }
+  }
+
   Future<void> load({bool silent = false}) async {
     final showSpinner = !silent && tasks.isEmpty;
     if (showSpinner) {
@@ -621,6 +638,11 @@ class TasksViewModel extends ChangeNotifier {
       isNew: false,
     );
     await upsertTask(saved);
+
+    final allDone = next.isNotEmpty && next.every((item) => item.isDone);
+    if (allDone && !task.isDone) {
+      await toggleTask(taskId);
+    }
   }
 
   Future<void> deleteTask(String id) async {

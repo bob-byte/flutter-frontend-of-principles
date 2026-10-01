@@ -61,7 +61,7 @@ Future<Task?> showTaskEditSheet(
 
   if (isEdit) {
     editVm.onAutosaved = (task) {
-      unawaited(tasksVm.upsertTask(task));
+      unawaited(tasksVm.upsertEditedTask(task));
     };
   }
 

@@ -273,6 +273,32 @@ void main() {
       expect(saved.subtasks.single.title, 'Milk');
     });
 
+    test('live-save completes the parent when all items are done', () async {
+      final service = _offlineService();
+      final created = await service.saveTask(
+        Task(
+          id: '0',
+          title: 'Shop',
+          createdAt: DateTime(2026, 1, 1),
+          subtasks: const [
+            TaskSubtask(id: 'a', title: 'Milk', sortOrder: 0),
+            TaskSubtask(id: 'b', title: 'Eggs', isDone: true, sortOrder: 1),
+          ],
+        ),
+        isNew: true,
+      );
+
+      final vm = EditTaskViewModel(service);
+      await vm.load(taskId: created.id, seed: created);
+      vm.toggleSubtaskDone('a');
+      final saved = await vm.flushAutosave();
+
+      expect(saved?.isDone, isTrue);
+      expect(saved?.subtasks.every((item) => item.isDone), isTrue);
+      final fromDb = await service.getTask(created.id);
+      expect(fromDb?.isDone, isTrue);
+    });
+
     test('prepareCreate applies AI draft subtasks, time, and reminders', () {
       final vm = EditTaskViewModel(_offlineService());
       vm.prepareCreate(
@@ -350,27 +376,57 @@ void main() {
   });
 
   group('TasksViewModel subtasks', () {
-    test('toggleSubtask flips an item without completing the parent', () async {
-      final service = _offlineService();
-      final vm = TasksViewModel(service, ThemeController());
-      vm.tasks.add(
-        Task(
-          id: '1',
-          title: 'Shop',
-          createdAt: DateTime(2026, 1, 1),
-          subtasks: const [
-            TaskSubtask(id: 'a', title: 'Milk', sortOrder: 0),
-            TaskSubtask(id: 'b', title: 'Eggs', isDone: true, sortOrder: 1),
-          ],
-        ),
-      );
+    test(
+      'toggleSubtask flips an item without completing the parent early',
+      () async {
+        final service = _offlineService();
+        final vm = TasksViewModel(service, ThemeController());
+        vm.tasks.add(
+          Task(
+            id: '1',
+            title: 'Shop',
+            createdAt: DateTime(2026, 1, 1),
+            subtasks: const [
+              TaskSubtask(id: 'a', title: 'Milk', sortOrder: 0),
+              TaskSubtask(id: 'b', title: 'Eggs', sortOrder: 1),
+            ],
+          ),
+        );
 
-      await vm.toggleSubtask('1', 'a');
+        await vm.toggleSubtask('1', 'a');
 
-      expect(vm.tasks.single.isDone, isFalse);
-      expect(vm.tasks.single.completedSubtaskCount, 2);
-      expect(vm.tasks.single.subtasks.first.isDone, isTrue);
-    });
+        expect(vm.tasks.single.isDone, isFalse);
+        expect(vm.tasks.single.completedSubtaskCount, 1);
+        expect(vm.tasks.single.subtasks.first.isDone, isTrue);
+      },
+    );
+
+    test(
+      'toggleSubtask completes the parent when all items are done',
+      () async {
+        final service = _offlineService();
+        final vm = TasksViewModel(service, ThemeController());
+        await service.saveTask(
+          Task(
+            id: '1',
+            title: 'Shop',
+            createdAt: DateTime(2026, 1, 1),
+            subtasks: const [
+              TaskSubtask(id: 'a', title: 'Milk', sortOrder: 0),
+              TaskSubtask(id: 'b', title: 'Eggs', isDone: true, sortOrder: 1),
+            ],
+          ),
+          isNew: false,
+        );
+        await vm.load();
+
+        await vm.toggleSubtask('1', 'a');
+
+        expect(vm.tasks.single.isDone, isTrue);
+        expect(vm.tasks.single.completedSubtaskCount, 2);
+        expect(vm.tasks.single.subtasks.every((item) => item.isDone), isTrue);
+      },
+    );
 
     test('completing a repeating task copies unchecked subtasks', () async {
       final service = _offlineService();

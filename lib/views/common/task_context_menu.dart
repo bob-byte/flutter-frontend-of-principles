@@ -56,7 +56,7 @@ void showTaskContextMenu({
                     taskId: task.id,
                   );
                   if (!context.mounted || saved == null) return;
-                  await context.read<TasksViewModel>().upsertTask(saved);
+                  await context.read<TasksViewModel>().upsertEditedTask(saved);
                 },
               ),
               if (canMoveToToday)
