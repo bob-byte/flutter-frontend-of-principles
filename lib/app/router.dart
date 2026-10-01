@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/habit.dart';
+import '../models/user_goal.dart';
 import '../views/edit_habit_view.dart';
+import '../views/edit_goal_view.dart';
 import '../views/goals_view.dart';
 import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
@@ -41,6 +43,14 @@ class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => EditHabitView(habit: habit),
+        );
+      case EditGoalView.routeName:
+        final goal = settings.arguments is UserGoal
+            ? settings.arguments as UserGoal
+            : null;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => EditGoalView(goal: goal),
         );
 
       case GoalsView.routeName:

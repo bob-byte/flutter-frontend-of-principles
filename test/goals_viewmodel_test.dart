@@ -67,9 +67,10 @@ class _FakeGoalService extends GoalService {
   Future<List<UserGoal>> getGoals() async => List.of(items);
 
   @override
-  Future<void> saveGoal(UserGoal goal) async {
+  Future<UserGoal> saveGoal(UserGoal goal) async {
     saved.add(goal);
     items = [...items, goal];
+    return goal;
   }
 
   @override

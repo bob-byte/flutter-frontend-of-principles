@@ -635,32 +635,92 @@ abstract class AppLocalizations {
   /// Empty-state message on the goals tab
   ///
   /// In en, this message translates to:
-  /// **'No goals yet. Add one above.'**
+  /// **'No goals yet. Tap + to add one.'**
   String get goalsEmptyList;
 
-  /// Title of the dialog used to create a goal
+  /// Title of the page used to create a goal
   ///
   /// In en, this message translates to:
   /// **'Add goal'**
   String get addGoalTitle;
 
-  /// Title of the dialog used to rename a goal
+  /// Title of the page used to edit a goal
   ///
   /// In en, this message translates to:
   /// **'Edit goal'**
   String get editGoalTitle;
 
-  /// Hint text in the add/edit goal dialog
+  /// Hint text on the add/edit goal page with identity and measurable examples
   ///
   /// In en, this message translates to:
-  /// **'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.'**
+  /// **'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.\nExamples of measurable goals: run a marathon, save \$10,000, finish a book each month.'**
   String get goalExamplesHint;
 
-  /// Optional notes field label on the add/edit goal dialog
+  /// Optional notes field label on the add/edit goal page
   ///
   /// In en, this message translates to:
   /// **'Notes'**
   String get goalNotes;
+
+  /// Name field label on the add/edit goal page
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get goalNameLabel;
+
+  /// Intro under the habits section on the goal page
+  ///
+  /// In en, this message translates to:
+  /// **'Habits under this goal are what move it forward.'**
+  String get goalPageLead;
+
+  /// Section title for habits attached to the goal
+  ///
+  /// In en, this message translates to:
+  /// **'Habits'**
+  String get goalHabitsSection;
+
+  /// Empty state when a goal has no habits
+  ///
+  /// In en, this message translates to:
+  /// **'No habits for this goal yet.'**
+  String get goalHabitsEmpty;
+
+  /// Button that opens a blank habit for this goal
+  ///
+  /// In en, this message translates to:
+  /// **'Create habit'**
+  String get goalCreateHabit;
+
+  /// Subtitle on the create-habit action
+  ///
+  /// In en, this message translates to:
+  /// **'Set it up yourself'**
+  String get goalCreateHabitHint;
+
+  /// Button that asks AI for habits for this goal
+  ///
+  /// In en, this message translates to:
+  /// **'Generate with AI'**
+  String get goalGenerateHabits;
+
+  /// Subtitle on the AI habit action
+  ///
+  /// In en, this message translates to:
+  /// **'Ideas for this goal'**
+  String get goalGenerateHabitsHint;
+
+  /// Adds one AI-suggested habit to this goal
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get goalAddRecommendation;
+
+  /// Shown when habit actions run before the goal has a name
+  ///
+  /// In en, this message translates to:
+  /// **'Name the goal before adding habits.'**
+  String get goalNameRequired;
 
   /// Title of the delete-goal confirmation dialog
   ///
@@ -2021,7 +2081,7 @@ abstract class AppLocalizations {
   /// Road guide step 1 body
   ///
   /// In en, this message translates to:
-  /// **'Write the outcome you want. Habits that move you toward it are organized under each goal.'**
+  /// **'Tap + to add a goal. Habits that move you toward it are organized under each goal.'**
   String get roadGuideGoalsBody;
 
   /// Road guide step 2 title

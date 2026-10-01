@@ -68,7 +68,9 @@ import '../viewmodels/settings_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
 import '../models/habit.dart';
+import '../models/user_goal.dart';
 import '../views/goals_view.dart';
+import '../views/edit_goal_view.dart';
 import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
 import '../views/edit_habit_view.dart';
@@ -448,6 +450,11 @@ class PrinciplesApp extends StatelessWidget {
                   final habit =
                       ModalRoute.of(ctx)?.settings.arguments as Habit?;
                   return EditHabitView(habit: habit);
+                },
+                EditGoalView.routeName: (ctx) {
+                  final goal =
+                      ModalRoute.of(ctx)?.settings.arguments as UserGoal?;
+                  return EditGoalView(goal: goal);
                 },
                 GoalsView.routeName: (_) => const GoalsView(),
                 HabitProgressView.routeName: (_) => const HabitProgressView(),

@@ -303,7 +303,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newGoalLabel => 'New goal';
 
   @override
-  String get goalsEmptyList => 'No goals yet. Add one above.';
+  String get goalsEmptyList => 'No goals yet. Tap + to add one.';
 
   @override
   String get addGoalTitle => 'Add goal';
@@ -313,10 +313,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goalExamplesHint =>
-      'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.';
+      'Examples of identity-oriented goals: be an Olympic champion, be confident, be free from smoking.\nExamples of measurable goals: run a marathon, save \$10,000, finish a book each month.';
 
   @override
   String get goalNotes => 'Notes';
+
+  @override
+  String get goalNameLabel => 'Goal';
+
+  @override
+  String get goalPageLead => 'Habits under this goal are what move it forward.';
+
+  @override
+  String get goalHabitsSection => 'Habits';
+
+  @override
+  String get goalHabitsEmpty => 'No habits for this goal yet.';
+
+  @override
+  String get goalCreateHabit => 'Create habit';
+
+  @override
+  String get goalCreateHabitHint => 'Set it up yourself';
+
+  @override
+  String get goalGenerateHabits => 'Generate with AI';
+
+  @override
+  String get goalGenerateHabitsHint => 'Ideas for this goal';
+
+  @override
+  String get goalAddRecommendation => 'Add';
+
+  @override
+  String get goalNameRequired => 'Name the goal before adding habits.';
 
   @override
   String get deleteGoalQuestion => 'Delete goal?';
@@ -1068,7 +1098,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roadGuideGoalsBody =>
-      'Write the outcome you want. Habits that move you toward it are organized under each goal.';
+      'Tap + to add a goal. Habits that move you toward it are organized under each goal.';
 
   @override
   String get roadGuideHabitsTitle => 'Add habits that get you there';

@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/road_guide/main_shell_controller.dart';
 import 'package:principles_app/core/road_guide/road_guide_controller.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/models/habit.dart';
-import 'package:principles_app/models/user_goal.dart';
+import 'package:principles_app/services/ai_recommendation_service.dart';
 import 'package:principles_app/services/auth_service.dart';
+import 'package:principles_app/services/database_service.dart';
 import 'package:principles_app/services/dialog_service.dart';
 import 'package:principles_app/services/goal_service.dart';
 import 'package:principles_app/services/habit_service.dart';
@@ -19,7 +21,6 @@ import 'package:principles_app/services/user_service.dart';
 import 'package:principles_app/viewmodels/goals_viewmodel.dart';
 import 'package:principles_app/viewmodels/habit_progress_viewmodel.dart';
 import 'package:principles_app/views/goals_view.dart';
-import 'package:principles_app/views/widgets/add_edit_goal_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,9 +28,6 @@ const _goalsCacheKey = 'user_goals_cache';
 
 Widget _buildWidget({List<Habit> habits = const []}) {
   final dialogService = DialogService();
-  dialogService.registerDialogBuilder(DialogType.addEditGoal, (context, data) {
-    return AddEditGoalDialogWidget(existingGoal: data as UserGoal?);
-  });
   final habitVm = HabitProgressViewModel(
     HabitService(AuthService(SecureStore())),
   )..habits = List<Habit>.from(habits);
@@ -42,6 +40,12 @@ Widget _buildWidget({List<Habit> habits = const []}) {
         Provider(create: (_) => AuthService(SecureStore())),
         ChangeNotifierProvider(create: (_) => ThemeController()),
         Provider(create: (ctx) => GoalService(ctx.read<AuthService>())),
+        Provider(create: (_) => DatabaseService()),
+        Provider(create: (ctx) => HabitService(ctx.read<AuthService>())),
+        Provider(
+          create: (_) => AiRecommendationService(ApiClient(SecureStore())),
+        ),
+        Provider(create: (_) => UserService(forceLocalOnly: true)),
         ChangeNotifierProvider(
           create: (ctx) => GoalsViewModel(
             ctx.read<GoalService>(),
@@ -94,7 +98,7 @@ void main() {
     await tester.pumpWidget(_buildWidget());
     await _pumpUntilLoaded(tester);
 
-    expect(find.text('No goals yet. Add one above.'), findsOneWidget);
+    expect(find.text('No goals yet. Tap + to add one.'), findsOneWidget);
   });
 
   testWidgets('tapping a goal opens the edit dialog', (tester) async {
@@ -117,8 +121,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Edit goal'), findsOneWidget);
-    expect(find.byKey(const Key('goalDialogFieldInput')), findsOneWidget);
-    expect(find.byKey(const Key('goalDialogComplete')), findsOneWidget);
+    expect(find.byKey(const Key('goalNameField')), findsOneWidget);
+    expect(find.byKey(const Key('goalNotesField')), findsOneWidget);
+    expect(find.byKey(const Key('goalCompleteButton')), findsOneWidget);
+    expect(find.byKey(const Key('goalCreateHabit')), findsOneWidget);
+    expect(find.byKey(const Key('goalGenerateHabits')), findsOneWidget);
     expect(find.text('Be a reader'), findsWidgets);
   });
 
@@ -141,7 +148,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(find.byKey(const Key('goalDialogComplete')));
+    await tester.ensureVisible(find.byKey(const Key('goalCompleteButton')));
+    await tester.tap(find.byKey(const Key('goalCompleteButton')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -149,7 +157,8 @@ void main() {
     expect(find.byKey(const Key('appToast')), findsOneWidget);
     expect(find.text('Goal marked as completed'), findsOneWidget);
 
-    await tester.tap(find.text('Cancel'));
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -241,5 +250,12 @@ void main() {
     expect(find.text('1 habit'), findsOneWidget);
     expect(find.text('Train'), findsOneWidget);
     expect(find.text('*Goal not defined'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('goalTile-1-Be a reader')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Read 10 pages'), findsWidgets);
+    expect(find.text('No habits for this goal yet.'), findsNothing);
   });
 }

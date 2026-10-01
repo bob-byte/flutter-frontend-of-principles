@@ -17,6 +17,7 @@ import 'common/app_loading_indicator.dart';
 import 'common/completion_burst.dart';
 import 'common/context_menu_overlay.dart';
 import 'common/themed_lottie.dart';
+import 'edit_goal_view.dart';
 import 'habit_detail_view.dart';
 
 class GoalsView extends StatefulWidget {
@@ -31,8 +32,6 @@ class GoalsView extends StatefulWidget {
 }
 
 class _GoalsViewState extends State<GoalsView> {
-  final _controller = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -48,51 +47,88 @@ class _GoalsViewState extends State<GoalsView> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final body = _GoalsBody(controller: _controller, embedded: widget.embedded);
+    final palette = context.watch<ThemeController>().palette;
 
-    if (widget.embedded) {
-      return SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            GlassAppBar(title: Text(l10n.goalsTitle)),
-            Expanded(child: body),
-          ],
-        ),
-      );
-    }
+    return Consumer<RoadGuideController>(
+      builder: (context, guide, _) {
+        final scaffold = Scaffold(
+          backgroundColor: Colors.transparent,
+          floatingActionButton: Padding(
+            key: guide.keys.goalsComposer,
+            padding: EdgeInsets.only(bottom: widget.embedded ? 48 : 0),
+            child: FloatingActionButton(
+              heroTag: 'goalsAddFab',
+              backgroundColor: palette.primary,
+              foregroundColor: palette.onPrimary,
+              elevation: 4,
+              shape: const CircleBorder(),
+              tooltip: l10n.addGoalTitle,
+              onPressed: () async {
+                if (guide.isActive) return;
+                final changed = await EditGoalView.open(context);
+                if (!context.mounted || !changed) return;
+                await context.read<GoalsViewModel>().load(silent: true);
+                try {
+                  await context.read<HabitProgressViewModel>().load(
+                    silent: true,
+                    syncRemote: false,
+                  );
+                } catch (e) {
+                  debugPrint('Reload habits after goal create failed: $e');
+                }
+              },
+              child: Icon(Icons.add, color: palette.onPrimary, size: 32),
+            ),
+          ),
+          body: SafeArea(
+            bottom: !widget.embedded,
+            child: Column(
+              children: [
+                if (widget.embedded)
+                  GlassAppBar(title: Text(l10n.goalsTitle))
+                else
+                  GlassAppBar(
+                    title: Text(l10n.goalsTitle),
+                    leading: GlassIconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                      onPressed: () => Navigator.maybePop(context),
+                    ),
+                  ),
+                Expanded(child: _GoalsBody(embedded: widget.embedded)),
+              ],
+            ),
+          ),
+        );
 
-    return GlassScaffold(
-      background: const AppLiquidBackground(),
-      appBar: GlassAppBar(
-        title: Text(l10n.goalsTitle),
-        leading: GlassIconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-      ),
-      body: body,
+        if (widget.embedded) return scaffold;
+        return Stack(
+          fit: StackFit.expand,
+          children: [const AppLiquidBackground(), scaffold],
+        );
+      },
     );
   }
 }
 
 class _GoalsBody extends StatelessWidget {
-  const _GoalsBody({required this.controller, this.embedded = false});
+  const _GoalsBody({this.embedded = false});
 
-  final TextEditingController controller;
   final bool embedded;
 
-  Future<void> _submit(GoalsViewModel vm) async {
-    await vm.addGoal(controller.text);
-    controller.clear();
+  Future<void> _openEditor(BuildContext context, UserGoal? goal) async {
+    final changed = await EditGoalView.open(context, goal: goal);
+    if (!context.mounted || !changed) return;
+    await context.read<GoalsViewModel>().load(silent: true);
+    try {
+      await context.read<HabitProgressViewModel>().load(
+        silent: true,
+        syncRemote: false,
+      );
+    } catch (e) {
+      debugPrint('Reload habits after goal edit failed: $e');
+    }
   }
 
   void _showGoalMenu(
@@ -133,7 +169,7 @@ class _GoalsBody extends StatelessWidget {
                   icon: Icons.edit_outlined,
                   onTap: () {
                     Navigator.of(dialogContext).pop();
-                    vm.editGoal(goal);
+                    _openEditor(context, goal);
                   },
                 ),
                 ContextMenuAction(
@@ -193,62 +229,23 @@ class _GoalsBody extends StatelessWidget {
           ...habitVm.habits,
         ];
 
-        return Column(
-          children: [
-            Padding(
-              key: guide.keys.goalsComposer,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GlassTextField(
-                      useOwnLayer: true,
-                      controller: controller,
-                      placeholder: l10n.newGoalLabel,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) {
-                        if (guide.isActive) return;
-                        _submit(vm);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GlassIconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      if (guide.isActive) return;
-                      _submit(vm);
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: vm.isLoading && displayGoals.isEmpty
-                  ? const AppLoadingIndicator()
-                  : displayGoals.isEmpty
-                  ? _GoalsEmptyState(message: l10n.goalsEmptyList)
-                  : _GoalsList(
-                      goals: displayGoals,
-                      habits: displayHabits,
-                      demoGoalId: demoGoal?.id,
-                      guideActive: guide.isActive,
-                      embedded: embedded,
-                      onShowMenu: (tileContext, goal, {Rect? anchor}) {
-                        if (guide.isActive) return;
-                        if (goal.id == RoadGuideDemoIds.goalId) return;
-                        _showGoalMenu(
-                          tileContext,
-                          goal,
-                          vm,
-                          palette,
-                          anchor: anchor,
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
+        return vm.isLoading && displayGoals.isEmpty
+            ? const AppLoadingIndicator()
+            : displayGoals.isEmpty
+            ? _GoalsEmptyState(message: l10n.goalsEmptyList)
+            : _GoalsList(
+                goals: displayGoals,
+                habits: displayHabits,
+                demoGoalId: demoGoal?.id,
+                guideActive: guide.isActive,
+                embedded: embedded,
+                onShowMenu: (tileContext, goal, {Rect? anchor}) {
+                  if (guide.isActive) return;
+                  if (goal.id == RoadGuideDemoIds.goalId) return;
+                  _showGoalMenu(tileContext, goal, vm, palette, anchor: anchor);
+                },
+                onOpen: (goal) => _openEditor(context, goal),
+              );
       },
     );
   }
@@ -260,6 +257,7 @@ class _GoalsList extends StatelessWidget {
     required this.habits,
     required this.embedded,
     required this.onShowMenu,
+    required this.onOpen,
     required this.guideActive,
     this.demoGoalId,
   });
@@ -271,6 +269,7 @@ class _GoalsList extends StatelessWidget {
   final int? demoGoalId;
   final void Function(BuildContext tileContext, UserGoal goal, {Rect? anchor})
   onShowMenu;
+  final void Function(UserGoal goal) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +291,7 @@ class _GoalsList extends StatelessWidget {
             vm: vm,
             scheme: scheme,
             onShowMenu: onShowMenu,
+            onOpen: onOpen,
             guideActive: guideActive,
             isDemo: active[i].id == demoGoalId,
           ),
@@ -314,6 +314,7 @@ class _GoalsList extends StatelessWidget {
               vm: vm,
               scheme: scheme,
               onShowMenu: onShowMenu,
+              onOpen: onOpen,
               guideActive: guideActive,
               isDemo: completed[i].id == demoGoalId,
             ),
@@ -355,6 +356,7 @@ class _GoalDismissibleTile extends StatelessWidget {
     required this.vm,
     required this.scheme,
     required this.onShowMenu,
+    required this.onOpen,
     required this.guideActive,
     this.isDemo = false,
   });
@@ -368,6 +370,7 @@ class _GoalDismissibleTile extends StatelessWidget {
   final bool isDemo;
   final void Function(BuildContext tileContext, UserGoal goal, {Rect? anchor})
   onShowMenu;
+  final void Function(UserGoal goal) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +398,7 @@ class _GoalDismissibleTile extends StatelessWidget {
           ? null
           : Text(l10n.goalHabitsCount(habits.length)),
       trailing: GlassListTile.chevron,
-      onTap: (guideActive || isDemo) ? null : () => vm.editGoal(goal),
+      onTap: (guideActive || isDemo) ? null : () => onOpen(goal),
       onLongPress: (guideActive || isDemo)
           ? null
           : () {

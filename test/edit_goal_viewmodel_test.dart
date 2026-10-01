@@ -3,39 +3,40 @@ import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/models/user_goal.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/goal_service.dart';
-import 'package:principles_app/viewmodels/add_edit_goal_viewmodel.dart';
+import 'package:principles_app/viewmodels/edit_goal_viewmodel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _FakeGoalService goals;
-  late AddEditGoalViewModel createVm;
-  late AddEditGoalViewModel editVm;
+  late EditGoalViewModel createVm;
+  late EditGoalViewModel editVm;
 
   setUp(() {
     goals = _FakeGoalService();
-    createVm = AddEditGoalViewModel(goals);
-    editVm = AddEditGoalViewModel(
+    createVm = EditGoalViewModel(goals);
+    editVm = EditGoalViewModel(
       goals,
       existingGoal: UserGoal(id: 4, name: 'Read', isCompleted: false),
     );
   });
 
   test('create mode starts blank and cannot toggle completed', () {
-    expect(createVm.text, isEmpty);
+    expect(createVm.name, isEmpty);
+    expect(createVm.notes, isEmpty);
     expect(createVm.canToggleCompleted, isFalse);
   });
 
   test('edit mode loads existing goal fields', () {
-    expect(editVm.text, 'Read');
+    expect(editVm.name, 'Read');
     expect(editVm.notes, isEmpty);
     expect(editVm.canToggleCompleted, isTrue);
     expect(editVm.isCompleted, isFalse);
   });
 
-  test('updateText notifies and stores value', () {
-    createVm.updateText('New goal');
-    expect(createVm.text, 'New goal');
+  test('updateName notifies and stores value', () {
+    createVm.updateName('New goal');
+    expect(createVm.name, 'New goal');
   });
 
   test('updateNotes notifies and stores value', () {
@@ -43,25 +44,34 @@ void main() {
     expect(createVm.notes, 'Why this matters');
   });
 
-  test('saveGoal does nothing for blank text', () async {
-    await createVm.saveGoal();
+  test('save does nothing for blank text', () async {
+    final saved = await createVm.save();
+    expect(saved, isFalse);
     expect(goals.saved, isEmpty);
   });
 
-  test('saveGoal creates a new goal when editing none', () async {
-    createVm.updateText('  Fitness  ');
+  test('save creates a new goal when editing none', () async {
+    createVm.updateName('  Fitness  ');
     createVm.updateNotes('  Stay healthy  ');
-    await createVm.saveGoal();
+    final saved = await createVm.save();
+    expect(saved, isTrue);
     expect(goals.saved.single.name, 'Fitness');
     expect(goals.saved.single.notes, 'Stay healthy');
+    expect(createVm.isEditing, isTrue);
   });
 
-  test('saveGoal updates existing goal', () async {
-    editVm.updateText('Read daily');
+  test('save updates existing goal', () async {
+    editVm.updateName('Read daily');
     editVm.updateNotes('Before bed');
-    await editVm.saveGoal();
+    await editVm.save();
     expect(goals.updated.single.name, 'Read daily');
     expect(goals.updated.single.notes, 'Before bed');
+  });
+
+  test('ensureSaved skips a second write when nothing changed', () async {
+    final goal = await editVm.ensureSaved();
+    expect(goal?.name, 'Read');
+    expect(goals.updated, isEmpty);
   });
 }
 
@@ -72,12 +82,14 @@ class _FakeGoalService extends GoalService {
   final updated = <UserGoal>[];
 
   @override
-  Future<void> saveGoal(UserGoal goal) async {
+  Future<UserGoal> saveGoal(UserGoal goal) async {
     saved.add(goal);
+    return goal.copyWith(localId: 1);
   }
 
   @override
-  Future<void> updateGoal(UserGoal original, UserGoal updatedGoal) async {
+  Future<UserGoal> updateGoal(UserGoal original, UserGoal updatedGoal) async {
     updated.add(updatedGoal);
+    return updatedGoal;
   }
 }

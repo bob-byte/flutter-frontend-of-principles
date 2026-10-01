@@ -14,6 +14,7 @@ import '../common/completion_burst.dart';
 import '../common/context_menu_overlay.dart';
 import '../common/expandable_bottom_sheet.dart';
 import '../common/themed_lottie.dart';
+import '../edit_goal_view.dart';
 
 class GoalSelectionSheetWidget extends StatelessWidget {
   final String currentTargetGoal;
@@ -103,7 +104,7 @@ class _GoalSelectionSheetContent extends StatelessWidget {
                       ),
                       tooltip: l10n.addGoalTitle,
                       padding: EdgeInsets.zero,
-                      onPressed: () => vm.showAddEditGoalDialog(),
+                      onPressed: () => _openGoalEditor(context),
                     ),
                   ),
                 ],
@@ -125,6 +126,14 @@ class _GoalSelectionSheetContent extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openGoalEditor(BuildContext context, {UserGoal? goal}) async {
+    await EditGoalView.open(context, goal: goal);
+    if (!context.mounted) return;
+    await context.read<GoalSelectionViewModel>().loadGoals();
+    final goalsVm = _maybeRead<GoalsViewModel>(context);
+    await goalsVm?.load(silent: true);
   }
 
   Widget _buildBody(
@@ -222,7 +231,7 @@ class _GoalSelectionSheetContent extends StatelessWidget {
                   icon: Icons.edit_outlined,
                   onTap: () {
                     Navigator.of(dialogContext).pop();
-                    vm.showAddEditGoalDialog(existingGoal: goal);
+                    _openGoalEditor(context, goal: goal);
                   },
                 ),
                 ContextMenuAction(

@@ -12,11 +12,9 @@ import 'services/home_calendar_widget_service.dart';
 import 'core/logging/logger_to_server.dart';
 import 'core/storage/secure_store.dart';
 import 'models/frequency_config.dart';
-import 'models/user_goal.dart';
 import 'services/dialog_service.dart';
 import 'services/push_sync_service.dart';
 import 'services/reminder_service.dart';
-import 'views/widgets/add_edit_goal_dialog.dart';
 import 'views/widgets/archive_bottom_sheet.dart';
 import 'views/widgets/frequency_dialog.dart';
 import 'views/widgets/goal_selection_sheet.dart';
@@ -28,9 +26,6 @@ void _setupDialogService() {
     data,
   ) {
     return FrequencyDialogWidget(initialConfig: data as FrequencyConfig);
-  });
-  dialogService.registerDialogBuilder(DialogType.addEditGoal, (context, data) {
-    return AddEditGoalDialogWidget(existingGoal: data as UserGoal?);
   });
   dialogService.registerSheetBuilder(BottomSheetType.goalSelection, (
     context,

@@ -303,7 +303,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newGoalLabel => 'Нова ціль';
 
   @override
-  String get goalsEmptyList => 'Ще немає цілей. Додайте одну вище.';
+  String get goalsEmptyList => 'Ще немає цілей. Натисніть +, щоб додати.';
 
   @override
   String get addGoalTitle => 'Додати ціль';
@@ -313,10 +313,41 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get goalExamplesHint =>
-      'Приклади цілей спрямованих на вашу ідентичність: бути олімпійським чемпіоном, бути впевненим в собі, бути вільним від куріння.';
+      'Приклади цілей спрямованих на вашу ідентичність: бути олімпійським чемпіоном, бути впевненим в собі, бути вільним від куріння.\nПриклади вимірюваних цілей: пробігти марафон, накопичити \$10 000, читати одну книгу на місяць.';
 
   @override
   String get goalNotes => 'Нотатки';
+
+  @override
+  String get goalNameLabel => 'Ціль';
+
+  @override
+  String get goalPageLead => 'Звички під цією ціллю рухають її вперед.';
+
+  @override
+  String get goalHabitsSection => 'Звички';
+
+  @override
+  String get goalHabitsEmpty => 'Для цієї цілі ще немає звичок.';
+
+  @override
+  String get goalCreateHabit => 'Створити звичку';
+
+  @override
+  String get goalCreateHabitHint => 'Налаштуйте її самостійно';
+
+  @override
+  String get goalGenerateHabits => 'Згенерувати з AI';
+
+  @override
+  String get goalGenerateHabitsHint => 'Ідеї саме для цієї цілі';
+
+  @override
+  String get goalAddRecommendation => 'Додати';
+
+  @override
+  String get goalNameRequired =>
+      'Спочатку назвіть ціль, потім додавайте звички.';
 
   @override
   String get deleteGoalQuestion => 'Видалити ціль?';
@@ -1071,7 +1102,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get roadGuideGoalsBody =>
-      'Опишіть результат, якого хочете. Звички, що ведуть до нього, групуються під кожною ціллю.';
+      'Натисніть +, щоб додати ціль. Звички, що ведуть до неї, групуються під кожною ціллю.';
 
   @override
   String get roadGuideHabitsTitle => 'Додайте звички до цілі';

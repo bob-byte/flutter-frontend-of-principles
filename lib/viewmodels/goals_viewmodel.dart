@@ -37,16 +37,6 @@ class GoalsViewModel extends ChangeNotifier {
     await load();
   }
 
-  Future<void> editGoal(UserGoal goal) async {
-    final response = await _dialogService.showCustomDialog(
-      variant: DialogType.addEditGoal,
-      data: goal,
-    );
-    if (response != null && response.confirmed) {
-      await load();
-    }
-  }
-
   Future<bool> confirmDeleteGoal(UserGoal goal) {
     return _dialogService.showConfirmAsync(
       msg: _dialogService.l10n.deleteGoalMessage,

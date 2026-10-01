@@ -139,7 +139,7 @@ class GoalService {
     }
   }
 
-  Future<void> saveGoal(UserGoal goal) async {
+  Future<UserGoal> saveGoal(UserGoal goal) async {
     await _init();
     final stamped = goal.copyWith(lastModified: DateTime.now().toUtc());
     var stored = stamped;
@@ -149,6 +149,7 @@ class GoalService {
       final localId = await db.insert('user_goals', {
         'id': stamped.id,
         'name': stamped.name,
+        'notes': _notesForStorage(stamped.notes),
         'isCompleted': stamped.isCompleted ? 1 : 0,
         'lastModified': stamped.lastModified.toUtc().toIso8601String(),
       });
@@ -160,9 +161,10 @@ class GoalService {
     }
 
     await _pushGoal(stored, isNew: stored.id == null || stored.id == 0);
+    return stored;
   }
 
-  Future<void> updateGoal(UserGoal oldGoal, UserGoal newGoal) async {
+  Future<UserGoal> updateGoal(UserGoal oldGoal, UserGoal newGoal) async {
     await _init();
     final stamped = newGoal.copyWith(
       localId: oldGoal.localId,
@@ -174,7 +176,7 @@ class GoalService {
           g.localId == oldGoal.localId ||
           (g.id == oldGoal.id && g.name == oldGoal.name),
     );
-    if (index == -1) return;
+    if (index == -1) return stamped;
 
     if (_useSqlite && stamped.localId != null) {
       final db = await _localDb!.database;
@@ -183,6 +185,7 @@ class GoalService {
         {
           'id': stamped.id,
           'name': stamped.name,
+          'notes': _notesForStorage(stamped.notes),
           'isCompleted': stamped.isCompleted ? 1 : 0,
           'lastModified': stamped.lastModified.toUtc().toIso8601String(),
         },
@@ -193,6 +196,12 @@ class GoalService {
     _goals[index] = stamped;
     await _saveToStorage();
     await _pushGoal(stamped, isNew: false);
+    return stamped;
+  }
+
+  String? _notesForStorage(String notes) {
+    final trimmed = notes.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Future<void> _pushGoal(UserGoal goal, {required bool isNew}) async {
@@ -209,6 +218,7 @@ class GoalService {
         data: {
           'id': serverId,
           'name': goal.name,
+          'notes': _notesForStorage(goal.notes),
           'isCompleted': goal.isCompleted,
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),

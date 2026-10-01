@@ -73,18 +73,6 @@ class GoalSelectionViewModel extends ChangeNotifier {
     );
   }
 
-  Future<void> showAddEditGoalDialog({UserGoal? existingGoal}) async {
-    final response = await _dialogService.showCustomDialog(
-      variant: DialogType.addEditGoal,
-      data: existingGoal,
-    );
-
-    if (response != null && response.confirmed == true) {
-      await loadGoals();
-      await _goalsViewModel?.load(silent: true);
-    }
-  }
-
   void selectGoal(UserGoal goal) {
     _dialogService.completeSheet(SheetResponse(confirmed: true, data: goal));
   }

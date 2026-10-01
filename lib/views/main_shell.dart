@@ -27,6 +27,7 @@ import '../viewmodels/helper_viewmodel.dart';
 import '../viewmodels/tasks_viewmodel.dart';
 import 'common/app_liquid_background.dart';
 import 'common/lazy_shell_tab_stack.dart';
+import 'edit_goal_view.dart';
 import 'edit_habit_view.dart';
 import 'goals_view.dart';
 import 'habit_detail_view.dart';
@@ -209,7 +210,8 @@ class _MainShellState extends State<MainShell> {
       if (route.isFirst) return true;
       final name = route.settings.name;
       if (name == HabitDetailView.routeName ||
-          name == EditHabitView.routeName) {
+          name == EditHabitView.routeName ||
+          name == EditGoalView.routeName) {
         return false;
       }
       if (route is PopupRoute) return false;

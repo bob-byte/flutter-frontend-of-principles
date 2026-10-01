@@ -7,7 +7,7 @@ import '../core/helpers/open_notification_settings.dart';
 import '../core/input/keyboard.dart';
 import '../views/common/app_alert_dialog.dart';
 
-enum DialogType { frequencyConfig, addEditGoal }
+enum DialogType { frequencyConfig }
 
 enum BottomSheetType { goalSelection, archive }
 
