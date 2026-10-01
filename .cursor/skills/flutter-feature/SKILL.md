@@ -24,6 +24,11 @@ description: Implements Flutter features in Principles following MVVM folders, d
 
 - Post-auth destination is `HelperView.routeName` (`MainShell`), not a separate `MainView` bypass, so the road guide can run
 
+## Edit Goal form
+
+- Matching `prefixIcon`s on stacked fields so labels share one inset
+- Vertically center empty-field text/placeholder: fixed-height `SizedBox` + `expands: true` + `textAlignVertical: TextAlignVertical.center` (same as habit notes)
+
 ## Tooling
 
 Prefer MCP `user-dart`: `analyze_files`, `dart_format`, `run_tests`, `hot_reload` / `hot_restart`, `get_runtime_errors`, `get_widget_tree`. Use shell `flutter`/`dart` only when MCP cannot do the job.

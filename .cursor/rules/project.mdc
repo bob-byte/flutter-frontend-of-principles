@@ -20,7 +20,9 @@ Flutter rewrite of the Principles habit/goal app (install: https://principles.to
 
 - Tab order: Chat · Goals · **Tasks** (center, default) · Habits · Settings
 - Goals lists habits grouped under each goal
-- Edit Habit is a normal page (not a fullscreen sheet), like Habit Detail
+- Edit Goal and Edit Habit are normal pages (not fullscreen sheets), like Habit Detail. The goal page lists that goal’s habits and can create one or generate habits with AI
+- Edit Goal form fields: keep matching `prefixIcon`s on stacked inputs so labels share one horizontal inset. Vertically center placeholders/text in the middle of each field — fixed-height `SizedBox` + `expands: true` + `textAlignVertical: TextAlignVertical.center` (same pattern as habit notes on Edit Habit). Do not top-align empty single-line goal name text
+
 - Pre-login: App Benefits carousel
 - Post-login: spotlight road guide once per device; replay from Settings → About
 - After login/signup, navigate to `HelperView` / `MainShell` so the road guide can run
