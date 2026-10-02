@@ -2,20 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Push Notifications capability: silent sync pushes via FCM/APNs. -->
-	<key>com.apple.developer.aps-environment</key>
-	<string>development</string>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
-	<!-- Required by flutter_secure_storage on sandboxed macOS so the
-	     session token persists across app relaunches. -->
-	<key>keychain-access-groups</key>
-	<array/>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.aps-environment</key>
+	<string>production</string>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>keychain-access-groups</key>
+	<array/>
 </dict>
 </plist>
