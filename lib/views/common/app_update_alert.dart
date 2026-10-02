@@ -73,4 +73,3 @@ class _AppUpdateAlertState extends State<AppUpdateAlert> {
     );
   }
 }
-

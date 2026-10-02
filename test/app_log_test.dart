@@ -32,21 +32,24 @@ void main() {
     expect(request.toJson()['logType'], 'Information');
   });
 
-  test('release sink only receives Error+ like MAUI LogEventLevel.Error', () async {
-    final posted = <Level>[];
-    await AppLog.setup(
-      debug: false,
-      releaseSink: (record) => posted.add(record.level),
-    );
+  test(
+    'release sink only receives Error+ like MAUI LogEventLevel.Error',
+    () async {
+      final posted = <Level>[];
+      await AppLog.setup(
+        debug: false,
+        releaseSink: (record) => posted.add(record.level),
+      );
 
-    AppLog.info('ignored in release');
-    AppLog.warning('ignored in release');
-    AppLog.error('posted');
-    AppLog.fatal('posted');
+      AppLog.info('ignored in release');
+      AppLog.warning('ignored in release');
+      AppLog.error('posted');
+      AppLog.fatal('posted');
 
-    await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
 
-    expect(posted, [Level.SEVERE, Level.SHOUT]);
-    expect(AppLog.releaseMinimumLevel, Level.SEVERE);
-  });
+      expect(posted, [Level.SEVERE, Level.SHOUT]);
+      expect(AppLog.releaseMinimumLevel, Level.SEVERE);
+    },
+  );
 }

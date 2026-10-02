@@ -65,8 +65,7 @@ class SecureStore {
   }
 
   static bool _isKeychainDuplicate(PlatformException e) {
-    if (e.code == 'Unexpected security result code' &&
-        e.details == -25299) {
+    if (e.code == 'Unexpected security result code' && e.details == -25299) {
       return true;
     }
     if (e.message?.contains('already exists') == true) return true;

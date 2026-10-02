@@ -70,9 +70,7 @@ void main() {
   });
 
   test('deleteHabit removes remote then local when delete succeeds', () async {
-    final id = await db.insertHabit(
-      Habit(name: 'Drop me', isArchived: true),
-    );
+    final id = await db.insertHabit(Habit(name: 'Drop me', isArchived: true));
     habits.archived = [Habit(id: id, name: 'Drop me', isArchived: true)];
     await vm.loadHabits();
 
@@ -83,9 +81,7 @@ void main() {
   });
 
   test('deleteHabit keeps local row when remote delete fails', () async {
-    final id = await db.insertHabit(
-      Habit(name: 'Keep me', isArchived: true),
-    );
+    final id = await db.insertHabit(Habit(name: 'Keep me', isArchived: true));
     habits
       ..archived = [Habit(id: id, name: 'Keep me', isArchived: true)]
       ..deleteOk = false;
@@ -100,10 +96,7 @@ void main() {
 class _FakeHabitService extends HabitService {
   _FakeHabitService()
     : super(
-        AuthService(
-          _TokenStore(),
-          dio: Dio()..httpClientAdapter = _Noop(),
-        ),
+        AuthService(_TokenStore(), dio: Dio()..httpClientAdapter = _Noop()),
       );
 
   List<Habit> archived = [];

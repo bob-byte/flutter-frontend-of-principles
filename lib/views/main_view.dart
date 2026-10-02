@@ -41,18 +41,18 @@ class _MainViewContent extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: vm.currentIndex,
         onTap: vm.setIndex,
-        selectedItemColor: Colors.blue, 
+        selectedItemColor: Colors.blue,
         items: [
           BottomNavigationBarItem(
-            icon: const Icon(Icons.card_giftcard), 
+            icon: const Icon(Icons.card_giftcard),
             label: l10n.tabAssistant,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.show_chart), 
+            icon: const Icon(Icons.show_chart),
             label: l10n.tabProgress,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.person), 
+            icon: const Icon(Icons.person),
             label: l10n.tabProfile,
           ),
         ],

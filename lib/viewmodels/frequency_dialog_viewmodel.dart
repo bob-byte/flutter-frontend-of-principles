@@ -4,19 +4,21 @@ import '../../services/dialog_service.dart';
 
 class FrequencyDialogViewModel extends ChangeNotifier {
   final DialogService _dialogService = DialogService();
-  
+
   FrequencyType _selectedType = FrequencyType.daily;
   FrequencyType get selectedType => _selectedType;
 
   final TextEditingController daysController = TextEditingController(text: '3');
-  final TextEditingController timesController = TextEditingController(text: '3');
-  
+  final TextEditingController timesController = TextEditingController(
+    text: '3',
+  );
+
   PeriodType _selectedPeriod = PeriodType.week;
   PeriodType get selectedPeriod => _selectedPeriod;
 
   void init(FrequencyConfig initialConfig) {
     _selectedType = initialConfig.type;
-    
+
     if (initialConfig.type == FrequencyType.everyXDays) {
       daysController.text = (initialConfig.interval ?? 3).toString();
     } else if (initialConfig.type == FrequencyType.timesPerPeriod) {
@@ -62,7 +64,9 @@ class FrequencyDialogViewModel extends ChangeNotifier {
       result = const FrequencyConfig(type: FrequencyType.daily);
     }
 
-    _dialogService.completeDialog(DialogResponse(confirmed: true, data: result));
+    _dialogService.completeDialog(
+      DialogResponse(confirmed: true, data: result),
+    );
   }
 
   @override

@@ -194,7 +194,9 @@ class SyncBootstrapSnapshot {
       tasks: parsedTasks,
       tasksProvided: hasTasksKey,
       tasksTrustedForPrune:
-          trustPrune && hasTasksKey && (rawTasks.isEmpty || parsedTasks.isNotEmpty),
+          trustPrune &&
+          hasTasksKey &&
+          (rawTasks.isEmpty || parsedTasks.isNotEmpty),
       conversations: parsedConversations,
       conversationsProvided: hasConversationsKey,
       conversationsTrustedForPrune:

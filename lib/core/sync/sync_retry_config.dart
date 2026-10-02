@@ -17,7 +17,11 @@ class SyncRetryConfig {
   final Duration jitterRange;
   final Random? _random;
 
-  DateTime nextRetryAt(int retryCount, {DateTime? now, double? jitterFraction}) {
+  DateTime nextRetryAt(
+    int retryCount, {
+    DateTime? now,
+    double? jitterFraction,
+  }) {
     var delay = baseDelay;
     for (var i = 0; i < retryCount; i++) {
       final nextTicks = (delay.inMicroseconds * backoffMultiplier).round();

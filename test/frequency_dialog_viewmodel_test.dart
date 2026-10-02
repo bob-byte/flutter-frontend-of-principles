@@ -14,9 +14,7 @@ void main() {
   tearDown(() => vm.dispose());
 
   test('init loads everyXDays interval', () {
-    vm.init(
-      const FrequencyConfig(type: FrequencyType.everyXDays, interval: 5),
-    );
+    vm.init(const FrequencyConfig(type: FrequencyType.everyXDays, interval: 5));
     expect(vm.selectedType, FrequencyType.everyXDays);
     expect(vm.daysController.text, '5');
   });

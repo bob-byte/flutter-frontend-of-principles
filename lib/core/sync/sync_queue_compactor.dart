@@ -20,10 +20,14 @@ class SyncQueueCompactor {
       }
     }
 
-    final active = items
-        .where((item) => item.localId != null && !idsToRemove.contains(item.localId))
-        .toList()
-      ..sort(_byTimeThenId);
+    final active =
+        items
+            .where(
+              (item) =>
+                  item.localId != null && !idsToRemove.contains(item.localId),
+            )
+            .toList()
+          ..sort(_byTimeThenId);
 
     for (final group in _groupBy(
       active.where((item) => item.handlerType == SyncHandlerType.user),

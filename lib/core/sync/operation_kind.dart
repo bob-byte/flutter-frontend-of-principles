@@ -17,6 +17,5 @@ class OperationKind {
     return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
   }
 
-  static bool isDelete(String operation) =>
-      normalize(operation) == delete;
+  static bool isDelete(String operation) => normalize(operation) == delete;
 }

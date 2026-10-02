@@ -240,6 +240,7 @@ class _EditHabitViewState extends State<EditHabitView> {
                   children: [
                     TextField(
                       controller: _nameController,
+                      keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.sentences,
                       minLines: 1,
                       maxLines: 5,
@@ -331,6 +332,7 @@ class _EditHabitViewState extends State<EditHabitView> {
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.center,
+                        keyboardType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
                         onChanged: (val) => vm.notes = val,
                         decoration: InputDecoration(

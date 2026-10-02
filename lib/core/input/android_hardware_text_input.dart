@@ -92,7 +92,12 @@ class _AndroidHardwareTextInputState extends State<AndroidHardwareTextInput> {
     final end = selection.end;
     if (selection.isCollapsed) {
       if (start == 0) return true;
-      start = value.text.substring(0, start).characters.skipLast(1).string.length;
+      start = value.text
+          .substring(0, start)
+          .characters
+          .skipLast(1)
+          .string
+          .length;
     }
 
     editable.userUpdateTextEditingValue(
