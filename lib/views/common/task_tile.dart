@@ -48,163 +48,204 @@ class TaskTile extends StatelessWidget {
         task.dueDate!.isBefore(today);
     final markColor = isOverdue ? scheme.error : themeColor;
 
-    return TasksGlassPanel(
-      palette: palette,
-      borderRadius: BorderRadius.circular(20),
-      blur: 0,
-      onTap: onTap,
-      onLongPress: onLongPress == null
-          ? null
-          : () {
-              final box = context.findRenderObject() as RenderBox?;
-              Rect? anchor;
-              if (box != null && box.hasSize) {
-                anchor = box.localToGlobal(Offset.zero) & box.size;
-              }
-              onLongPress!(anchor);
-            },
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CompletionCheckButton(
-            isDone: task.isDone,
-            palette: palette,
-            borderColor: isOverdue
-                ? scheme.error.withValues(alpha: 0.75)
-                : palette.glassBorder,
-            onToggle: onToggle,
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: markColor,
-              borderRadius: BorderRadius.circular(999),
-              boxShadow: [
-                BoxShadow(
-                  color: markColor.withValues(alpha: 0.45),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isOverdue) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 1, right: 6),
-                        child: Icon(
-                          Icons.priority_high_rounded,
-                          size: 18,
-                          color: scheme.error,
-                        ),
-                      ),
-                    ],
-                    Expanded(
-                      child: Text(
-                        task.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                          color: appearanceDone
-                              ? palette.textMuted
-                              : palette.textPrimary,
-                          decoration: appearanceDone
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
+    void handleLongPress() {
+      if (onLongPress == null) return;
+      final box = context.findRenderObject() as RenderBox?;
+      Rect? anchor;
+      if (box != null && box.hasSize) {
+        anchor = box.localToGlobal(Offset.zero) & box.size;
+      }
+      onLongPress!(anchor);
+    }
+
+    // Keep open-on-tap off the check column so near-miss taps still toggle
+    // instead of opening edit.
+    return GestureDetector(
+      onLongPress: onLongPress == null ? null : handleLongPress,
+      child: TasksGlassPanel(
+        palette: palette,
+        borderRadius: BorderRadius.circular(20),
+        blur: 0,
+        padding: const EdgeInsets.fromLTRB(0, 10, 14, 10),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CompletionCheckButton(
+                isDone: task.isDone,
+                palette: palette,
+                expandToHeight: true,
+                padding: const EdgeInsets.only(left: 8, right: 4),
+                borderColor: isOverdue
+                    ? scheme.error.withValues(alpha: 0.75)
+                    : palette.glassBorder,
+                onToggle: onToggle,
+              ),
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(20),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                if (_taskMetaLine(task, strings).isNotEmpty)
-                  Text(
-                    _taskMetaLine(task, strings),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: task.priority != null
-                          ? priorityColor(task.priority!, scheme)
-                          : palette.textMuted,
-                    ),
-                  ),
-                if (task.hasSubtasks) ...[
-                  const SizedBox(height: 8),
-                  _TaskSubtasksPreview(
-                    task: task,
-                    palette: palette,
-                    strings: strings,
-                    onToggleSubtask: onToggleSubtask,
-                  ),
-                ],
-                if (task.dueDate != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        isOverdue
-                            ? Icons.warning_amber_rounded
-                            : Icons.schedule,
-                        size: 13,
-                        color: isOverdue ? scheme.error : palette.textMuted,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isOverdue
-                            ? '${strings.taskOverdue} · ${formatTaskDate(task.dueDate!)}'
-                            : formatScheduleChip(
-                                task,
-                                noDate: formatTaskDate(task.dueDate!),
+                    splashColor: palette.primary.withValues(alpha: 0.12),
+                    highlightColor: palette.primary.withValues(alpha: 0.06),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 4,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: markColor,
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: markColor.withValues(alpha: 0.45),
+                                blurRadius: 8,
                               ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isOverdue
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: isOverdue ? scheme.error : palette.textMuted,
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (isOverdue && onMoveToToday != null) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: onMoveToToday,
-                      style: TextButton.styleFrom(
-                        foregroundColor: scheme.error,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: const Icon(Icons.today_outlined, size: 16),
-                      label: Text(strings.taskMoveToToday),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (isOverdue) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 1,
+                                        right: 6,
+                                      ),
+                                      child: Icon(
+                                        Icons.priority_high_rounded,
+                                        size: 18,
+                                        color: scheme.error,
+                                      ),
+                                    ),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      task.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: -0.2,
+                                        color: appearanceDone
+                                            ? palette.textMuted
+                                            : palette.textPrimary,
+                                        decoration: appearanceDone
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              if (_taskMetaLine(task, strings).isNotEmpty)
+                                Text(
+                                  _taskMetaLine(task, strings),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: task.priority != null
+                                        ? priorityColor(task.priority!, scheme)
+                                        : palette.textMuted,
+                                  ),
+                                ),
+                              if (task.hasSubtasks) ...[
+                                const SizedBox(height: 8),
+                                _TaskSubtasksPreview(
+                                  task: task,
+                                  palette: palette,
+                                  strings: strings,
+                                  onToggleSubtask: onToggleSubtask,
+                                ),
+                              ],
+                              if (task.dueDate != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isOverdue
+                                          ? Icons.warning_amber_rounded
+                                          : Icons.schedule,
+                                      size: 13,
+                                      color: isOverdue
+                                          ? scheme.error
+                                          : palette.textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isOverdue
+                                          ? '${strings.taskOverdue} · ${formatTaskDate(task.dueDate!)}'
+                                          : formatScheduleChip(
+                                              task,
+                                              noDate: formatTaskDate(
+                                                task.dueDate!,
+                                              ),
+                                            ),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isOverdue
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: isOverdue
+                                            ? scheme.error
+                                            : palette.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (isOverdue && onMoveToToday != null) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    onPressed: onMoveToToday,
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: scheme.error,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      minimumSize: const Size(0, 32),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.today_outlined,
+                                      size: 16,
+                                    ),
+                                    label: Text(strings.taskMoveToToday),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: palette.textMuted.withValues(alpha: 0.7),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ],
-            ),
+                ),
+              ),
+            ],
           ),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: palette.textMuted.withValues(alpha: 0.7),
-          ),
-        ],
+        ),
       ),
     );
   }

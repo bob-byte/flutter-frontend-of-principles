@@ -232,6 +232,7 @@ class _SubtaskRow extends StatelessWidget {
               focusNode: focusNode,
               onTapOutside: (_) {},
               scrollPadding: scrollPadding,
+              keyboardType: TextInputType.text,
               textCapitalization: TextCapitalization.sentences,
               // "Next" — never "Done", which dismisses the IME on iOS.
               textInputAction: TextInputAction.next,

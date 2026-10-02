@@ -12,16 +12,18 @@ import 'package:principles_app/core/sync/sync_handler_type.dart';
 import 'package:principles_app/core/sync/sync_queue_item.dart';
 import 'package:principles_app/models/task.dart';
 import 'package:principles_app/services/task_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late List<RequestOptions> requests;
   late ApiClient apiClient;
-  late _FakeTaskService tasks;
+  late TaskService tasks;
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({'auth_access_token': 't'});
+    SharedPreferences.setMockInitialValues({});
     requests = [];
     final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
     apiClient = ApiClient(SecureStore(), dio: dio);
@@ -33,13 +35,13 @@ void main() {
             Response(
               requestOptions: options,
               statusCode: 200,
-              data: {'id': 55, 'title': 'New', 'isCompleted': false},
+              data: {'id': 55, 'name': 'New', 'isCompleted': false},
             ),
           );
         },
       ),
     );
-    tasks = _FakeTaskService(apiClient);
+    tasks = TaskService(apiClient: apiClient, taskDb: null);
   });
 
   test('deletes remote task by entity id', () async {
@@ -101,20 +103,6 @@ void main() {
     );
     expect(requests.single.method, 'POST');
     expect(requests.single.path, ApiEndpoints.tasks);
-    expect(tasks.assignedServerIds, [55]);
+    expect((await tasks.getTask('local-1'))?.serverId, 55);
   });
-}
-
-class _FakeTaskService extends TaskService {
-  _FakeTaskService(ApiClient apiClient) : super(apiClient: apiClient);
-
-  final assignedServerIds = <int>[];
-
-  @override
-  Future<Task?> getTaskByLocalId(int localId) async => null;
-
-  @override
-  Future<void> assignServerId(Task task, int serverId) async {
-    assignedServerIds.add(serverId);
-  }
 }

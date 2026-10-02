@@ -20,14 +20,15 @@ class ScheduleReminderOffset {
   }
 
   Map<String, dynamic> toJson() => {
-        'offsetMinutes': offsetMinutes,
-        if (notificationRequestId != null)
-          'notificationRequestId': notificationRequestId,
-      };
+    'offsetMinutes': offsetMinutes,
+    if (notificationRequestId != null)
+      'notificationRequestId': notificationRequestId,
+  };
 
   factory ScheduleReminderOffset.fromJson(Map<String, dynamic> json) {
     return ScheduleReminderOffset(
-      offsetMinutes: _asInt(json['offsetMinutes'] ?? json['OffsetMinutes']) ?? 0,
+      offsetMinutes:
+          _asInt(json['offsetMinutes'] ?? json['OffsetMinutes']) ?? 0,
       notificationRequestId: _asInt(
         json['notificationRequestId'] ?? json['NotificationRequestId'],
       ),

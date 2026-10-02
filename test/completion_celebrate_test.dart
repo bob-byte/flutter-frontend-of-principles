@@ -4,6 +4,7 @@ import 'package:principles_app/core/theme/task_theme_palette.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/l10n/task_strings.dart';
 import 'package:principles_app/models/task.dart';
+import 'package:principles_app/models/task_subtask.dart';
 import 'package:principles_app/services/completion_feedback.dart';
 import 'package:principles_app/views/common/completion_burst.dart';
 import 'package:principles_app/views/common/completion_check.dart';
@@ -165,6 +166,56 @@ void main() {
     expect(title.style?.color, palette.textPrimary);
     expect(find.textContaining('Overdue ·'), findsOneWidget);
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+  });
+
+  testWidgets('task tile check column toggles without opening edit', (
+    tester,
+  ) async {
+    final palette = TasksUiPalette.of(TasksUiTheme.darkOrange);
+    var opened = 0;
+    var toggled = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: TaskTile(
+            task: Task(
+              id: '1',
+              title: 'Buy milk and eggs for breakfast tomorrow',
+              createdAt: DateTime(2026, 1, 1),
+              subtasks: const [
+                TaskSubtask(id: 'a', title: 'Milk', sortOrder: 0),
+                TaskSubtask(id: 'b', title: 'Eggs', sortOrder: 1),
+              ],
+            ),
+            palette: palette,
+            themeColor: palette.primary,
+            strings: TaskStrings.en,
+            onTap: () => opened++,
+            onToggle: () => toggled++,
+          ),
+        ),
+      ),
+    );
+
+    final check = tester.getRect(find.byType(CompletionCheckButton));
+    await tester.tapAt(check.centerLeft + const Offset(2, 0));
+    await tester.pump();
+    expect(toggled, 1);
+    expect(opened, 0);
+
+    // Below the visual circle on a taller row must still toggle.
+    await tester.tapAt(Offset(check.center.dx, check.bottom - 4));
+    await tester.pump();
+    expect(toggled, 2);
+    expect(opened, 0);
+
+    await tester.tap(find.text('Buy milk and eggs for breakfast tomorrow'));
+    await tester.pump();
+    expect(opened, 1);
+    expect(toggled, 2);
   });
 }
 

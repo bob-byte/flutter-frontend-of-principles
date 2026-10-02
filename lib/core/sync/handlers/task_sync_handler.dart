@@ -51,20 +51,21 @@ class TaskSyncHandler implements SyncQueueHandler {
 
     if (operation == OperationKind.save) {
       final task = await _loadTask(item);
+      final service = taskService;
+      if (service != null) {
+        // allowCreate: queue may be the only upload after compacting create+edit.
+        // Shared lock + re-read prevents a second POST while create is in flight.
+        await service.pushSaveToRemote(task, allowCreate: true);
+        return;
+      }
       final dto = TaskItemDto.fromTask(task);
       final serverId =
           task.serverId ?? int.tryParse(task.id) ?? item.entityId ?? 0;
       if (serverId == 0) {
-        final response = await _apiClient.post(
+        await _apiClient.post(
           ApiEndpoints.tasks,
           data: dto.toJson()..remove('id'),
         );
-        if (response.data is Map) {
-          final created = TaskItemDto.fromJson(
-            Map<String, dynamic>.from(response.data as Map),
-          );
-          await taskService?.assignServerId(task, created.id);
-        }
       } else {
         await _apiClient.put(
           '${ApiEndpoints.tasks}/$serverId',

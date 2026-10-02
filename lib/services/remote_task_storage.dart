@@ -26,24 +26,19 @@ class RemoteTaskStorage {
     final list = response.data as List<dynamic>;
     final meta = await _loadLocalMeta();
 
-    final tasks = list
-        .map((item) {
-          final dto = TaskItemDto.fromJson(
-            Map<String, dynamic>.from(item as Map),
-          );
-          final local = meta[dto.id.toString()];
-          return dto.toTask(
-            priority: TaskPriority.fromOptionalString(
-              local?['priority'] as String?,
-            ),
-            theme: local?['theme'] as String?,
-            completedAt: local?['completedAt'] != null
-                ? DateTime.tryParse(local!['completedAt'] as String)
-                : null,
-          );
-        })
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final tasks = list.map((item) {
+      final dto = TaskItemDto.fromJson(Map<String, dynamic>.from(item as Map));
+      final local = meta[dto.id.toString()];
+      return dto.toTask(
+        priority: TaskPriority.fromOptionalString(
+          local?['priority'] as String?,
+        ),
+        theme: local?['theme'] as String?,
+        completedAt: local?['completedAt'] != null
+            ? DateTime.tryParse(local!['completedAt'] as String)
+            : null,
+      );
+    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     _cache = tasks;
     return tasks;
@@ -121,7 +116,8 @@ class RemoteTaskStorage {
   }
 
   Future<void> saveThemeColor(String name, int colorArgb) async {
-    final colors = await getThemeColors()..[name] = colorArgb;
+    final colors = await getThemeColors()
+      ..[name] = colorArgb;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themesPrefsKey, jsonEncode(colors));
   }
@@ -200,7 +196,8 @@ class RemoteTaskStorage {
   }
 
   Future<void> _removeLocalMeta(String taskId) async {
-    final meta = await _loadLocalMeta()..remove(taskId);
+    final meta = await _loadLocalMeta()
+      ..remove(taskId);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_metaPrefsKey, jsonEncode(meta));
   }

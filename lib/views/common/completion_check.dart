@@ -9,8 +9,8 @@ class CompletionCheck extends StatelessWidget {
     super.key,
     required this.isDone,
     required this.palette,
-    this.size = 26,
-    this.iconSize = 16,
+    this.size = 32,
+    this.iconSize = 20,
     this.borderColor,
     this.doneColor,
     this.showShadow = true,
@@ -133,6 +133,9 @@ class _CelebrateCompleteTapState extends State<CelebrateCompleteTap> {
   }
 }
 
+/// Minimum side length for [CompletionCheckButton] tap targets on list rows.
+const kCompletionCheckMinTapSize = 48.0;
+
 /// Tappable check that plays the overlay check in this circle, then toggles.
 class CompletionCheckButton extends StatelessWidget {
   const CompletionCheckButton({
@@ -140,8 +143,11 @@ class CompletionCheckButton extends StatelessWidget {
     required this.isDone,
     required this.palette,
     required this.onToggle,
-    this.size = 26,
-    this.iconSize = 16,
+    this.size = 32,
+    this.iconSize = 20,
+    this.minTapSize = kCompletionCheckMinTapSize,
+    this.padding = EdgeInsets.zero,
+    this.expandToHeight = false,
     this.borderColor,
     this.doneColor,
     this.showShadow = true,
@@ -153,6 +159,18 @@ class CompletionCheckButton extends StatelessWidget {
   final VoidCallback onToggle;
   final double size;
   final double iconSize;
+
+  /// Opaque hit box side length. Keeps taps on the check from missing onto the
+  /// surrounding row (e.g. Tasks glass panel open-on-tap).
+  final double minTapSize;
+
+  /// Extra opaque padding around the min tap box (e.g. left gutter on tiles).
+  final EdgeInsets padding;
+
+  /// When true, the hit box stretches to the parent's height (use inside a
+  /// [Row] with [CrossAxisAlignment.stretch]) so misses below a multi-line
+  /// title still toggle instead of opening the row.
+  final bool expandToHeight;
   final Color? borderColor;
   final Color? doneColor;
   final bool showShadow;
@@ -160,6 +178,7 @@ class CompletionCheckButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tapSide = size > minTapSize ? size : minTapSize;
     return CompletionBurstTarget(
       child: Builder(
         builder: (linkedContext) {
@@ -179,15 +198,32 @@ class CompletionCheckButton extends StatelessWidget {
               }
               onToggle();
             },
-            child: CompletionCheck(
-              isDone: isDone,
-              palette: palette,
-              size: size,
-              iconSize: iconSize,
-              borderColor: borderColor,
-              doneColor: doneColor,
-              showShadow: showShadow,
-              burstRadius: burstRadius,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: padding,
+              child: SizedBox(
+                width: tapSide,
+                height: expandToHeight ? double.infinity : tapSide,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: tapSide,
+                    height: tapSide,
+                    child: Center(
+                      child: CompletionCheck(
+                        isDone: isDone,
+                        palette: palette,
+                        size: size,
+                        iconSize: iconSize,
+                        borderColor: borderColor,
+                        doneColor: doneColor,
+                        showShadow: showShadow,
+                        burstRadius: burstRadius,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           );
         },

@@ -373,6 +373,74 @@ void main() {
       expect(flushed, isNull);
       expect(live, isEmpty);
     });
+
+    test('toggleCompleted live-saves done and incomplete', () async {
+      final service = _offlineService();
+      final created = await service.saveTask(
+        Task(
+          id: '0',
+          title: 'Finish report',
+          createdAt: DateTime(2026, 1, 1),
+          dueDate: dateOnly(DateTime.now()),
+        ),
+        isNew: true,
+      );
+
+      final vm = EditTaskViewModel(service);
+      final live = <Task>[];
+      await vm.load(taskId: created.id, seed: created);
+      vm.onAutosaved = live.add;
+
+      expect(vm.isDone, isFalse);
+      vm.toggleCompleted();
+      final done = await vm.flushAutosave();
+      expect(done?.isDone, isTrue);
+      expect(done?.completedAt, isNotNull);
+      expect(vm.isDone, isTrue);
+      expect(live.last.isDone, isTrue);
+
+      vm.toggleCompleted();
+      final open = await vm.flushAutosave();
+      expect(open?.isDone, isFalse);
+      expect(open?.completedAt, isNull);
+      expect(vm.isDone, isFalse);
+      expect(live.last.isDone, isFalse);
+
+      final fromDb = await service.getTask(created.id);
+      expect(fromDb?.isDone, isFalse);
+      expect(fromDb?.completedAt, isNull);
+    });
+
+    test(
+      'toggleCompleted keeps incomplete when all subtasks are done',
+      () async {
+        final service = _offlineService();
+        final created = await service.saveTask(
+          Task(
+            id: '0',
+            title: 'Shop',
+            isDone: true,
+            completedAt: DateTime(2026, 1, 2),
+            createdAt: DateTime(2026, 1, 1),
+            subtasks: const [
+              TaskSubtask(id: 'a', title: 'Milk', isDone: true, sortOrder: 0),
+              TaskSubtask(id: 'b', title: 'Eggs', isDone: true, sortOrder: 1),
+            ],
+          ),
+          isNew: true,
+        );
+
+        final vm = EditTaskViewModel(service);
+        await vm.load(taskId: created.id, seed: created);
+        expect(vm.isDone, isTrue);
+
+        vm.toggleCompleted();
+        final saved = await vm.flushAutosave();
+        expect(saved?.isDone, isFalse);
+        expect(vm.isDone, isFalse);
+        expect(saved?.subtasks.every((item) => item.isDone), isTrue);
+      },
+    );
   });
 
   group('TasksViewModel subtasks', () {

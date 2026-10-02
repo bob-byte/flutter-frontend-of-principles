@@ -97,36 +97,37 @@ void main() {
     expect(titles, {'Local only', 'Keep'});
   });
 
-  test('mergeRemoteTask collapses local and server-id duplicate rows', () async {
-    await service.saveTask(
-      Task(
-        id: 'Lkeep',
-        title: 'Local copy',
-        createdAt: DateTime.utc(2026, 1, 1),
-        serverId: 2,
-      ),
-      isNew: false,
-    );
-    await service.saveTask(
-      Task(
-        id: '2',
-        title: 'Bootstrap copy',
-        createdAt: DateTime.utc(2026, 1, 1),
-        serverId: 2,
-      ),
-      isNew: false,
-    );
+  test(
+    'mergeRemoteTask collapses local and server-id duplicate rows',
+    () async {
+      await service.saveTask(
+        Task(
+          id: 'Lkeep',
+          title: 'Local copy',
+          createdAt: DateTime.utc(2026, 1, 1),
+          serverId: 2,
+        ),
+        isNew: false,
+      );
+      await service.saveTask(
+        Task(
+          id: '2',
+          title: 'Bootstrap copy',
+          createdAt: DateTime.utc(2026, 1, 1),
+          serverId: 2,
+        ),
+        isNew: false,
+      );
 
-    await service.mergeRemoteTask(
-      const TaskItemDto(id: 2, name: 'Merged'),
-    );
+      await service.mergeRemoteTask(const TaskItemDto(id: 2, name: 'Merged'));
 
-    final tasks = await service.getTasks();
-    expect(tasks, hasLength(1));
-    expect(tasks.single.id, '2');
-    expect(tasks.single.title, 'Merged');
-    expect(tasks.single.serverId, 2);
-  });
+      final tasks = await service.getTasks();
+      expect(tasks, hasLength(1));
+      expect(tasks.single.id, '2');
+      expect(tasks.single.title, 'Merged');
+      expect(tasks.single.serverId, 2);
+    },
+  );
 
   test('updateTaskStatus flips local completion', () async {
     await service.saveTask(

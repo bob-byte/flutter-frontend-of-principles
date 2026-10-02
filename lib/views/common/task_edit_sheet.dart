@@ -19,6 +19,7 @@ import 'app_loading_indicator.dart';
 import 'expandable_bottom_sheet.dart';
 import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
+import 'completion_check.dart';
 import 'task_subtasks_editor.dart';
 import 'tasks_glass.dart';
 
@@ -341,51 +342,83 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                     physics: const ClampingScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                     children: [
-                      TextField(
-                        controller: _titleController,
-                        focusNode: _titleFocus,
-                        autofocus: widget.taskId == null,
-                        onTapOutside: (_) {},
-                        scrollPadding: const EdgeInsets.symmetric(vertical: 8),
-                        keyboardType: TextInputType.text,
-                        textCapitalization: TextCapitalization.sentences,
-                        enableSuggestions: true,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                          color: palette.textPrimary,
-                          height: 1.35,
-                        ),
-                        decoration: _borderlessDecoration.copyWith(
-                          hintText: strings.taskWhatNeedsToBeDone,
-                          hintStyle: TextStyle(
-                            color: palette.textMuted.withValues(alpha: 0.75),
-                            fontWeight: FontWeight.w400,
-                            fontSize: 17,
-                          ),
-                          suffixIcon: widget.taskId == null
-                              ? Tooltip(
-                                  message: strings.taskAiAssistTitle,
-                                  child: GestureDetector(
-                                    onTap: vm.isSaving
-                                        ? null
-                                        : () => _openAiAssist(vm),
-                                    behavior: HitTestBehavior.opaque,
-                                    child: Icon(
-                                      Icons.auto_awesome,
-                                      size: 20,
-                                      color: palette.primary,
-                                    ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _titleController,
+                              focusNode: _titleFocus,
+                              autofocus: widget.taskId == null,
+                              onTapOutside: (_) {},
+                              scrollPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                              ),
+                              keyboardType: TextInputType.text,
+                              textCapitalization: TextCapitalization.sentences,
+                              enableSuggestions: true,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w500,
+                                color: vm.isDone
+                                    ? palette.textMuted
+                                    : palette.textPrimary,
+                                height: 1.35,
+                                decoration: vm.isDone
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                              decoration: _borderlessDecoration.copyWith(
+                                hintText: strings.taskWhatNeedsToBeDone,
+                                hintStyle: TextStyle(
+                                  color: palette.textMuted.withValues(
+                                    alpha: 0.75,
                                   ),
-                                )
-                              : null,
-                          suffixIconConstraints: const BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 17,
+                                ),
+                                suffixIcon: widget.taskId == null
+                                    ? Tooltip(
+                                        message: strings.taskAiAssistTitle,
+                                        child: GestureDetector(
+                                          onTap: vm.isSaving
+                                              ? null
+                                              : () => _openAiAssist(vm),
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Icon(
+                                            Icons.auto_awesome,
+                                            size: 20,
+                                            color: palette.primary,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                suffixIconConstraints: const BoxConstraints(
+                                  minWidth: 20,
+                                  minHeight: 20,
+                                ),
+                              ),
+                              textInputAction: TextInputAction.next,
+                              onChanged: (value) => _onTitleChanged(vm, value),
+                            ),
                           ),
-                        ),
-                        textInputAction: TextInputAction.next,
-                        onChanged: (value) => _onTitleChanged(vm, value),
+                          if (vm.isEditing) ...[
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: vm.isDone
+                                  ? strings.taskMarkIncomplete
+                                  : strings.taskMarkCompleted,
+                              child: CompletionCheckButton(
+                                key: const Key('taskEditCompleteToggle'),
+                                isDone: vm.isDone,
+                                palette: palette,
+                                size: 28,
+                                iconSize: 18,
+                                onToggle: vm.toggleCompleted,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (_titleError) ...[
                         const SizedBox(height: 6),

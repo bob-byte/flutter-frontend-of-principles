@@ -1,12 +1,4 @@
-enum TaskRepeatPreset {
-  none,
-  daily,
-  weekly,
-  monthly,
-  yearly,
-  weekday,
-  custom,
-}
+enum TaskRepeatPreset { none, daily, weekly, monthly, yearly, weekday, custom }
 
 enum TaskRepeatUnit { day, week, month, year }
 
@@ -49,12 +41,12 @@ class TaskRepeatConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'preset': preset.name,
-        'interval': interval,
-        'unit': unit.name,
-        'weekdays': weekdays,
-        'anchor': anchor.name,
-      };
+    'preset': preset.name,
+    'interval': interval,
+    'unit': unit.name,
+    'weekdays': weekdays,
+    'anchor': anchor.name,
+  };
 
   factory TaskRepeatConfig.fromJson(Map<String, dynamic>? json) {
     if (json == null || json.isEmpty) {
@@ -100,30 +92,30 @@ class TaskRepeatConfig {
       const TaskRepeatConfig(preset: TaskRepeatPreset.daily);
 
   factory TaskRepeatConfig.weekly(DateTime day) => TaskRepeatConfig(
-        preset: TaskRepeatPreset.weekly,
-        unit: TaskRepeatUnit.week,
-        weekdays: [day.weekday],
-      );
+    preset: TaskRepeatPreset.weekly,
+    unit: TaskRepeatUnit.week,
+    weekdays: [day.weekday],
+  );
 
   factory TaskRepeatConfig.monthly() => const TaskRepeatConfig(
-        preset: TaskRepeatPreset.monthly,
-        unit: TaskRepeatUnit.month,
-      );
+    preset: TaskRepeatPreset.monthly,
+    unit: TaskRepeatUnit.month,
+  );
 
   factory TaskRepeatConfig.yearly() => const TaskRepeatConfig(
-        preset: TaskRepeatPreset.yearly,
-        unit: TaskRepeatUnit.year,
-      );
+    preset: TaskRepeatPreset.yearly,
+    unit: TaskRepeatUnit.year,
+  );
 
   factory TaskRepeatConfig.everyWeekday() => const TaskRepeatConfig(
-        preset: TaskRepeatPreset.weekday,
-        unit: TaskRepeatUnit.week,
-        weekdays: [
-          DateTime.monday,
-          DateTime.tuesday,
-          DateTime.wednesday,
-          DateTime.thursday,
-          DateTime.friday,
-        ],
-      );
+    preset: TaskRepeatPreset.weekday,
+    unit: TaskRepeatUnit.week,
+    weekdays: [
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+    ],
+  );
 }

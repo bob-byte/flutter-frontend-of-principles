@@ -26,6 +26,10 @@ class TaskService {
   final LocalTaskStorage _local;
   final LocalRemoteExecutor? _executor;
 
+  /// Serializes create/update HTTP for the same local task so a live-save edit
+  /// cannot POST a duplicate while the initial create is still in flight.
+  final Map<String, Future<void>> _remoteSaveChains = {};
+
   bool get _useRemote => !AppConfig.useLocalData;
 
   Future<List<Task>> getTasks({bool? isDone}) =>
@@ -48,6 +52,9 @@ class TaskService {
   Future<Task?> getTaskByLocalId(int localId) =>
       _local.getTaskByLocalId(localId);
 
+  static int resolvedServerId(Task task) =>
+      task.serverId ?? int.tryParse(task.id) ?? 0;
+
   Future<Task> saveTask(Task task, {required bool isNew}) async {
     var stored = task;
     if (isNew && (task.id == '0' || task.id.isEmpty)) {
@@ -63,30 +70,7 @@ class TaskService {
     final persisted = await _local.getTask(stored.id) ?? stored;
     if (!_useRemote) return persisted;
 
-    Future<Task> remote() async {
-      final latest = await _local.getTask(persisted.id) ?? persisted;
-      final dto = TaskItemDto.fromTask(latest);
-      final serverId = latest.serverId ?? int.tryParse(latest.id) ?? 0;
-      if (isNew || serverId == 0) {
-        final response = await _apiClient.post(
-          ApiEndpoints.tasks,
-          data: dto.toJson()..remove('id'),
-        );
-        final created = TaskItemDto.fromJson(
-          Map<String, dynamic>.from(response.data as Map),
-        );
-        // Keep the stable local id so in-memory list rows stay editable
-        // while background sync assigns serverId.
-        final mapped = latest.copyWith(serverId: created.id);
-        await _local.saveTask(mapped, isNew: false);
-        return mapped;
-      }
-      await _apiClient.put(
-        '${ApiEndpoints.tasks}/$serverId',
-        data: dto.toJson(),
-      );
-      return latest;
-    }
+    Future<Task> remote() => pushSaveToRemote(persisted, allowCreate: isNew);
 
     if (_executor != null) {
       await _executor.execute<Task>(
@@ -111,6 +95,49 @@ class TaskService {
     return persisted;
   }
 
+  /// Pushes the latest local row for [task] to the server.
+  ///
+  /// When [allowCreate] is false and the row still has no server id (create still
+  /// in flight), throws so the queue retries after create assigns [Task.serverId].
+  /// Queued sync should pass [allowCreate] true so a compacted first upload can
+  /// POST once.
+  Future<Task> pushSaveToRemote(Task task, {required bool allowCreate}) {
+    return _enqueueRemoteSave(task.id, () async {
+      final latest = await _local.getTask(task.id) ?? task;
+      final dto = TaskItemDto.fromTask(latest);
+      final serverId = resolvedServerId(latest);
+      if (serverId != 0) {
+        await _apiClient.put(
+          '${ApiEndpoints.tasks}/$serverId',
+          data: dto.toJson(),
+        );
+        return latest;
+      }
+      if (!allowCreate) {
+        throw StateError('Task has no server id yet');
+      }
+      final response = await _apiClient.post(
+        ApiEndpoints.tasks,
+        data: dto.toJson()..remove('id'),
+      );
+      final created = TaskItemDto.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+      // Keep the stable local id so in-memory list rows stay editable
+      // while background sync assigns serverId.
+      final mapped = latest.copyWith(serverId: created.id);
+      await _local.saveTask(mapped, isNew: false);
+      return mapped;
+    });
+  }
+
+  Future<T> _enqueueRemoteSave<T>(String taskId, Future<T> Function() action) {
+    final previous = _remoteSaveChains[taskId] ?? Future<void>.value();
+    final next = previous.catchError((_) {}).then((_) => action());
+    _remoteSaveChains[taskId] = next.then<void>((_) {}, onError: (_) {});
+    return next;
+  }
+
   Future<void> updateTaskStatus(String id, bool isDone) async {
     await _local.updateTaskStatus(id, isDone);
     if (!_useRemote) return;
@@ -120,7 +147,7 @@ class TaskService {
 
     Future<void> remote() async {
       final latest = await _local.getTask(id) ?? task;
-      final sid = latest.serverId ?? int.tryParse(latest.id) ?? 0;
+      final sid = resolvedServerId(latest);
       if (sid == 0) {
         throw StateError('Task has no server id yet');
       }

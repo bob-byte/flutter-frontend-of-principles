@@ -30,6 +30,8 @@ class EditTaskViewModel extends ChangeNotifier {
   String? editingId;
   String title = '';
   String description = '';
+  bool isDone = false;
+  DateTime? completedAt;
   TaskPriority? priority;
   ThemePickerMode themeMode = ThemePickerMode.none;
   String? selectedTheme;
@@ -177,6 +179,13 @@ class EditTaskViewModel extends ChangeNotifier {
         .then((_) => autosave());
   }
 
+  /// Keeps the ids [prepareTaskNotifications] just stored so the next edit
+  /// cancels that alarm instead of scheduling a second one.
+  void _adoptScheduledNotifications(Task saved) {
+    reminders = List.of(saved.reminders);
+    constantNotificationRequestId = saved.constantNotificationRequestId;
+  }
+
   /// Persists the current edit form if live-save is active.
   Future<Task?> autosave() async {
     if (!liveSave || !isEditing) return lastAutosaved;
@@ -188,7 +197,8 @@ class EditTaskViewModel extends ChangeNotifier {
     final saved = await save(promptForNotifications: prompt);
     if (saved != null) {
       lastAutosaved = saved;
-      _lastSavedSignature = _formSignature();
+      // [save] records the signature before notification scheduling. Refreshing
+      // it here would hide edits typed while that scheduling was in flight.
       onAutosaved?.call(saved);
     }
     return saved ?? lastAutosaved;
@@ -218,6 +228,7 @@ class EditTaskViewModel extends ChangeNotifier {
     return [
       title.trim(),
       description.trim(),
+      isDone ? '1' : '0',
       priority?.name ?? '',
       themeMode.name,
       themeName,
@@ -250,6 +261,7 @@ class EditTaskViewModel extends ChangeNotifier {
       // Keep user edits if they already typed over the seed.
       if (title != seed.title ||
           description != seed.description ||
+          isDone != seed.isDone ||
           !_sameSubtasks(subtasks, seed.subtasks)) {
         return;
       }
@@ -267,6 +279,8 @@ class EditTaskViewModel extends ChangeNotifier {
   void _clearForm() {
     title = '';
     description = '';
+    isDone = false;
+    completedAt = null;
     priority = null;
     themeMode = ThemePickerMode.none;
     selectedTheme = null;
@@ -287,6 +301,8 @@ class EditTaskViewModel extends ChangeNotifier {
     editingId = task.id;
     title = task.title;
     description = task.description;
+    isDone = task.isDone;
+    completedAt = task.completedAt;
     priority = task.priority;
     hasDueDate = task.dueDate != null;
     dueDate = task.dueDate ?? dateOnly(DateTime.now());
@@ -381,6 +397,15 @@ class EditTaskViewModel extends ChangeNotifier {
   void setDescription(String value) {
     description = value;
     _markDirty();
+  }
+
+  /// Toggles completion while editing; persists via live-save.
+  void toggleCompleted() {
+    if (!isEditing) return;
+    isDone = !isDone;
+    completedAt = isDone ? DateTime.now() : null;
+    notifyListeners();
+    _markDirty(immediate: true);
   }
 
   String addSubtask() {
@@ -571,10 +596,14 @@ class EditTaskViewModel extends ChangeNotifier {
         if (existing == null) return null;
 
         final preparedSubtasks = _preparedSubtasks();
+        // Auto-complete only when the parent was still open — never re-force
+        // done after the user explicitly marks it incomplete in this sheet.
         final autoComplete =
+            !isDone &&
             !existing.isDone &&
             preparedSubtasks.isNotEmpty &&
             preparedSubtasks.every((item) => item.isDone);
+        final effectiveDone = isDone || autoComplete;
 
         saved = existing.copyWith(
           title: trimmedTitle,
@@ -594,12 +623,19 @@ class EditTaskViewModel extends ChangeNotifier {
           constantNotificationRequestId: constantNotificationRequestId,
           clearConstantNotificationRequestId: !hasDueDate,
           subtasks: preparedSubtasks,
-          isDone: autoComplete ? true : null,
-          completedAt: autoComplete ? DateTime.now() : null,
+          isDone: effectiveDone,
+          completedAt: effectiveDone
+              ? (existing.isDone
+                    ? existing.completedAt ?? completedAt ?? DateTime.now()
+                    : completedAt ?? DateTime.now())
+              : null,
+          clearCompletedAt: !effectiveDone,
         );
         saved =
             await _reminderService?.prepareTaskNotifications(saved) ?? saved;
         saved = await _taskService.saveTask(saved, isNew: false);
+        isDone = saved.isDone;
+        completedAt = saved.completedAt;
       } else {
         saved = Task(
           id: '0',
@@ -620,15 +656,15 @@ class EditTaskViewModel extends ChangeNotifier {
             await _reminderService?.prepareTaskNotifications(saved) ?? saved;
         saved = await _taskService.saveTask(saved, isNew: true);
       }
-      unawaited(
-        (_reminderService?.syncTaskNotifications(saved) ?? Future.value())
-            .catchError((Object e) {
-              debugPrint('Task notification sync failed: $e');
-            }),
-      );
+      _adoptScheduledNotifications(saved);
       if (isEditing) {
         lastAutosaved = saved;
         _lastSavedSignature = _formSignature();
+      }
+      try {
+        await _reminderService?.syncTaskNotifications(saved);
+      } catch (e) {
+        debugPrint('Task notification sync failed: $e');
       }
       return saved;
     } finally {

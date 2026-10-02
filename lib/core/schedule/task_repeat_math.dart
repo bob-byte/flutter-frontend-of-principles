@@ -24,17 +24,13 @@ DateTime? nextOccurrenceStart({
     case TaskRepeatPreset.yearly:
       return _addCalendar(base, years: repeat.interval.clamp(1, 50));
     case TaskRepeatPreset.weekday:
-      return _nextWeekly(
-        base,
-        const [
-          DateTime.monday,
-          DateTime.tuesday,
-          DateTime.wednesday,
-          DateTime.thursday,
-          DateTime.friday,
-        ],
-        intervalWeeks: 1,
-      );
+      return _nextWeekly(base, const [
+        DateTime.monday,
+        DateTime.tuesday,
+        DateTime.wednesday,
+        DateTime.thursday,
+        DateTime.friday,
+      ], intervalWeeks: 1);
     case TaskRepeatPreset.custom:
       switch (repeat.unit) {
         case TaskRepeatUnit.day:
@@ -80,14 +76,7 @@ DateTime _addCalendar(
     year--;
   }
   final day = base.day.clamp(1, _daysInMonth(year, month));
-  return DateTime(
-    year,
-    month,
-    day,
-    base.hour,
-    base.minute,
-    base.second,
-  );
+  return DateTime(year, month, day, base.hour, base.minute, base.second);
 }
 
 int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
@@ -99,9 +88,14 @@ DateTime _nextWeekly(
   List<int> weekdays, {
   required int intervalWeeks,
 }) {
-  final days =
-      weekdays.isEmpty ? [base.weekday] : (List<int>.from(weekdays)..sort());
-  var cursor = DateTime(base.year, base.month, base.day).add(const Duration(days: 1));
+  final days = weekdays.isEmpty
+      ? [base.weekday]
+      : (List<int>.from(weekdays)..sort());
+  var cursor = DateTime(
+    base.year,
+    base.month,
+    base.day,
+  ).add(const Duration(days: 1));
   final startWeek = _weekStart(base);
   for (var i = 0; i < 400; i++) {
     if (days.contains(cursor.weekday)) {

@@ -343,6 +343,7 @@ class _HabitReminderCopyFieldsState extends State<_HabitReminderCopyFields> {
           controller: _titleController,
           style: TextStyle(color: palette.textPrimary),
           cursorColor: palette.primary,
+          keyboardType: TextInputType.text,
           textCapitalization: TextCapitalization.sentences,
           decoration: decoration(
             label: l10n.reminderTitleLabel,
@@ -357,6 +358,7 @@ class _HabitReminderCopyFieldsState extends State<_HabitReminderCopyFields> {
           style: TextStyle(color: palette.textPrimary),
           cursorColor: palette.primary,
           maxLines: 3,
+          keyboardType: TextInputType.multiline,
           textCapitalization: TextCapitalization.sentences,
           decoration: decoration(
             label: l10n.reminderDescriptionLabel,
