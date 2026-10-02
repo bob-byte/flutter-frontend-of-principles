@@ -27,7 +27,8 @@ description: Implements Flutter features in Principles following MVVM folders, d
 ## Edit Goal form
 
 - Matching `prefixIcon`s on stacked fields so labels share one inset
-- Vertically center empty-field text/placeholder: fixed-height `SizedBox` + `expands: true` + `textAlignVertical: TextAlignVertical.center` (same as habit notes)
+- Goal name: grow with content (`ConstrainedBox(minHeight: 56)` + `minLines: 1` / `maxLines: null`) so long titles stay fully visible; keep empty-field text vertically centered
+- Notes: fixed-height `SizedBox` + `expands: true` + `textAlignVertical: TextAlignVertical.center` (same as habit notes)
 
 ## Tooling
 
