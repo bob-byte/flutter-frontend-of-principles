@@ -14,14 +14,17 @@ class ForgetPasswordViewModel extends ChangeNotifier {
 
   Future<int?> generateCode(
     String email, {
+    String? language,
     required String genericError,
+    required String emailNotRegisteredError,
+    required String mailServerError,
   }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
 
     try {
-      final code = await _authService.generateCode(email);
+      final code = await _authService.generateCode(email, language: language);
       if (code == null) {
         _error = genericError;
       }
@@ -29,11 +32,10 @@ class ForgetPasswordViewModel extends ChangeNotifier {
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('EmailIsIncorrect')) {
-        _error = 'Такого користувача не знайдено (Email не зареєстровано).';
+        _error = emailNotRegisteredError;
       } else if (errorMsg.contains('Transaction failed') ||
           errorMsg.contains('500')) {
-        _error =
-            'Помилка поштового сервера на бекенді. Зверніться до адміністратора.';
+        _error = mailServerError;
       } else {
         _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       }

@@ -9,10 +9,32 @@ import '../core/theme/theme_controller.dart';
 import '../viewmodels/forget_password_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
 import 'common/app_alert_dialog.dart';
+import 'common/confirm_email_code_dialog.dart';
+
+class ForgetPasswordArgs {
+  final String? initialEmail;
+  final bool emailReadOnly;
+
+  const ForgetPasswordArgs({this.initialEmail, this.emailReadOnly = false});
+
+  static ForgetPasswordArgs fromRouteArguments(Object? arguments) {
+    if (arguments is ForgetPasswordArgs) return arguments;
+    if (arguments is String) {
+      return ForgetPasswordArgs(initialEmail: arguments);
+    }
+    return const ForgetPasswordArgs();
+  }
+}
 
 class ForgetPasswordView extends StatefulWidget {
   final String? initialEmail;
-  const ForgetPasswordView({super.key, this.initialEmail});
+  final bool emailReadOnly;
+
+  const ForgetPasswordView({
+    super.key,
+    this.initialEmail,
+    this.emailReadOnly = false,
+  });
 
   static const routeName = '/forget-password';
 
@@ -52,7 +74,10 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
 
     final validCode = await vm.generateCode(
       email,
+      language: Localizations.localeOf(context).languageCode,
       genericError: l10n.genericErrorOccurred,
+      emailNotRegisteredError: l10n.emailNotRegisteredError,
+      mailServerError: l10n.mailServerError,
     );
 
     if (!mounted) return;
@@ -61,69 +86,17 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
     }
   }
 
-  void _showConfirmCodePopup(int validCode, String email, String newPassword) {
-    showDialog(
+  Future<void> _showConfirmCodePopup(
+    int validCode,
+    String email,
+    String newPassword,
+  ) async {
+    final confirmed = await showConfirmEmailCodeDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final codeController = TextEditingController();
-        final l10n = AppLocalizations.of(context)!;
-        String? localError;
-
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AppAlertDialog(
-              title: Text(l10n.confirmCodeTitle, textAlign: TextAlign.center),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(l10n.confirmCodeSubtitle, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: codeController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: l10n.codeLabel,
-                      errorText: localError,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Скасувати'), // "Cancel"
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final enteredCode = int.tryParse(codeController.text);
-                    if (enteredCode == validCode) {
-                      Navigator.of(ctx).pop(); // Close popup
-                      await _doChangePassword(email, newPassword);
-                    } else {
-                      setStateDialog(() {
-                        localError = l10n.wrongCodeError;
-                      });
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(l10n.confirmBtn),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      validCode: validCode,
     );
+    if (!mounted || !confirmed) return;
+    await _doChangePassword(email, newPassword);
   }
 
   Future<void> _doChangePassword(String email, String newPassword) async {
@@ -203,9 +176,10 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
                 ),
                 const SizedBox(height: 32),
 
-                // Email Field
+                // Email Field — read-only when changing password while signed in
                 TextFormField(
                   controller: _emailController,
+                  readOnly: widget.emailReadOnly,
                   keyboardType: TextInputType.emailAddress,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   validator: (value) {

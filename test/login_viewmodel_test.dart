@@ -35,11 +35,14 @@ void main() {
     expect(vm.isLoginEnable, isTrue);
   });
 
-  test('failed login sets generic error and increments toward lockout', () async {
-    expect(await attempt(), isFalse);
-    expect(vm.error, 'generic');
-    expect(vm.isTimerVisible, isFalse);
-  });
+  test(
+    'failed login sets generic error and increments toward lockout',
+    () async {
+      expect(await attempt(), isFalse);
+      expect(vm.error, 'generic');
+      expect(vm.isTimerVisible, isFalse);
+    },
+  );
 
   test('locks out after five failed attempts', () async {
     for (var i = 0; i < 5; i++) {
@@ -51,11 +54,14 @@ void main() {
     expect(await attempt(), isFalse);
   });
 
-  test('maps InvalidEmailOrPassword exception to invalid credentials', () async {
-    auth.throwError = Exception('InvalidEmailOrPassword');
-    expect(await attempt(), isFalse);
-    expect(vm.error, 'invalid');
-  });
+  test(
+    'maps InvalidEmailOrPassword exception to invalid credentials',
+    () async {
+      auth.throwError = Exception('InvalidEmailOrPassword');
+      expect(await attempt(), isFalse);
+      expect(vm.error, 'invalid');
+    },
+  );
 }
 
 class _FakeAuth extends AuthService {

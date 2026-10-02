@@ -15,6 +15,7 @@ import '../core/home_widget/home_widget_binder.dart';
 import '../core/input/android_hardware_text_input.dart';
 import '../core/launch_data_loader.dart';
 import '../core/locale/locale_controller.dart';
+import '../core/logging/app_lifecycle_logger.dart';
 import '../core/network/api_client.dart';
 import '../core/network/network_service.dart';
 import '../core/road_guide/main_shell_controller.dart';
@@ -331,6 +332,7 @@ class PrinciplesApp extends StatelessWidget {
             localeController: ctx.read<LocaleController>(),
             userService: ctx.read<UserService>(),
             localDataCleaner: ctx.read<LocalDataCleaner>(),
+            reminderService: ctx.read<ReminderService>(),
           ),
         ),
         ChangeNotifierProvider(create: (_) => MainShellController()),
@@ -378,18 +380,21 @@ class PrinciplesApp extends StatelessWidget {
             brightnessResolver: Theme.maybeBrightnessOf,
             adaptiveQuality: true,
             child: MaterialApp(
+              debugShowCheckedModeBanner: false,
               navigatorKey: context.read<DialogService>().navigatorKey,
               builder: (context, child) => AndroidHardwareTextInput(
-                child: DeepLinkBinder(
-                  child: HomeWidgetBinder(
-                    child: DeliveredNotificationClearer(
-                      child: VideoSplashOverlay(
-                        key: _videoSplashKey,
-                        child: AppUpdateAlert(
-                          navigatorKey: context
-                              .read<DialogService>()
-                              .navigatorKey,
-                          child: child ?? const SizedBox.shrink(),
+                child: AppLifecycleLogger(
+                  child: DeepLinkBinder(
+                    child: HomeWidgetBinder(
+                      child: DeliveredNotificationClearer(
+                        child: VideoSplashOverlay(
+                          key: _videoSplashKey,
+                          child: AppUpdateAlert(
+                            navigatorKey: context
+                                .read<DialogService>()
+                                .navigatorKey,
+                            child: child ?? const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                     ),
@@ -439,9 +444,13 @@ class PrinciplesApp extends StatelessWidget {
                 SignupView.routeName: (_) => const SignupView(),
                 AppBenefitsView.routeName: (_) => const AppBenefitsView(),
                 ForgetPasswordView.routeName: (ctx) {
-                  final email =
-                      ModalRoute.of(ctx)?.settings.arguments as String?;
-                  return ForgetPasswordView(initialEmail: email);
+                  final args = ForgetPasswordArgs.fromRouteArguments(
+                    ModalRoute.of(ctx)?.settings.arguments,
+                  );
+                  return ForgetPasswordView(
+                    initialEmail: args.initialEmail,
+                    emailReadOnly: args.emailReadOnly,
+                  );
                 },
                 HelperView.routeName: (_) => const MainShell(),
                 MainView.routeName: (_) => const MainView(),

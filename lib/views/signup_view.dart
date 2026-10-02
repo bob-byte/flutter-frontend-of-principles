@@ -9,8 +9,10 @@ import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
 import '../viewmodels/signup_viewmodel.dart';
 import '../viewmodels/startup_viewmodel.dart';
+import 'common/confirm_email_code_dialog.dart';
 import 'common/ui_theme_switcher.dart';
 import 'common/themed_lottie.dart';
+import 'edit_profile_text_view.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -27,11 +29,11 @@ class _SignupViewState extends State<SignupView> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _missionController = TextEditingController();
-  final _sloganController = TextEditingController();
 
   bool _obscurePassword = true;
   int _selectedGender = 0; // 0: Male, 1: Female, 2: Other
+  String _mission = '';
+  String _slogan = '';
 
   final _formKey = GlobalKey<FormState>();
 
@@ -40,12 +42,10 @@ class _SignupViewState extends State<SignupView> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _missionController.dispose();
-    _sloganController.dispose();
     super.dispose();
   }
 
-  void _doRegister() async {
+  Future<void> _onRegisterPressed() async {
     final vm = context.read<SignupViewModel>();
     final l10n = AppLocalizations.of(context)!;
 
@@ -62,14 +62,41 @@ class _SignupViewState extends State<SignupView> {
       return;
     }
 
+    final email = _emailController.text.trim();
+    final validCode = await vm.generateSignupCode(
+      email,
+      language: Localizations.localeOf(context).languageCode,
+      genericError: l10n.genericErrorOccurred,
+      emailAlreadyExistsError: l10n.errorEmailAlreadyExists,
+    );
+
+    if (!mounted) return;
+    if (validCode != null) {
+      _showConfirmCodePopup(validCode);
+    }
+  }
+
+  Future<void> _showConfirmCodePopup(int validCode) async {
+    final confirmed = await showConfirmEmailCodeDialog(
+      context: context,
+      validCode: validCode,
+    );
+    if (!mounted || !confirmed) return;
+    await _doRegister();
+  }
+
+  Future<void> _doRegister() async {
+    final vm = context.read<SignupViewModel>();
+    final l10n = AppLocalizations.of(context)!;
     final navigator = Navigator.of(context);
+
     final success = await vm.register(
       name: _nameController.text,
-      email: _emailController.text,
+      email: _emailController.text.trim(),
       password: _passwordController.text,
       gender: _selectedGender,
-      mission: _missionController.text.isEmpty ? null : _missionController.text,
-      slogan: _sloganController.text.isEmpty ? null : _sloganController.text,
+      mission: _mission.isEmpty ? null : _mission,
+      slogan: _slogan.isEmpty ? null : _slogan,
       genericError: l10n.genericErrorOccurred,
       emailAlreadyExistsError: l10n.errorEmailAlreadyExists,
     );
@@ -84,6 +111,26 @@ class _SignupViewState extends State<SignupView> {
       } catch (_) {}
       openPostAuthShell(navigator);
     }
+  }
+
+  Future<void> _editMission() async {
+    final result = await EditMissionView.openDraft(
+      context,
+      initialText: _mission,
+      gender: _selectedGender,
+    );
+    if (!mounted || result == null) return;
+    setState(() => _mission = result);
+  }
+
+  Future<void> _editSlogan() async {
+    final result = await EditSloganView.openDraft(
+      context,
+      initialText: _slogan,
+      gender: _selectedGender,
+    );
+    if (!mounted || result == null) return;
+    setState(() => _slogan = result);
   }
 
   @override
@@ -138,6 +185,7 @@ class _SignupViewState extends State<SignupView> {
                         controller: _nameController,
                         hintText: l10n.nameLabel,
                         prefixIcon: Icons.person_outline,
+                        textCapitalization: TextCapitalization.sentences,
                         validator: (value) {
                           if (value == null || value.isEmpty)
                             return l10n.fieldRequired;
@@ -226,97 +274,22 @@ class _SignupViewState extends State<SignupView> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Mission
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
-                        child: Text(
-                          l10n.missionLabel,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      _ProfileTextTile(
+                        key: const Key('signupMissionTile'),
+                        label: l10n.missionLabel,
+                        value: _mission,
+                        emptyLabel: l10n.optionalLabel,
+                        icon: Icons.flag_outlined,
+                        onTap: _editMission,
                       ),
-                      _CustomTextField(
-                        controller: _missionController,
-                        hintText: l10n.optionalLabel,
-                        prefixIcon: Icons.flag_outlined,
-                        maxLines: 3,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            Icons.info_outline,
-                            color: palette.textMuted,
-                          ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Вона буде використана для створення більш доцільних для вас рекомендованих звичок. Місія - це життєва мета, яка постійно підтримує високий рівень мотивації й допомагає зробити найкращий вибір у різноманітних ситуаціях. Наприклад, місія може звучати так: “Я створюю ІТ-додатки, щоб робити світ кращим”.',
-                                  style: TextStyle(color: palette.onPrimary),
-                                ),
-                                backgroundColor: palette.primary,
-                                duration: const Duration(seconds: 10),
-                                action: SnackBarAction(
-                                  label: 'OK',
-                                  textColor: palette.onPrimary,
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).hideCurrentSnackBar();
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Slogan
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
-                        child: Text(
-                          l10n.sloganLabel,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      _CustomTextField(
-                        controller: _sloganController,
-                        hintText: l10n.optionalLabel,
-                        prefixIcon: Icons.assignment_outlined,
-                        maxLines: 3,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            Icons.info_outline,
-                            color: palette.textMuted,
-                          ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Основне гасло буде використано для формування кращих рекомендованих звичок. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя.',
-                                  style: TextStyle(color: palette.onPrimary),
-                                ),
-                                backgroundColor: palette.primary,
-                                duration: const Duration(seconds: 10),
-                                action: SnackBarAction(
-                                  label: 'OK',
-                                  textColor: palette.onPrimary,
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(
-                                      context,
-                                    ).hideCurrentSnackBar();
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                      const SizedBox(height: 12),
+                      _ProfileTextTile(
+                        key: const Key('signupSloganTile'),
+                        label: l10n.sloganLabel,
+                        value: _slogan,
+                        emptyLabel: l10n.optionalLabel,
+                        icon: Icons.assignment_outlined,
+                        onTap: _editSlogan,
                       ),
                     ],
                   ),
@@ -340,7 +313,7 @@ class _SignupViewState extends State<SignupView> {
                     SizedBox(
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: vm.isBusy ? null : _doRegister,
+                        onPressed: vm.isBusy ? null : _onRegisterPressed,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: palette.primary,
                           foregroundColor: palette.onPrimary,
@@ -407,6 +380,81 @@ class _SignupViewState extends State<SignupView> {
   }
 }
 
+class _ProfileTextTile extends StatelessWidget {
+  const _ProfileTextTile({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.emptyLabel,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final String emptyLabel;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasValue = value.trim().isNotEmpty;
+    return Material(
+      color: scheme.surface.withValues(alpha: 0.72),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outline),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: Colors.grey),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasValue ? value : emptyLabel,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: hasValue ? scheme.onSurface : Colors.grey,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.onSurface.withValues(alpha: 0.45),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
@@ -414,6 +462,7 @@ class _CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
   final String? Function(String?)? validator;
   final int maxLines;
 
@@ -424,6 +473,7 @@ class _CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.obscureText = false,
     this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
     this.validator,
     this.maxLines = 1,
   });
@@ -436,6 +486,9 @@ class _CustomTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      textCapitalization: obscureText
+          ? TextCapitalization.none
+          : textCapitalization,
       validator: validator,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       maxLines: isMultiline ? null : maxLines,

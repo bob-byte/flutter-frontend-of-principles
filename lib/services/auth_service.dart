@@ -167,12 +167,15 @@ class AuthService {
     }
   }
 
-  Future<int?> generateCode(String email) async {
+  Future<int?> generateCode(String email, {String? language}) async {
     try {
       final dio = createDio();
       final response = await dio.get(
         '${baseUrl}/api/account/code',
-        queryParameters: {'emailWhereSendCode': email},
+        queryParameters: {
+          'emailWhereSendCode': email,
+          if (language != null && language.isNotEmpty) 'language': language,
+        },
       );
       if (response.statusCode == 200) {
         return response.data['code'] ?? response.data['Code'];
@@ -186,6 +189,33 @@ class AuthService {
       return null;
     } catch (e) {
       debugPrint('Generate Code Error: $e');
+      return null;
+    }
+  }
+
+  /// Sends a verification code to [email] for signup (email must not be registered).
+  Future<int?> generateSignupCode(String email, {String? language}) async {
+    try {
+      final dio = createDio();
+      final response = await dio.get(
+        '${baseUrl}/api/account/signupcode',
+        queryParameters: {
+          'emailWhereSendCode': email,
+          if (language != null && language.isNotEmpty) 'language': language,
+        },
+      );
+      if (response.statusCode == 200) {
+        return response.data['code'] ?? response.data['Code'];
+      }
+      return null;
+    } on DioException catch (e) {
+      debugPrint('Generate Signup Code Dio Error: ${e.response?.data}');
+      if (e.response?.data is String) {
+        throw Exception(e.response!.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Generate Signup Code Error: $e');
       return null;
     }
   }

@@ -24,6 +24,14 @@ void main() {
     );
   }
 
+  Future<int?> generateSignupCode() {
+    return vm.generateSignupCode(
+      'ada@example.com',
+      genericError: 'generic',
+      emailAlreadyExistsError: 'exists',
+    );
+  }
+
   test('successful register clears error', () async {
     expect(await register(), isTrue);
     expect(vm.error, isNull);
@@ -40,6 +48,25 @@ void main() {
     expect(await register(), isFalse);
     expect(vm.error, 'exists');
   });
+
+  test('generateSignupCode returns code on success', () async {
+    auth.signupCode = 123456;
+    expect(await generateSignupCode(), 123456);
+    expect(vm.error, isNull);
+    expect(vm.isBusy, isFalse);
+  });
+
+  test('generateSignupCode maps duplicate-email exception', () async {
+    auth.signupCodeError = Exception('UserWithIdenticalEmailAlreadyExists');
+    expect(await generateSignupCode(), isNull);
+    expect(vm.error, 'exists');
+  });
+
+  test('generateSignupCode sets generic error when code is null', () async {
+    auth.signupCode = null;
+    expect(await generateSignupCode(), isNull);
+    expect(vm.error, 'generic');
+  });
 }
 
 class _FakeAuth extends AuthService {
@@ -47,6 +74,8 @@ class _FakeAuth extends AuthService {
 
   bool succeed = true;
   Object? throwError;
+  int? signupCode = 111111;
+  Object? signupCodeError;
 
   @override
   Future<bool> register({
@@ -60,5 +89,12 @@ class _FakeAuth extends AuthService {
     final err = throwError;
     if (err != null) throw err;
     return succeed;
+  }
+
+  @override
+  Future<int?> generateSignupCode(String email, {String? language}) async {
+    final err = signupCodeError;
+    if (err != null) throw err;
+    return signupCode;
   }
 }

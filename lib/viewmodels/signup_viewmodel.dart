@@ -11,6 +11,44 @@ class SignupViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   String? get error => _error;
 
+  /// Emails a signup verification code (from HostEmail) and returns it for
+  /// client-side confirmation, same pattern as forget-password.
+  Future<int?> generateSignupCode(
+    String email, {
+    String? language,
+    required String genericError,
+    required String emailAlreadyExistsError,
+  }) async {
+    _isBusy = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final code = await _authService.generateSignupCode(
+        email,
+        language: language,
+      );
+      if (code == null) {
+        _error = genericError;
+      }
+      return code;
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (errorMsg.contains('UserWithIdenticalEmailAlreadyExists')) {
+        _error = emailAlreadyExistsError;
+      } else if (errorMsg.contains('Transaction failed') ||
+          errorMsg.contains('500')) {
+        _error = genericError;
+      } else {
+        _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      }
+      return null;
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> register({
     required String name,
     required String email,

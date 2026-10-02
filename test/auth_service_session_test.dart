@@ -153,7 +153,10 @@ void main() {
 
     expect(await authService.login('a@b.com', 'secret'), isTrue);
     expect(store.writes, [AppConfig.tokenStorageKey]);
-    expect(store.writes.where((k) => k == AppConfig.productionAuthTokenKey).length, 1);
+    expect(
+      store.writes.where((k) => k == AppConfig.productionAuthTokenKey).length,
+      1,
+    );
   });
 
   test('detects Keychain duplicate-item errors', () {
@@ -170,7 +173,10 @@ void main() {
     );
     expect(
       SecureStore.isKeychainDuplicateItem(
-        PlatformException(code: 'Unexpected security result code', message: 'other'),
+        PlatformException(
+          code: 'Unexpected security result code',
+          message: 'other',
+        ),
       ),
       isFalse,
     );
