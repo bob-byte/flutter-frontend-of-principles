@@ -342,6 +342,8 @@ class _GlobalReminderSheetContentState
                     children: [
                       TextField(
                         controller: _titleController,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.sentences,
                         decoration: InputDecoration(
                           labelText: l10n.reminderTitleLabel,
                           prefixIcon: const Icon(Icons.local_offer_outlined),
@@ -354,6 +356,8 @@ class _GlobalReminderSheetContentState
                       TextField(
                         controller: _descController,
                         maxLines: 3,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
                         decoration: InputDecoration(
                           labelText: l10n.reminderDescriptionLabel,
                           alignLabelWithHint: true,

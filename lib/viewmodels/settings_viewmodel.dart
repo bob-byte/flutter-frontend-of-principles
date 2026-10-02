@@ -8,7 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/config/app_store.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/sync/local_data_cleaner.dart';
+import '../models/app_notification_sound.dart';
 import '../models/user.dart';
+import '../services/reminder_service.dart';
 import '../services/settings_service.dart';
 import '../services/user_service.dart';
 
@@ -18,10 +20,12 @@ class SettingsViewModel extends ChangeNotifier {
     required LocaleController localeController,
     required UserService userService,
     required LocalDataCleaner localDataCleaner,
+    ReminderService? reminderService,
   }) : _settingsService = settingsService,
        _localeController = localeController,
        _userService = userService,
-       _localDataCleaner = localDataCleaner;
+       _localDataCleaner = localDataCleaner,
+       _reminderService = reminderService;
 
   static final Uri _aboutUri = Uri.parse(AppStoreIds.aboutSite);
   static final Uri _telegramUri = Uri.parse('https://t.me/principles_app');
@@ -40,6 +44,7 @@ class SettingsViewModel extends ChangeNotifier {
   final LocaleController _localeController;
   final UserService _userService;
   final LocalDataCleaner _localDataCleaner;
+  final ReminderService? _reminderService;
 
   User _user = User();
   bool _isLoadingProfile = false;
@@ -47,8 +52,10 @@ class SettingsViewModel extends ChangeNotifier {
   bool _isDeletingAccount = false;
   String? _profileError;
   String? _appVersionLabel;
+  AppNotificationSound _notificationSound = AppNotificationSound.defaultSound;
 
   Locale? get localeOverride => _localeController.localeOverride;
+  AppNotificationSound get notificationSound => _notificationSound;
 
   User get user => _user;
   String get userName => _user.name ?? '';
@@ -65,6 +72,7 @@ class SettingsViewModel extends ChangeNotifier {
   Future<void> load({bool silent = false}) async {
     await Future.wait([
       loadLocale(),
+      loadNotificationSound(),
       loadProfile(silent: silent),
       loadAppVersion(),
     ]);
@@ -94,6 +102,19 @@ class SettingsViewModel extends ChangeNotifier {
       return;
     }
     _localeController.setLocaleOverride(null);
+  }
+
+  Future<void> loadNotificationSound() async {
+    _notificationSound = await _settingsService.getNotificationSound();
+    notifyListeners();
+  }
+
+  Future<void> setNotificationSound(AppNotificationSound sound) async {
+    if (_notificationSound == sound) return;
+    _notificationSound = sound;
+    notifyListeners();
+    await _settingsService.setNotificationSound(sound);
+    await _reminderService?.rescheduleAllForNotificationSound();
   }
 
   Future<void> loadProfile({bool silent = false}) async {

@@ -189,25 +189,28 @@ void main() {
       expect(stored.isEnabled, isFalse);
     });
 
-    test('save returns notSupported when local notifications are unavailable', () async {
-      final service = ReminderService(forceLocalOnly: true)
-        ..localNotificationSupportedOverride = false;
-      final vm = GlobalReminderViewModel(
-        reminderService: service,
-        userService: UserService(forceLocalOnly: true),
-      );
-      await vm.load(
-        defaultTitle: 'Remember your day',
-        defaultDescription: 'time to review your goals, habits, and tasks',
-      );
-      vm.setEnabled(true);
+    test(
+      'save returns notSupported when local notifications are unavailable',
+      () async {
+        final service = ReminderService(forceLocalOnly: true)
+          ..localNotificationSupportedOverride = false;
+        final vm = GlobalReminderViewModel(
+          reminderService: service,
+          userService: UserService(forceLocalOnly: true),
+        );
+        await vm.load(
+          defaultTitle: 'Remember your day',
+          defaultDescription: 'time to review your goals, habits, and tasks',
+        );
+        vm.setEnabled(true);
 
-      final result = await vm.save(
-        title: 'Remember your day',
-        description: 'time to review your goals, habits, and tasks',
-      );
+        final result = await vm.save(
+          title: 'Remember your day',
+          description: 'time to review your goals, habits, and tasks',
+        );
 
-      expect(result, GlobalReminderSaveResult.notSupported);
-    });
+        expect(result, GlobalReminderSaveResult.notSupported);
+      },
+    );
   });
 }

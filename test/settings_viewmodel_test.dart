@@ -6,6 +6,7 @@ import 'package:principles_app/core/locale/locale_controller.dart';
 import 'package:principles_app/core/storage/local_db.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/sync/local_data_cleaner.dart';
+import 'package:principles_app/models/app_notification_sound.dart';
 import 'package:principles_app/models/user.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/goal_service.dart';
@@ -51,15 +52,18 @@ void main() {
     );
   });
 
-  test('loadProfile reads cached name, email, slogan, mission and gender', () async {
-    await vm.loadProfile();
+  test(
+    'loadProfile reads cached name, email, slogan, mission and gender',
+    () async {
+      await vm.loadProfile();
 
-    expect(vm.userName, 'Ada');
-    expect(vm.email, 'ada@example.com');
-    expect(vm.mainSlogan, 'Keep going');
-    expect(vm.mission, 'Build tools');
-    expect(vm.gender, 0);
-  });
+      expect(vm.userName, 'Ada');
+      expect(vm.email, 'ada@example.com');
+      expect(vm.mainSlogan, 'Keep going');
+      expect(vm.mission, 'Build tools');
+      expect(vm.gender, 0);
+    },
+  );
 
   test('saveUserName rejects a blank name', () async {
     await vm.loadProfile();
@@ -105,5 +109,16 @@ void main() {
     expect(vm.userName, isEmpty);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(UserService.prefsKey), isNull);
+  });
+
+  test('setNotificationSound persists the selection', () async {
+    await vm.loadNotificationSound();
+    expect(vm.notificationSound, AppNotificationSound.principles);
+
+    await vm.setNotificationSound(AppNotificationSound.chime);
+    expect(vm.notificationSound, AppNotificationSound.chime);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(AppNotificationSound.prefsKey), 'chime');
   });
 }

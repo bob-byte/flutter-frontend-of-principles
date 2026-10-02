@@ -257,6 +257,8 @@ class _ReminderBottomSheetState extends State<ReminderBottomSheet> {
               TextField(
                 key: const Key('reminderTitleField'),
                 controller: _titleController,
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.sentences,
                 style: TextStyle(color: palette.textPrimary),
                 cursorColor: palette.primary,
                 decoration: InputDecoration(
@@ -276,6 +278,10 @@ class _ReminderBottomSheetState extends State<ReminderBottomSheet> {
               TextField(
                 key: const Key('reminderDescriptionField'),
                 controller: _descController,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+                minLines: 1,
+                maxLines: 4,
                 style: TextStyle(color: palette.textPrimary),
                 cursorColor: palette.primary,
                 decoration: InputDecoration(

@@ -1,4 +1,5 @@
 import '../core/storage/secure_store.dart';
+import '../models/app_notification_sound.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -6,10 +7,12 @@ class SettingsService {
 
   final SecureStore _secureStore;
 
-  Future<void> setThemeMode(String mode) => _secureStore.write('theme_mode', mode);
+  Future<void> setThemeMode(String mode) =>
+      _secureStore.write('theme_mode', mode);
   Future<String?> getThemeMode() => _secureStore.read('theme_mode');
 
-  Future<void> setUiTheme(String theme) => _secureStore.write('ui_theme', theme);
+  Future<void> setUiTheme(String theme) =>
+      _secureStore.write('ui_theme', theme);
   Future<String?> getUiTheme() => _secureStore.read('ui_theme');
 
   Future<void> setLocaleOverride(String? localeCode) async {
@@ -30,7 +33,10 @@ class SettingsService {
     if (value == null) {
       await prefs.remove(lastSuccessfulSyncKey);
     } else {
-      await prefs.setString(lastSuccessfulSyncKey, value.toUtc().toIso8601String());
+      await prefs.setString(
+        lastSuccessfulSyncKey,
+        value.toUtc().toIso8601String(),
+      );
     }
   }
 
@@ -53,5 +59,13 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(lastFailedSyncKey);
     return raw == null ? null : DateTime.tryParse(raw)?.toUtc();
+  }
+
+  Future<AppNotificationSound> getNotificationSound() =>
+      AppNotificationSound.load();
+
+  Future<void> setNotificationSound(AppNotificationSound sound) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppNotificationSound.prefsKey, sound.id);
   }
 }

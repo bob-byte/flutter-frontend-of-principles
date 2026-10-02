@@ -27,6 +27,11 @@
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
+		A11C0B1E02A10001AA000041 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001AA000040 /* InfoPlist.strings */; };
+		A11C0B1E02A10001BB000021 /* principles_reminder.wav in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001BB000004 /* principles_reminder.wav */; };
+		A11C0B1E02A10001BB000022 /* notification_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001BB000005 /* notification_chime.wav */; };
+		A11C0B1E02A10001BB000023 /* notification_soft.wav in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001BB000006 /* notification_soft.wav */; };
+		A11C0B1E02A10001BB000024 /* notification_alarm.wav in Resources */ = {isa = PBXBuildFile; fileRef = A11C0B1E02A10001BB000008 /* notification_alarm.wav */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		8EB27A7A7C4F91F0CAFFDD61 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5F1C57134DFB3EFAACADFAB /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
@@ -73,6 +78,12 @@
 		33CC10F22044A3C60003C045 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
+		A11C0B1E02A10001AA000042 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Runner/en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A11C0B1E02A10001AA000043 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = Runner/uk.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A11C0B1E02A10001BB000004 /* principles_reminder.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = principles_reminder.wav; path = Runner/principles_reminder.wav; sourceTree = "<group>"; };
+		A11C0B1E02A10001BB000005 /* notification_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = notification_chime.wav; path = Runner/notification_chime.wav; sourceTree = "<group>"; };
+		A11C0B1E02A10001BB000006 /* notification_soft.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = notification_soft.wav; path = Runner/notification_soft.wav; sourceTree = "<group>"; };
+		A11C0B1E02A10001BB000008 /* notification_alarm.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = notification_alarm.wav; path = Runner/notification_alarm.wav; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
 		33CEB47222A05771004F2AC0 /* Flutter-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Debug.xcconfig"; sourceTree = "<group>"; };
 		33CEB47422A05771004F2AC0 /* Flutter-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Release.xcconfig"; sourceTree = "<group>"; };
@@ -170,6 +181,11 @@
 				33CC10F22044A3C60003C045 /* Assets.xcassets */,
 				33CC10F42044A3C60003C045 /* MainMenu.xib */,
 				33CC10F72044A3C60003C045 /* Info.plist */,
+				A11C0B1E02A10001AA000040 /* InfoPlist.strings */,
+				A11C0B1E02A10001BB000004 /* principles_reminder.wav */,
+				A11C0B1E02A10001BB000005 /* notification_chime.wav */,
+				A11C0B1E02A10001BB000006 /* notification_soft.wav */,
+				A11C0B1E02A10001BB000008 /* notification_alarm.wav */,
 			);
 			name = Resources;
 			path = ..;
@@ -241,6 +257,7 @@
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				9C2EAE3DBEFEA8FA491E222C /* [CP] Embed Pods Frameworks */,
+				9231E68797C3000FE1EFC9E2 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -290,6 +307,7 @@
 			knownRegions = (
 				en,
 				Base,
+				uk,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
@@ -317,6 +335,11 @@
 			files = (
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
+				A11C0B1E02A10001AA000041 /* InfoPlist.strings in Resources */,
+				A11C0B1E02A10001BB000021 /* principles_reminder.wav in Resources */,
+				A11C0B1E02A10001BB000022 /* notification_chime.wav in Resources */,
+				A11C0B1E02A10001BB000023 /* notification_soft.wav in Resources */,
+				A11C0B1E02A10001BB000024 /* notification_alarm.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -360,6 +383,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$FLUTTER_ROOT\"/packages/flutter_tools/bin/macos_assemble.sh && touch Flutter/ephemeral/tripwire";
+		};
+		9231E68797C3000FE1EFC9E2 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		9C2EAE3DBEFEA8FA491E222C /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -466,6 +506,15 @@
 			);
 			name = MainMenu.xib;
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		A11C0B1E02A10001AA000040 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A11C0B1E02A10001AA000042 /* en */,
+				A11C0B1E02A10001AA000043 /* uk */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

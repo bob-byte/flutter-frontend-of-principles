@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../models/app_notification_sound.dart';
 import '../../models/habit_reminder.dart';
 import '../deep_link/notification_payload.dart';
 
@@ -122,10 +123,13 @@ class ConstantAlarmEntry {
   }
 }
 
-NotificationDetails constantAlarmNotificationDetails() {
+NotificationDetails constantAlarmNotificationDetails({
+  AppNotificationSound sound = AppNotificationSound.defaultSound,
+}) {
+  final androidSoundName = sound.androidRawName;
   return NotificationDetails(
     android: AndroidNotificationDetails(
-      kConstantAlarmChannelId,
+      '$kConstantAlarmChannelId${sound.androidChannelSuffix}',
       'Alarms',
       channelDescription:
           'Constant reminders that ring until you mark them done',
@@ -137,26 +141,31 @@ NotificationDetails constantAlarmNotificationDetails() {
       fullScreenIntent: true,
       visibility: NotificationVisibility.public,
       playSound: true,
+      sound: androidSoundName == null
+          ? null
+          : RawResourceAndroidNotificationSound(androidSoundName),
       enableVibration: true,
       autoCancel: true,
       ongoing: false,
       additionalFlags: Int32List.fromList(const <int>[4]), // FLAG_INSISTENT
       dismissIsolate: NotificationDismissedIsolate.background,
     ),
-    iOS: const DarwinNotificationDetails(
+    iOS: DarwinNotificationDetails(
       presentAlert: true,
       presentSound: true,
       presentBanner: true,
       presentList: true,
+      sound: sound.darwinFileName,
       interruptionLevel: InterruptionLevel.timeSensitive,
       categoryIdentifier: kConstantDarwinCategoryId,
       dismissIsolate: NotificationDismissedIsolate.background,
     ),
-    macOS: const DarwinNotificationDetails(
+    macOS: DarwinNotificationDetails(
       presentAlert: true,
       presentSound: true,
       presentBanner: true,
       presentList: true,
+      sound: sound.darwinFileName,
       interruptionLevel: InterruptionLevel.timeSensitive,
       categoryIdentifier: kConstantDarwinCategoryId,
       dismissIsolate: NotificationDismissedIsolate.main,
@@ -226,6 +235,7 @@ Future<void> scheduleConstantAlarm({
   required FlutterLocalNotificationsPlugin plugin,
   required ConstantAlarmEntry entry,
   required DateTime when,
+  AppNotificationSound? sound,
 }) async {
   if (entry.notificationId <= 0) return;
   ensureConstantAlarmTimeZone();
@@ -235,6 +245,9 @@ Future<void> scheduleConstantAlarm({
   if (!scheduled.isAfter(now)) {
     scheduled = now.add(kConstantReminderSoon);
   }
+  final details = constantAlarmNotificationDetails(
+    sound: sound ?? await AppNotificationSound.load(),
+  );
   await plugin.cancel(id: entry.notificationId);
   try {
     await plugin.zonedSchedule(
@@ -243,7 +256,7 @@ Future<void> scheduleConstantAlarm({
       body: entry.body,
       scheduledDate: scheduled,
       androidScheduleMode: AndroidScheduleMode.alarmClock,
-      notificationDetails: constantAlarmNotificationDetails(),
+      notificationDetails: details,
       payload: entry.payload,
     );
   } catch (e) {
@@ -254,7 +267,7 @@ Future<void> scheduleConstantAlarm({
       body: entry.body,
       scheduledDate: scheduled,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      notificationDetails: constantAlarmNotificationDetails(),
+      notificationDetails: details,
       payload: entry.payload,
     );
   }

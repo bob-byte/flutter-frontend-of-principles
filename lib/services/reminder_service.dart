@@ -18,6 +18,7 @@ import '../core/network/api_endpoints.dart';
 import '../core/push/reminder_target_index.dart';
 import '../core/push/remote_delete_reminders.dart' as remote_delete;
 import '../core/reminder/constant_reminder_alarm.dart';
+import '../core/reminder/notification_sound_details.dart';
 import '../core/reminder/reminder_restore_isolate.dart';
 import '../core/reminder/reminder_targets.dart';
 import '../core/storage/local_db.dart';
@@ -25,6 +26,7 @@ import '../core/sync/local_remote_executor.dart';
 import '../core/sync/operation_kind.dart';
 import '../core/sync/sync_handler_type.dart';
 import '../core/utils/date_helpers.dart';
+import '../models/app_notification_sound.dart';
 import '../models/habit.dart';
 import '../models/habit_reminder.dart';
 import '../models/habit_record.dart';
@@ -108,6 +110,11 @@ class ReminderService {
 
   static void _onNotificationResponse(NotificationResponse response) {
     unawaited(snoozeConstantAlarmIfActive(response));
+    // Dismiss only re-arms constant alarms — do not deep-link as a tap.
+    if (response.notificationResponseType ==
+        NotificationResponseType.notificationDismissed) {
+      return;
+    }
     onNotificationOpened?.call(response.payload);
   }
 
@@ -159,6 +166,10 @@ class ReminderService {
     bool ensurePermission = true,
   }) async {
     if (kIsWeb || forceLocalOnly) return;
+    await init();
+    // A later edit allocates a new id and used to leave the previous alarm
+    // pending, so a task moved to tomorrow still rang today.
+    await _cancelStaleTaskNotifications(task);
     await cancelTaskNotifications(task);
     if (task.isDone || task.dueDate == null || task.reminders.isEmpty) {
       await _stopTaskConstantAlarm(task);
@@ -210,6 +221,48 @@ class ReminderService {
       if (id != null) await cancelNotification(id);
     }
     await _stopTaskConstantAlarm(task);
+  }
+
+  /// Cancels pending alarms for [task] whose id is no longer stored on it.
+  Future<void> _cancelStaleTaskNotifications(Task task) async {
+    if (kIsWeb || forceLocalOnly) return;
+    final keep = scheduledTaskNotificationIds(task);
+    final ids = <String>{task.id};
+    final serverId = task.serverId;
+    if (serverId != null) ids.add('$serverId');
+    final payloads = <String>{
+      for (final id in ids) ...<String>[
+        '${NotificationPayloads.task}$id',
+        taskConstantPayload(id),
+      ],
+    };
+
+    final pending = await _notificationsPlugin.pendingNotificationRequests();
+    for (final request in pending) {
+      final payload = request.payload;
+      if (payload == null || !payloads.contains(payload)) continue;
+      if (keep.contains(request.id)) continue;
+      if (isConstantReminderPayload(payload)) {
+        await cancelConstantAlarm(
+          plugin: _notificationsPlugin,
+          payload: payload,
+          notificationId: request.id,
+        );
+      } else {
+        await cancelNotification(request.id);
+      }
+    }
+
+    final alarms = await loadConstantAlarms();
+    for (final alarm in alarms.values) {
+      if (!payloads.contains(alarm.payload)) continue;
+      if (keep.contains(alarm.notificationId)) continue;
+      await cancelConstantAlarm(
+        plugin: _notificationsPlugin,
+        payload: alarm.payload,
+        notificationId: alarm.notificationId,
+      );
+    }
   }
 
   Future<void> syncHabitNotifications(
@@ -340,7 +393,12 @@ class ReminderService {
 
       final targets = await loadTargets();
       for (final alarm in alarms.values) {
-        if (!targets.isOrphanPayload(alarm.payload)) continue;
+        if (!targets.shouldCancelNotification(
+          alarm.payload,
+          alarm.notificationId,
+        )) {
+          continue;
+        }
         await cancelConstantAlarm(
           plugin: _notificationsPlugin,
           payload: alarm.payload,
@@ -349,7 +407,17 @@ class ReminderService {
         payloadById.remove(alarm.notificationId);
       }
       for (final entry in payloadById.entries) {
-        if (targets.isOrphanPayload(entry.value)) {
+        if (!targets.shouldCancelNotification(entry.value, entry.key)) {
+          continue;
+        }
+        final payload = entry.value;
+        if (isConstantReminderPayload(payload)) {
+          await cancelConstantAlarm(
+            plugin: _notificationsPlugin,
+            payload: payload!,
+            notificationId: entry.key,
+          );
+        } else {
           await cancelNotification(entry.key);
         }
       }
@@ -390,7 +458,7 @@ class ReminderService {
       body: body,
       scheduledDate: tzDate,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      notificationDetails: _taskNotificationDetails,
+      notificationDetails: await _taskDetails(),
       payload: payload,
     );
   }
@@ -553,18 +621,19 @@ class ReminderService {
     await prefs.setStringList(key, ids.toList());
   }
 
-  static const NotificationDetails _taskNotificationDetails =
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'task_reminders_channel',
-          'Task Reminders',
-          channelDescription: 'Notifications for task reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
-      );
+  Future<NotificationDetails> _taskDetails() async {
+    return reminderNotificationDetails(
+      channel: ReminderNotificationChannel.task,
+      sound: await AppNotificationSound.load(),
+    );
+  }
+
+  Future<NotificationDetails> _habitDetails() async {
+    return reminderNotificationDetails(
+      channel: ReminderNotificationChannel.habit,
+      sound: await AppNotificationSound.load(),
+    );
+  }
 
   final NotificationPermissionGate _permissionGate =
       NotificationPermissionGate();
@@ -727,7 +796,7 @@ class ReminderService {
         body: reminder.description.isNotEmpty ? reminder.description : null,
         scheduledDate: tzDate,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        notificationDetails: _habitNotificationDetails,
+        notificationDetails: await _habitDetails(),
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
         payload: payload,
       );
@@ -1309,24 +1378,19 @@ class ReminderService {
       body: reminder.description.isNotEmpty ? reminder.description : null,
       scheduledDate: tzDate,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      notificationDetails: _habitNotificationDetails,
+      notificationDetails: await _habitDetails(),
       matchDateTimeComponents: DateTimeComponents.time,
       payload: NotificationPayloads.habitsReport,
     );
   }
 
-  static const NotificationDetails _habitNotificationDetails =
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          'habit_reminders_channel',
-          'Habit Reminders',
-          channelDescription: 'Notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-        macOS: DarwinNotificationDetails(),
-      );
+  /// Re-applies every pending local reminder using the current notification sound.
+  Future<void> rescheduleAllForNotificationSound() async {
+    if (kIsWeb || forceLocalOnly) return;
+    final job = await prepareReminderRestore(explainRestore: false);
+    if (job == null) return;
+    await applyReminderRestoreJob(job);
+  }
 
   Future<void> _waitUntilResumed() async {
     final binding = WidgetsBinding.instance;

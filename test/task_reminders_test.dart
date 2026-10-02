@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -285,6 +286,58 @@ void main() {
       expect(vm.priority, TaskPriority.high);
       expect(vm.hasDueDate, isTrue);
     });
+
+    test(
+      'moving an on-time task to the next day keeps the same notification id',
+      () async {
+        final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+        dio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              handler.reject(
+                DioException(requestOptions: options, message: 'offline'),
+              );
+            },
+          ),
+        );
+        final service = TaskService(
+          apiClient: ApiClient(SecureStore(), dio: dio),
+          taskDb: null,
+        );
+        final edit = EditTaskViewModel(
+          service,
+          reminderService: ReminderService(forceLocalOnly: true),
+        );
+        final created = await service.saveTask(
+          Task(
+            id: '0',
+            title: 'Call',
+            createdAt: DateTime(2026, 10, 2),
+            dueDate: DateTime(2026, 10, 2, 15),
+            reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+          ),
+          isNew: true,
+        );
+
+        await edit.load(taskId: created.id);
+        final first = await edit.save(promptForNotifications: false);
+        final notificationId = edit.reminders.single.notificationRequestId;
+
+        expect(notificationId, isNotNull);
+        expect(first!.reminders.single.notificationRequestId, notificationId);
+        expect(first.dueDate, DateTime(2026, 10, 2, 15));
+
+        edit.setDueDate(DateTime(2026, 10, 3, 15));
+        final second = await edit.flushAutosave();
+
+        expect(second!.dueDate, DateTime(2026, 10, 3, 15));
+        expect(edit.reminders.single.notificationRequestId, notificationId);
+        expect(second.reminders.single.notificationRequestId, notificationId);
+        final stored = await service.getTask(created.id);
+        expect(stored!.dueDate, DateTime(2026, 10, 3, 15));
+        expect(stored.reminders.single.notificationRequestId, notificationId);
+      },
+    );
   });
 
   group('TaskItemDto reminder encoding', () {

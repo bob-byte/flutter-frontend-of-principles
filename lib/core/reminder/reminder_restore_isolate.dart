@@ -3,12 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../models/app_notification_sound.dart';
 import '../../models/habit_reminder.dart';
 import '../../models/reminder.dart';
 import '../../models/schedule_reminder_offset.dart';
 import '../../models/task.dart';
 import '../deep_link/notification_payload.dart';
 import 'constant_reminder_alarm.dart';
+import 'notification_sound_details.dart';
 
 /// Timezone used by [ReminderService.init] when scheduling.
 const kReminderRestoreTimezone = 'Europe/Kiev';
@@ -273,27 +275,14 @@ Future<void> executeReminderRestoreJob(
     );
   }
 
-  const habitDetails = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'habit_reminders_channel',
-      'Habit Reminders',
-      channelDescription: 'Notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-    ),
-    iOS: DarwinNotificationDetails(),
-    macOS: DarwinNotificationDetails(),
+  final sound = await AppNotificationSound.load();
+  final habitDetails = reminderNotificationDetails(
+    channel: ReminderNotificationChannel.habit,
+    sound: sound,
   );
-  const taskDetails = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'task_reminders_channel',
-      'Task Reminders',
-      channelDescription: 'Notifications for task reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-    ),
-    iOS: DarwinNotificationDetails(),
-    macOS: DarwinNotificationDetails(),
+  final taskDetails = reminderNotificationDetails(
+    channel: ReminderNotificationChannel.task,
+    sound: sound,
   );
 
   for (final raw in ops) {
@@ -333,6 +322,7 @@ Future<void> executeReminderRestoreJob(
                 payload: payload,
               ),
               when: DateTime.fromMillisecondsSinceEpoch(whenMs),
+              sound: sound,
             );
           }
         }

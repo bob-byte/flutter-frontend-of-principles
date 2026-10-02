@@ -67,40 +67,45 @@ void main() {
     expect(cleared, isTrue);
   });
 
-  test('ReminderService.clearDeliveredLocally uses the platform channel', () async {
-    var cleared = false;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(notificationSettingsChannel, (call) async {
-          if (call.method == 'clearDeliveredNotifications') {
+  test(
+    'ReminderService.clearDeliveredLocally uses the platform channel',
+    () async {
+      var cleared = false;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(notificationSettingsChannel, (call) async {
+            if (call.method == 'clearDeliveredNotifications') {
+              cleared = true;
+            }
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(notificationSettingsChannel, null);
+      });
+
+      await ReminderService().clearDeliveredLocally();
+      expect(cleared, isTrue);
+    },
+  );
+
+  test(
+    'ReminderService.clearDeliveredLocally is a no-op when forceLocalOnly',
+    () async {
+      var cleared = false;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(notificationSettingsChannel, (call) async {
             cleared = true;
-          }
-          return null;
-        });
-    addTearDown(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(notificationSettingsChannel, null);
-    });
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(notificationSettingsChannel, null);
+      });
 
-    await ReminderService().clearDeliveredLocally();
-    expect(cleared, isTrue);
-  });
-
-  test('ReminderService.clearDeliveredLocally is a no-op when forceLocalOnly',
-      () async {
-    var cleared = false;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(notificationSettingsChannel, (call) async {
-          cleared = true;
-          return null;
-        });
-    addTearDown(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(notificationSettingsChannel, null);
-    });
-
-    await ReminderService(forceLocalOnly: true).clearDeliveredLocally();
-    expect(cleared, isFalse);
-  });
+      await ReminderService(forceLocalOnly: true).clearDeliveredLocally();
+      expect(cleared, isFalse);
+    },
+  );
 
   testWidgets('DeliveredNotificationClearer clears on start and resume', (
     tester,
@@ -121,9 +126,7 @@ void main() {
     await tester.pumpWidget(
       Provider(
         create: (_) => ReminderService(),
-        child: const DeliveredNotificationClearer(
-          child: SizedBox.shrink(),
-        ),
+        child: const DeliveredNotificationClearer(child: SizedBox.shrink()),
       ),
     );
     await tester.pump(); // post-frame clear

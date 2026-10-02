@@ -67,6 +67,49 @@ void main() {
       expect(targets.isOrphanPayload('habit_constant:6'), isTrue);
     });
 
+    test('drops an older alarm id after the task kept a new one', () {
+      final moved = ReminderTargets.from(
+        openTasks: [
+          Task(
+            id: 'L1',
+            serverId: 77,
+            title: 'Tomorrow',
+            createdAt: DateTime(2026, 10, 2),
+            dueDate: DateTime(2026, 10, 3, 15),
+            reminders: const [
+              ScheduleReminderOffset(
+                offsetMinutes: 0,
+                notificationRequestId: 42,
+              ),
+            ],
+          ),
+        ],
+        activeHabits: const [],
+      );
+
+      expect(moved.shouldCancelNotification('task:L1', 42), isFalse);
+      expect(moved.shouldCancelNotification('task:77', 42), isFalse);
+      expect(moved.shouldCancelNotification('task:L1', 7), isTrue);
+      expect(moved.shouldCancelNotification('task_constant:L1', 7), isTrue);
+    });
+
+    test('keeps alarms when the task has no stored notification id yet', () {
+      final fresh = ReminderTargets.from(
+        openTasks: [
+          Task(
+            id: 'L1',
+            title: 'Tomorrow',
+            createdAt: DateTime(2026, 10, 2),
+            dueDate: DateTime(2026, 10, 3, 15),
+            reminders: const [ScheduleReminderOffset(offsetMinutes: 0)],
+          ),
+        ],
+        activeHabits: const [],
+      );
+
+      expect(fresh.shouldCancelNotification('task:L1', 7), isFalse);
+    });
+
     test('never flags daily report, unknown, or malformed payloads', () {
       expect(targets.isOrphanPayload(null), isFalse);
       expect(targets.isOrphanPayload(''), isFalse);

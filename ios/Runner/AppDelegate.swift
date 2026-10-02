@@ -3,6 +3,7 @@ import AVFoundation
 import Flutter
 import UIKit
 import UserNotifications
+import flutter_local_notifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -12,6 +13,12 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Register as early as possible: a notification dismiss can arrive before
+    // didInitializeImplicitFlutterEngine and must not call a nil registrant.
+    FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
+
     try? AVAudioSession.sharedInstance().setCategory(
       .playback,
       mode: .default,
@@ -26,6 +33,10 @@ import UserNotifications
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    // Keep the callback wired for the UIScene / implicit-engine path too.
+    FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let messenger = engineBridge.applicationRegistrar.messenger()
     splashAudio.register(messenger: messenger)
