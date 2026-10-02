@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -9,6 +11,8 @@ import '../core/home_widget/home_widget_add_prompt.dart';
 import '../core/input/keyboard.dart';
 import '../core/launch_data_loader.dart';
 import '../core/road_guide/road_guide_controller.dart';
+import '../models/app_notification_sound.dart';
+import '../services/notification_sound_preview.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
@@ -19,6 +23,7 @@ import 'common/app_liquid_background.dart';
 import 'common/app_loading_indicator.dart';
 import 'common/ui_theme_switcher.dart';
 import 'forget_password_view.dart';
+import 'edit_profile_text_view.dart';
 import 'startup_view.dart';
 
 /// Shared insets for settings cards — ListView already pads horizontally.
@@ -178,7 +183,7 @@ class _SettingsBody extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: GlassListTile.chevron,
-                      onTap: () => _editSlogan(context, vm, l10n),
+                      onTap: () => EditSloganView.open(context),
                     ),
                     GlassListTile(
                       key: const Key('settingsProfileMissionTile'),
@@ -191,7 +196,7 @@ class _SettingsBody extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: GlassListTile.chevron,
-                      onTap: () => _editMission(context, vm, l10n),
+                      onTap: () => EditMissionView.open(context),
                     ),
                   ],
                 ),
@@ -318,6 +323,54 @@ class _SettingsBody extends StatelessWidget {
                       trailing: GlassListTile.chevron,
                       onTap: openNotificationSettings,
                     ),
+                    GlassListTile(
+                      key: const Key('settingsNotificationSoundTile'),
+                      contentPadding: _settingsTilePadding,
+                      leading: const Icon(Icons.music_note_outlined),
+                      title: Text(l10n.settingsNotificationSoundTitle),
+                      subtitle: Text(
+                        l10n.settingsNotificationSoundSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: PopupMenuButton<AppNotificationSound>(
+                        tooltip: l10n.settingsNotificationSoundTitle,
+                        onSelected: (sound) {
+                          // Preview immediately — do not wait for reminder
+                          // reschedule, which can take long enough that iOS
+                          // drops a late one-shot AudioPlayer play.
+                          unawaited(
+                            NotificationSoundPreview.instance.play(sound),
+                          );
+                          unawaited(vm.setNotificationSound(sound));
+                        },
+                        itemBuilder: (context) => [
+                          for (final sound in AppNotificationSound.selectable)
+                            PopupMenuItem<AppNotificationSound>(
+                              value: sound,
+                              child: Text(_notificationSoundName(l10n, sound)),
+                            ),
+                        ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 120),
+                              child: Text(
+                                _notificationSoundName(
+                                  l10n,
+                                  vm.notificationSound,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -428,7 +481,10 @@ class _SettingsBody extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).pushNamed(
                         ForgetPasswordView.routeName,
-                        arguments: vm.email.isEmpty ? null : vm.email,
+                        arguments: ForgetPasswordArgs(
+                          initialEmail: vm.email.isEmpty ? null : vm.email,
+                          emailReadOnly: true,
+                        ),
                       );
                     },
                   ),
@@ -476,6 +532,20 @@ class _SettingsBody extends StatelessWidget {
       'uk' => l10n.languageUkrainian,
       'en' => l10n.languageEnglish,
       _ => l10n.languageSystem,
+    };
+  }
+
+  String _notificationSoundName(
+    AppLocalizations l10n,
+    AppNotificationSound sound,
+  ) {
+    return switch (sound) {
+      AppNotificationSound.principles =>
+        l10n.settingsNotificationSoundPrinciples,
+      AppNotificationSound.system => l10n.settingsNotificationSoundSystem,
+      AppNotificationSound.chime => l10n.settingsNotificationSoundChime,
+      AppNotificationSound.soft => l10n.settingsNotificationSoundSoft,
+      AppNotificationSound.alarm => l10n.settingsNotificationSoundAlarm,
     };
   }
 
@@ -534,54 +604,6 @@ class _SettingsBody extends StatelessWidget {
       context,
       saved
           ? l10n.genderSavedSuccess
-          : (vm.profileError ?? l10n.genericErrorOccurred),
-    );
-  }
-
-  Future<void> _editSlogan(
-    BuildContext context,
-    SettingsViewModel vm,
-    AppLocalizations l10n,
-  ) async {
-    final result = await _showProfileEditor(
-      context: context,
-      title: l10n.yourMainSlogan,
-      initialValue: vm.mainSlogan,
-      maxLines: 5,
-      explanation: l10n.mainSloganExplanation,
-      l10n: l10n,
-    );
-    if (result == null || !context.mounted) return;
-    final saved = await vm.saveMainSlogan(result);
-    if (!context.mounted) return;
-    _showSaveResult(
-      context,
-      saved
-          ? l10n.sloganSavedSuccess
-          : (vm.profileError ?? l10n.genericErrorOccurred),
-    );
-  }
-
-  Future<void> _editMission(
-    BuildContext context,
-    SettingsViewModel vm,
-    AppLocalizations l10n,
-  ) async {
-    final result = await _showProfileEditor(
-      context: context,
-      title: l10n.yourMission,
-      initialValue: vm.mission,
-      maxLines: 7,
-      explanation: l10n.missionExplanation,
-      l10n: l10n,
-    );
-    if (result == null || !context.mounted) return;
-    final saved = await vm.saveMission(result);
-    if (!context.mounted) return;
-    _showSaveResult(
-      context,
-      saved
-          ? l10n.missionSavedSuccess
           : (vm.profileError ?? l10n.genericErrorOccurred),
     );
   }
@@ -807,6 +829,10 @@ class _ProfileEditDialogState extends State<_ProfileEditDialog> {
                 controller: _controller,
                 autofocus: true,
                 maxLines: widget.maxLines,
+                keyboardType: widget.maxLines == 1
+                    ? TextInputType.text
+                    : TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
                 textInputAction: widget.maxLines == 1
                     ? TextInputAction.done
                     : TextInputAction.newline,

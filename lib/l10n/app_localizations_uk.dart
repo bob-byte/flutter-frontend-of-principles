@@ -80,6 +80,28 @@ class AppLocalizationsUk extends AppLocalizations {
       'Керуйте дозволами сповіщень у системних Налаштуваннях';
 
   @override
+  String get settingsNotificationSoundTitle => 'Звук сповіщень';
+
+  @override
+  String get settingsNotificationSoundSubtitle =>
+      'Звук для нагадувань про задачі та звички';
+
+  @override
+  String get settingsNotificationSoundPrinciples => 'Principles';
+
+  @override
+  String get settingsNotificationSoundSystem => 'Системний';
+
+  @override
+  String get settingsNotificationSoundChime => 'Передзвін';
+
+  @override
+  String get settingsNotificationSoundSoft => 'М’який';
+
+  @override
+  String get settingsNotificationSoundAlarm => 'Будильник';
+
+  @override
   String get editHabitTitle => 'Редагувати звичку';
 
   @override
@@ -322,7 +344,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get goalNameLabel => 'Ціль';
 
   @override
-  String get goalPageLead => 'Звички під цією ціллю рухають її вперед.';
+  String get goalPageLead =>
+      'Звички визначають повторювальні дії, які наближають до поточної цілі';
 
   @override
   String get goalHabitsSection => 'Звички';
@@ -350,6 +373,56 @@ class AppLocalizationsUk extends AppLocalizations {
       'Спочатку назвіть ціль, потім додавайте звички.';
 
   @override
+  String get goalRecommendSection => 'Запропонувати ціль з AI';
+
+  @override
+  String get goalRecommendLead =>
+      'Оберіть сферу життя — і отримайте ідеї цілей з урахуванням місії та гасла.';
+
+  @override
+  String get goalRecommendAreaLabel => 'Сфера життя';
+
+  @override
+  String get goalRecommendAreaRequired => 'Спочатку оберіть сферу життя.';
+
+  @override
+  String get goalRecommendButton => 'Запропонувати цілі з AI';
+
+  @override
+  String get goalRecommendLoadingHint =>
+      'Поки ідеї завантажуються, можете редагувати поля.';
+
+  @override
+  String get goalRecommendApply => 'Використати';
+
+  @override
+  String get lifeAreaSpirituality => 'Духовність';
+
+  @override
+  String get lifeAreaCharacter => 'Характер';
+
+  @override
+  String get lifeAreaHealth => 'Здоровʼя';
+
+  @override
+  String get lifeAreaCareer => 'Карʼєра';
+
+  @override
+  String get lifeAreaFamily => 'Сімʼя';
+
+  @override
+  String get lifeAreaRelationships => 'Стосунки';
+
+  @override
+  String get lifeAreaSociality => 'Соціальність';
+
+  @override
+  String get lifeAreaMentality => 'Ментальність';
+
+  @override
+  String get lifeAreaOther => 'Інша';
+
+  @override
   String get deleteGoalQuestion => 'Видалити ціль?';
 
   @override
@@ -364,6 +437,30 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get completedGoalsHeader => 'Виконані';
+
+  @override
+  String get goalFiltersTooltip => 'Фільтри';
+
+  @override
+  String get goalFilters => 'Фільтри';
+
+  @override
+  String get goalFilterStatus => 'Статус';
+
+  @override
+  String get goalFilterAll => 'Усі';
+
+  @override
+  String get goalFilterActive => 'Активні';
+
+  @override
+  String get goalFilterCompleted => 'Виконані';
+
+  @override
+  String get goalClearFilters => 'Скинути';
+
+  @override
+  String get goalFiltersEmpty => 'Немає цілей, що відповідають фільтрам.';
 
   @override
   String goalHabitsCount(int count) {
@@ -394,6 +491,23 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get helperEmptyDescription =>
       'Я - ШІ-асистент зі саморозвитку. Ви можете звертатися до мене стосовно різних питань. Наприклад, \"Як моя особистість впливає на моє життя?\"';
+
+  @override
+  String get helperSuggestedPromptsTitle => 'Спробуйте запитати';
+
+  @override
+  String get helperPromptPersonality =>
+      'Як моя особистість впливає на моє життя?';
+
+  @override
+  String get helperPromptNextGoal => 'Яку поставити наступну ціль?';
+
+  @override
+  String get helperPromptStickHabits => 'Як краще дотримуватися своїх звичок?';
+
+  @override
+  String get helperPromptPlanToday =>
+      'Допоможи спланувати сьогодні з урахуванням звичок і завдань';
 
   @override
   String get copyMessage => 'Копіювати';
@@ -596,6 +710,36 @@ class AppLocalizationsUk extends AppLocalizations {
       'Основне гасло - це найважливіша ідея, якою Ви дотримуєтесь по житті. Воно допомагає визначити, як діяти, коли вам чогось не хочеться або виникають певні випробування чи спокуси. Приклад основного гасла: стосунки з Богом та сильний характер визначають якість життя. Гасло використовується для формування кращих рекомендованих звичок.';
 
   @override
+  String get sloganPageSubtitle =>
+      'Коротке гасло, яке підтримує, коли спадає мотивація.';
+
+  @override
+  String get missionPageSubtitle => 'Життєва мета, яка узгоджує твої вибори.';
+
+  @override
+  String get profileTextHintLabel => 'Що для тебе важливо? (необовʼязково)';
+
+  @override
+  String get profileTextHintPlaceholder =>
+      'родина, віра, майстерність, здоровʼя…';
+
+  @override
+  String get suggestWithAiButton => 'Запропонувати з AI';
+
+  @override
+  String get profileTextSuggestionsTitle => 'Пропозиції AI';
+
+  @override
+  String get profileTextApplySuggestion => 'Використати';
+
+  @override
+  String get profileTextAiLoadingHint =>
+      'Формуємо ідеї з твоїх цілей і профілю…';
+
+  @override
+  String get profileTextLearnMore => 'Чому це важливо';
+
+  @override
   String get nameSavedSuccess => 'Твоє імʼя успішно збережене';
 
   @override
@@ -734,7 +878,18 @@ class AppLocalizationsUk extends AppLocalizations {
   String get confirmBtn => 'Підтвердити';
 
   @override
+  String get pasteCodeTooltip => 'Вставити код';
+
+  @override
   String get wrongCodeError => 'Невірний код підтвердження';
+
+  @override
+  String get emailNotRegisteredError =>
+      'Такого користувача не знайдено (Email не зареєстровано).';
+
+  @override
+  String get mailServerError =>
+      'Помилка поштового сервера на бекенді. Зверніться до адміністратора.';
 
   @override
   String get passwordChangedSuccess => 'Успіх! Ваш пароль успішно змінено.';

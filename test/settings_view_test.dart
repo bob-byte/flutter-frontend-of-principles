@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:principles_app/core/locale/locale_controller.dart';
+import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/road_guide/main_shell_controller.dart';
 import 'package:principles_app/core/road_guide/road_guide_controller.dart';
 import 'package:principles_app/core/storage/local_db.dart';
@@ -16,6 +17,7 @@ import 'package:principles_app/core/theme/task_theme_palette.dart';
 import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:principles_app/models/user.dart';
+import 'package:principles_app/services/ai_recommendation_service.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/goal_service.dart';
 import 'package:principles_app/services/reminder_service.dart';
@@ -23,6 +25,7 @@ import 'package:principles_app/services/settings_service.dart';
 import 'package:principles_app/services/user_service.dart';
 import 'package:principles_app/viewmodels/settings_viewmodel.dart';
 import 'package:principles_app/views/app_benefits_view.dart';
+import 'package:principles_app/views/edit_profile_text_view.dart';
 import 'package:principles_app/views/settings_view.dart';
 import 'package:principles_app/views/startup_view.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +37,11 @@ Widget _buildWidget() {
     child: MultiProvider(
       providers: [
         Provider(create: (_) => AuthService(SecureStore())),
+        Provider(create: (_) => ApiClient(SecureStore())),
+        Provider(
+          create: (ctx) => AiRecommendationService(ctx.read<ApiClient>()),
+        ),
+        Provider(create: (ctx) => GoalService(ctx.read<AuthService>())),
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => LocaleController()),
         ChangeNotifierProvider(create: (_) => MainShellController()),
@@ -51,7 +59,7 @@ Widget _buildWidget() {
             userService: ctx.read<UserService>(),
             authService: ctx.read<AuthService>(),
             reminderService: ReminderService(forceLocalOnly: true),
-            goalService: GoalService(ctx.read<AuthService>()),
+            goalService: ctx.read<GoalService>(),
             secureStore: SecureStore(),
           ),
         ),
@@ -195,20 +203,34 @@ void main() {
     expect(find.byKey(const Key('settingsProfileFieldInput')), findsNothing);
   });
 
-  testWidgets('slogan info icon reveals explanation text', (tester) async {
+  testWidgets('slogan opens dedicated page with expandable explanation', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(_buildWidget());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('settingsProfileSloganTile')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('settingsProfileFieldInfo')), findsOneWidget);
+    expect(find.byType(EditSloganView), findsOneWidget);
+    expect(find.byKey(const Key('editProfileTextInput')), findsOneWidget);
+    expect(find.text('Suggest with AI'), findsOneWidget);
+    expect(
+      find.textContaining('A short motto that steadies you'),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('A main slogan is the most important idea'),
       findsNothing,
     );
 
-    await tester.tap(find.byKey(const Key('settingsProfileFieldInfo')));
+    await tester.ensureVisible(find.byIcon(Icons.expand_more_rounded));
+    await tester.tap(find.byIcon(Icons.expand_more_rounded));
     await tester.pumpAndSettle();
 
     expect(
@@ -289,5 +311,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Delete account?'), findsNothing);
     expect(find.byKey(const Key('settingsDeleteAccountTile')), findsOneWidget);
+  });
+
+  testWidgets('shows notification sound picker in reminders section', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_buildWidget());
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settingsNotificationSoundTile')),
+      200,
+    );
+    expect(
+      find.byKey(const Key('settingsNotificationSoundTile')),
+      findsOneWidget,
+    );
+    expect(find.text('Notification sound'), findsOneWidget);
+    expect(find.text('Principles'), findsWidgets);
   });
 }

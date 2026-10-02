@@ -79,6 +79,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'Manage notification permissions in system Settings';
 
   @override
+  String get settingsNotificationSoundTitle => 'Notification sound';
+
+  @override
+  String get settingsNotificationSoundSubtitle =>
+      'Sound played for task and habit reminders';
+
+  @override
+  String get settingsNotificationSoundPrinciples => 'Principles';
+
+  @override
+  String get settingsNotificationSoundSystem => 'System';
+
+  @override
+  String get settingsNotificationSoundChime => 'Chime';
+
+  @override
+  String get settingsNotificationSoundSoft => 'Soft';
+
+  @override
+  String get settingsNotificationSoundAlarm => 'Alarm';
+
+  @override
   String get editHabitTitle => 'Edit Habit';
 
   @override
@@ -322,7 +344,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalNameLabel => 'Goal';
 
   @override
-  String get goalPageLead => 'Habits under this goal are what move it forward.';
+  String get goalPageLead =>
+      'Habits define the recurring actions that bring you closer to the current goal.';
 
   @override
   String get goalHabitsSection => 'Habits';
@@ -349,6 +372,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalNameRequired => 'Name the goal before adding habits.';
 
   @override
+  String get goalRecommendSection => 'Suggest a goal with AI';
+
+  @override
+  String get goalRecommendLead =>
+      'Pick an area of life, then get goal ideas shaped by your mission and slogan.';
+
+  @override
+  String get goalRecommendAreaLabel => 'Area of life';
+
+  @override
+  String get goalRecommendAreaRequired => 'Select an area of life first.';
+
+  @override
+  String get goalRecommendButton => 'Suggest goals with AI';
+
+  @override
+  String get goalRecommendLoadingHint =>
+      'You can keep editing the fields while ideas load.';
+
+  @override
+  String get goalRecommendApply => 'Use this';
+
+  @override
+  String get lifeAreaSpirituality => 'Spirituality';
+
+  @override
+  String get lifeAreaCharacter => 'Character';
+
+  @override
+  String get lifeAreaHealth => 'Health';
+
+  @override
+  String get lifeAreaCareer => 'Career';
+
+  @override
+  String get lifeAreaFamily => 'Family';
+
+  @override
+  String get lifeAreaRelationships => 'Relationships';
+
+  @override
+  String get lifeAreaSociality => 'Sociality';
+
+  @override
+  String get lifeAreaMentality => 'Mentality';
+
+  @override
+  String get lifeAreaOther => 'Other';
+
+  @override
   String get deleteGoalQuestion => 'Delete goal?';
 
   @override
@@ -363,6 +436,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get completedGoalsHeader => 'Completed';
+
+  @override
+  String get goalFiltersTooltip => 'Filters';
+
+  @override
+  String get goalFilters => 'Filters';
+
+  @override
+  String get goalFilterStatus => 'Status';
+
+  @override
+  String get goalFilterAll => 'All';
+
+  @override
+  String get goalFilterActive => 'Active';
+
+  @override
+  String get goalFilterCompleted => 'Completed';
+
+  @override
+  String get goalClearFilters => 'Clear';
+
+  @override
+  String get goalFiltersEmpty => 'No goals match the filters.';
 
   @override
   String goalHabitsCount(int count) {
@@ -391,6 +488,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get helperEmptyDescription =>
       'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"';
+
+  @override
+  String get helperSuggestedPromptsTitle => 'Try asking';
+
+  @override
+  String get helperPromptPersonality =>
+      'How does my personality affect my life?';
+
+  @override
+  String get helperPromptNextGoal => 'What should I set as my next goal?';
+
+  @override
+  String get helperPromptStickHabits => 'How can I stick to my habits better?';
+
+  @override
+  String get helperPromptPlanToday =>
+      'Help me plan today around my habits and tasks';
 
   @override
   String get copyMessage => 'Copy';
@@ -591,6 +705,36 @@ class AppLocalizationsEn extends AppLocalizations {
       'A main slogan is the most important idea that guides you through life. It helps you decide how to act when you don’t feel like doing something, or when you face certain challenges or temptations. An example of a core motto: a relationship with God and a strong character determine the quality of life. A motto is used to cultivate the best recommended habits.';
 
   @override
+  String get sloganPageSubtitle =>
+      'A short motto that steadies you when motivation dips.';
+
+  @override
+  String get missionPageSubtitle =>
+      'A life purpose that keeps your choices aligned.';
+
+  @override
+  String get profileTextHintLabel => 'What matters to you? (optional)';
+
+  @override
+  String get profileTextHintPlaceholder => 'family, faith, craft, health…';
+
+  @override
+  String get suggestWithAiButton => 'Suggest with AI';
+
+  @override
+  String get profileTextSuggestionsTitle => 'AI suggestions';
+
+  @override
+  String get profileTextApplySuggestion => 'Use this';
+
+  @override
+  String get profileTextAiLoadingHint =>
+      'Crafting ideas from your goals and profile…';
+
+  @override
+  String get profileTextLearnMore => 'Why this matters';
+
+  @override
   String get nameSavedSuccess => 'Your name successfully saved';
 
   @override
@@ -728,7 +872,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmBtn => 'Confirm';
 
   @override
+  String get pasteCodeTooltip => 'Paste code';
+
+  @override
   String get wrongCodeError => 'Wrong confirmation code';
+
+  @override
+  String get emailNotRegisteredError => 'No user found with this email.';
+
+  @override
+  String get mailServerError =>
+      'Mail server error on the backend. Please contact the administrator.';
 
   @override
   String get passwordChangedSuccess =>

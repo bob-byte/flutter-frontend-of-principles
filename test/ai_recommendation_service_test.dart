@@ -6,6 +6,7 @@ import 'package:principles_app/core/network/api_client.dart';
 import 'package:principles_app/core/network/api_endpoints.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/network/server_required_retry.dart';
+import 'package:principles_app/models/profile_text_suggestion.dart';
 import 'package:principles_app/models/recommended_habit.dart';
 import 'package:principles_app/services/ai_recommendation_service.dart';
 
@@ -86,6 +87,129 @@ void main() {
       'mission': 'Grow',
       'mainSlogan': 'Stay honest',
       'gender': 0,
+    });
+  });
+
+  test(
+    'suggestProfileText posts kind and hint to /ai/suggest-profile-text',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({
+        AppConfig.tokenStorageKey: 'test-token',
+      });
+
+      final requests = <RequestOptions>[];
+      final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+      final apiClient = ApiClient(SecureStore(), dio: dio);
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            requests.add(options);
+            if (options.path == ApiEndpoints.aiSuggestProfileText) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: {
+                    'suggestions': [
+                      {
+                        'text': 'Character over comfort',
+                        'reason': 'Guides hard days',
+                      },
+                    ],
+                  },
+                ),
+              );
+              return;
+            }
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                message: 'Unexpected path ${options.path}',
+              ),
+            );
+          },
+        ),
+      );
+
+      final service = AiRecommendationService(apiClient);
+      final suggestions = await service.suggestProfileText(
+        kind: ProfileTextKind.slogan,
+        culture: 'en',
+        hint: 'faith and craft',
+        draft: 'Keep going',
+        mission: 'Serve well',
+        goals: ['Write daily'],
+        gender: 0,
+      );
+
+      expect(suggestions, hasLength(1));
+      expect(suggestions.single.text, 'Character over comfort');
+      expect(suggestions.single.reason, 'Guides hard days');
+      expect(requests.single.path, ApiEndpoints.aiSuggestProfileText);
+      expect(requests.single.data['kind'], 'slogan');
+      expect(requests.single.data['hint'], 'faith and craft');
+    },
+  );
+
+  test('recommendGoals posts areaOfLife to /ai/recommend-goals', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      AppConfig.tokenStorageKey: 'test-token',
+    });
+
+    final requests = <RequestOptions>[];
+    final dio = Dio(BaseOptions(baseUrl: 'https://example.test/api'));
+    final apiClient = ApiClient(SecureStore(), dio: dio);
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          requests.add(options);
+          if (options.path == ApiEndpoints.aiRecommendGoals) {
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'goals': [
+                    {'name': 'Run a half marathon', 'reason': 'Builds stamina'},
+                  ],
+                },
+              ),
+            );
+            return;
+          }
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              message: 'Unexpected path ${options.path}',
+            ),
+          );
+        },
+      ),
+    );
+
+    final service = AiRecommendationService(apiClient);
+    final goals = await service.recommendGoals(
+      culture: 'uk',
+      areaOfLife: 'Health',
+      existingGoals: ['Quit smoking'],
+      draft: 'Be fitter',
+      mission: 'Grow',
+      slogan: 'Stay honest',
+      gender: 1,
+    );
+
+    expect(goals, hasLength(1));
+    expect(goals.single.name, 'Run a half marathon');
+    expect(goals.single.reason, 'Builds stamina');
+    expect(requests.single.path, ApiEndpoints.aiRecommendGoals);
+    expect(requests.single.data, {
+      'culture': 'uk',
+      'areaOfLife': 'Health',
+      'existingGoals': ['Quit smoking'],
+      'draft': 'Be fitter',
+      'mission': 'Grow',
+      'mainSlogan': 'Stay honest',
+      'gender': 1,
     });
   });
 

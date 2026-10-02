@@ -4,6 +4,7 @@ import '../models/habit.dart';
 import '../models/user_goal.dart';
 import '../views/edit_habit_view.dart';
 import '../views/edit_goal_view.dart';
+import '../views/edit_profile_text_view.dart';
 import '../views/goals_view.dart';
 import '../views/app_benefits_view.dart';
 import '../views/helper_view.dart';
@@ -52,6 +53,16 @@ class AppRouter {
           settings: settings,
           builder: (_) => EditGoalView(goal: goal),
         );
+      case EditSloganView.routeName:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const EditSloganView(),
+        );
+      case EditMissionView.routeName:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const EditMissionView(),
+        );
 
       case GoalsView.routeName:
         return MaterialPageRoute(builder: (_) => const GoalsView());
@@ -62,9 +73,12 @@ class AppRouter {
       case SettingsView.routeName:
         return MaterialPageRoute(builder: (_) => const SettingsView());
       case ForgetPasswordView.routeName:
-        final email = settings.arguments as String?;
+        final args = ForgetPasswordArgs.fromRouteArguments(settings.arguments);
         return MaterialPageRoute(
-          builder: (_) => ForgetPasswordView(initialEmail: email),
+          builder: (_) => ForgetPasswordView(
+            initialEmail: args.initialEmail,
+            emailReadOnly: args.emailReadOnly,
+          ),
         );
       default:
         return MaterialPageRoute(

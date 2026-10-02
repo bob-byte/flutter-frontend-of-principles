@@ -236,6 +236,48 @@ abstract class AppLocalizations {
   /// **'Manage notification permissions in system Settings'**
   String get settingsRemindersSubtitle;
 
+  /// Settings row for choosing the local reminder notification sound
+  ///
+  /// In en, this message translates to:
+  /// **'Notification sound'**
+  String get settingsNotificationSoundTitle;
+
+  /// Helper text for the notification sound settings row
+  ///
+  /// In en, this message translates to:
+  /// **'Sound played for task and habit reminders'**
+  String get settingsNotificationSoundSubtitle;
+
+  /// Branded default notification sound option
+  ///
+  /// In en, this message translates to:
+  /// **'Principles'**
+  String get settingsNotificationSoundPrinciples;
+
+  /// OS default notification sound option
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsNotificationSoundSystem;
+
+  /// Two-note chime notification sound option
+  ///
+  /// In en, this message translates to:
+  /// **'Chime'**
+  String get settingsNotificationSoundChime;
+
+  /// Quiet single-tone notification sound option
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get settingsNotificationSoundSoft;
+
+  /// Insistent dual-tone alarm-style notification sound option
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm'**
+  String get settingsNotificationSoundAlarm;
+
   /// Edit habit screen title
   ///
   /// In en, this message translates to:
@@ -671,7 +713,7 @@ abstract class AppLocalizations {
   /// Intro under the habits section on the goal page
   ///
   /// In en, this message translates to:
-  /// **'Habits under this goal are what move it forward.'**
+  /// **'Habits define the recurring actions that bring you closer to the current goal.'**
   String get goalPageLead;
 
   /// Section title for habits attached to the goal
@@ -722,6 +764,102 @@ abstract class AppLocalizations {
   /// **'Name the goal before adding habits.'**
   String get goalNameRequired;
 
+  /// Section title for AI goal recommendations on the edit-goal page
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a goal with AI'**
+  String get goalRecommendSection;
+
+  /// Intro under the AI goal recommendations section
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an area of life, then get goal ideas shaped by your mission and slogan.'**
+  String get goalRecommendLead;
+
+  /// Label above the life-area chip picker
+  ///
+  /// In en, this message translates to:
+  /// **'Area of life'**
+  String get goalRecommendAreaLabel;
+
+  /// Shown when AI goal recommend runs without an area
+  ///
+  /// In en, this message translates to:
+  /// **'Select an area of life first.'**
+  String get goalRecommendAreaRequired;
+
+  /// Button that loads AI goal recommendations
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest goals with AI'**
+  String get goalRecommendButton;
+
+  /// Hint while AI goal recommendations are loading
+  ///
+  /// In en, this message translates to:
+  /// **'You can keep editing the fields while ideas load.'**
+  String get goalRecommendLoadingHint;
+
+  /// Applies one AI-suggested goal to the name field
+  ///
+  /// In en, this message translates to:
+  /// **'Use this'**
+  String get goalRecommendApply;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Spirituality'**
+  String get lifeAreaSpirituality;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Character'**
+  String get lifeAreaCharacter;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get lifeAreaHealth;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Career'**
+  String get lifeAreaCareer;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Family'**
+  String get lifeAreaFamily;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Relationships'**
+  String get lifeAreaRelationships;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Sociality'**
+  String get lifeAreaSociality;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Mentality'**
+  String get lifeAreaMentality;
+
+  /// Life-area chip label
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get lifeAreaOther;
+
   /// Title of the delete-goal confirmation dialog
   ///
   /// In en, this message translates to:
@@ -751,6 +889,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Completed'**
   String get completedGoalsHeader;
+
+  /// Tooltip for the goals-tab header filter button
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get goalFiltersTooltip;
+
+  /// Heading for the goals-tab filter panel
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get goalFilters;
+
+  /// Goals filter section for completion status
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get goalFilterStatus;
+
+  /// Show every goal regardless of completion status
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get goalFilterAll;
+
+  /// Show only incomplete goals
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get goalFilterActive;
+
+  /// Show only completed goals
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get goalFilterCompleted;
+
+  /// Reset goals-tab filters to defaults
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get goalClearFilters;
+
+  /// Empty-state when goals exist but filters hide them all
+  ///
+  /// In en, this message translates to:
+  /// **'No goals match the filters.'**
+  String get goalFiltersEmpty;
 
   /// Subtitle on a goal showing how many habits are grouped under it
   ///
@@ -787,6 +973,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"'**
   String get helperEmptyDescription;
+
+  /// Label above common AI helper prompt suggestions
+  ///
+  /// In en, this message translates to:
+  /// **'Try asking'**
+  String get helperSuggestedPromptsTitle;
+
+  /// Common AI helper prompt about personality
+  ///
+  /// In en, this message translates to:
+  /// **'How does my personality affect my life?'**
+  String get helperPromptPersonality;
+
+  /// Common AI helper prompt about choosing a next goal
+  ///
+  /// In en, this message translates to:
+  /// **'What should I set as my next goal?'**
+  String get helperPromptNextGoal;
+
+  /// Common AI helper prompt about habit consistency
+  ///
+  /// In en, this message translates to:
+  /// **'How can I stick to my habits better?'**
+  String get helperPromptStickHabits;
+
+  /// Common AI helper prompt about daily planning
+  ///
+  /// In en, this message translates to:
+  /// **'Help me plan today around my habits and tasks'**
+  String get helperPromptPlanToday;
 
   /// Tooltip / semantics for copying an AI helper message
   ///
@@ -1160,6 +1376,60 @@ abstract class AppLocalizations {
   /// **'A main slogan is the most important idea that guides you through life. It helps you decide how to act when you don’t feel like doing something, or when you face certain challenges or temptations. An example of a core motto: a relationship with God and a strong character determine the quality of life. A motto is used to cultivate the best recommended habits.'**
   String get mainSloganExplanation;
 
+  /// Hero subtitle on the edit slogan page
+  ///
+  /// In en, this message translates to:
+  /// **'A short motto that steadies you when motivation dips.'**
+  String get sloganPageSubtitle;
+
+  /// Hero subtitle on the edit mission page
+  ///
+  /// In en, this message translates to:
+  /// **'A life purpose that keeps your choices aligned.'**
+  String get missionPageSubtitle;
+
+  /// Label for the optional AI hint field on slogan/mission pages
+  ///
+  /// In en, this message translates to:
+  /// **'What matters to you? (optional)'**
+  String get profileTextHintLabel;
+
+  /// Placeholder for the optional AI hint field
+  ///
+  /// In en, this message translates to:
+  /// **'family, faith, craft, health…'**
+  String get profileTextHintPlaceholder;
+
+  /// Button that asks AI for slogan/mission suggestions
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest with AI'**
+  String get suggestWithAiButton;
+
+  /// Heading above AI slogan/mission suggestion cards
+  ///
+  /// In en, this message translates to:
+  /// **'AI suggestions'**
+  String get profileTextSuggestionsTitle;
+
+  /// Action label on an AI suggestion card
+  ///
+  /// In en, this message translates to:
+  /// **'Use this'**
+  String get profileTextApplySuggestion;
+
+  /// Hint shown while AI slogan/mission suggestions load
+  ///
+  /// In en, this message translates to:
+  /// **'Crafting ideas from your goals and profile…'**
+  String get profileTextAiLoadingHint;
+
+  /// Collapsed teaser on slogan/mission hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Why this matters'**
+  String get profileTextLearnMore;
+
   /// Toast after the user name is saved
   ///
   /// In en, this message translates to:
@@ -1412,11 +1682,29 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirmBtn;
 
+  /// No description provided for @pasteCodeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste code'**
+  String get pasteCodeTooltip;
+
   /// No description provided for @wrongCodeError.
   ///
   /// In en, this message translates to:
   /// **'Wrong confirmation code'**
   String get wrongCodeError;
+
+  /// No description provided for @emailNotRegisteredError.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found with this email.'**
+  String get emailNotRegisteredError;
+
+  /// No description provided for @mailServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail server error on the backend. Please contact the administrator.'**
+  String get mailServerError;
 
   /// No description provided for @passwordChangedSuccess.
   ///

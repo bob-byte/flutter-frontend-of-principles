@@ -15,6 +15,8 @@ class ApiEndpoints {
   static const aiChat = '/ai/chat';
   static const aiTitle = '/ai/title';
   static const aiRecommendHabits = '/ai/recommend-habits';
+  static const aiSuggestProfileText = '/ai/suggest-profile-text';
+  static const aiRecommendGoals = '/ai/recommend-goals';
   static const aiConversations = '/ai/conversations';
   static const reminder = '/reminder';
   static const habitsReportReminder = '$reminder/habitsreport';
