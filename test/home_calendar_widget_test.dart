@@ -126,9 +126,9 @@ void main() {
     expect(tripDays, [true, true, true]);
     expect(snapshot.items.any((i) => i.title == 'Inbox only'), isFalse);
 
-    final unthemed = snapshot.itemsOn(DateTime(2026, 9, 10)).firstWhere(
-      (i) => i.title == 'All-day trip',
-    );
+    final unthemed = snapshot
+        .itemsOn(DateTime(2026, 9, 10))
+        .firstWhere((i) => i.title == 'All-day trip');
     expect(unthemed.color, homeCalendarArgbHex(palette.primary.toARGB32()));
   });
 
@@ -155,7 +155,10 @@ void main() {
       return snapshot.items.single.color;
     }
 
-    expect(itemColorHex(orange), homeCalendarArgbHex(orange.primary.toARGB32()));
+    expect(
+      itemColorHex(orange),
+      homeCalendarArgbHex(orange.primary.toARGB32()),
+    );
     expect(itemColorHex(blue), homeCalendarArgbHex(blue.primary.toARGB32()));
   });
 

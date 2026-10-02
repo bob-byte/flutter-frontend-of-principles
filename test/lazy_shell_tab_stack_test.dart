@@ -155,9 +155,7 @@ void main() {
     await tester.tap(find.text('to-0'));
     await tester.pump();
 
-    final inactive = tester.element(
-      find.text('tab-2', skipOffstage: false),
-    );
+    final inactive = tester.element(find.text('tab-2', skipOffstage: false));
     expect(TickerMode.of(inactive), isFalse);
     final active = tester.element(find.text('tab-0'));
     expect(TickerMode.of(active), isTrue);
