@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
+import 'package:principles_app/models/recommended_goal.dart';
 import 'package:principles_app/models/user_goal.dart';
 import 'package:principles_app/services/auth_service.dart';
 import 'package:principles_app/services/goal_service.dart';
@@ -42,6 +43,23 @@ void main() {
   test('updateNotes notifies and stores value', () {
     createVm.updateNotes('Why this matters');
     expect(createVm.notes, 'Why this matters');
+  });
+
+  test('applyGoalRecommendation fills name and empty notes', () {
+    createVm.applyGoalRecommendation(
+      const RecommendedGoal(name: 'Run a marathon', reason: 'Builds endurance'),
+    );
+    expect(createVm.name, 'Run a marathon');
+    expect(createVm.notes, 'Builds endurance');
+  });
+
+  test('applyGoalRecommendation keeps existing notes', () {
+    createVm.updateNotes('Keep me');
+    createVm.applyGoalRecommendation(
+      const RecommendedGoal(name: 'Meditate daily', reason: 'Calm focus'),
+    );
+    expect(createVm.name, 'Meditate daily');
+    expect(createVm.notes, 'Keep me');
   });
 
   test('save does nothing for blank text', () async {

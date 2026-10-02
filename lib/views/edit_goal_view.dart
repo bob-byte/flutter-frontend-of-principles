@@ -7,6 +7,8 @@ import '../core/network/server_required_retry.dart';
 import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
+import '../models/life_area.dart';
+import '../models/recommended_goal.dart';
 import '../models/recommended_habit.dart';
 import '../models/user_goal.dart';
 import '../services/ai_recommendation_service.dart';
@@ -159,6 +161,37 @@ class _EditGoalViewState extends State<EditGoalView> {
     );
   }
 
+  Future<void> _recommendGoals() async {
+    final l10n = AppLocalizations.of(context)!;
+    _vm.name = _nameController.text;
+    _vm.notes = _notesController.text;
+    final area = _vm.selectedLifeArea;
+    if (area == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.goalRecommendAreaRequired)));
+      return;
+    }
+    await _vm.recommendGoals(
+      culture: Localizations.localeOf(context).languageCode,
+      areaOfLifeLabel: lifeAreaLabel(l10n, area),
+    );
+  }
+
+  void _applyGoalRecommendation(RecommendedGoal recommendation) {
+    _vm.applyGoalRecommendation(recommendation);
+    _nameController.text = _vm.name;
+    _nameController.selection = TextSelection.collapsed(
+      offset: _nameController.text.length,
+    );
+    if (_notesController.text.trim() != _vm.notes) {
+      _notesController.text = _vm.notes;
+      _notesController.selection = TextSelection.collapsed(
+        offset: _notesController.text.length,
+      );
+    }
+  }
+
   Future<void> _addRecommendation(RecommendedHabit recommended) async {
     final saved = await _vm.addRecommendedHabit(recommended);
     if (saved == null || !mounted) return;
@@ -240,6 +273,17 @@ class _EditGoalViewState extends State<EditGoalView> {
                             canComplete: vm.canToggleCompleted,
                             isCompleted: vm.isCompleted,
                             onToggleCompleted: _toggleCompleted,
+                          ),
+                          const SizedBox(height: 22),
+                          _GoalRecommendSection(
+                            palette: palette,
+                            selectedArea: vm.selectedLifeArea,
+                            recommendations: vm.goalRecommendations,
+                            isLoading: vm.isRecommendingGoals,
+                            error: vm.recommendGoalsError,
+                            onSelectArea: vm.selectLifeArea,
+                            onRecommend: _recommendGoals,
+                            onApply: _applyGoalRecommendation,
                           ),
                           const SizedBox(height: 22),
                           _HabitsSection(
@@ -332,10 +376,8 @@ class _IdentityCard extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    nameController.text.trim().isEmpty
-                        ? l10n.goalNameLabel
-                        : nameController.text.trim(),
-                    maxLines: 3,
+                    l10n.goalNameLabel,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: palette.onPrimary,
@@ -353,21 +395,23 @@ class _IdentityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  height: 56,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 56),
                   child: TextField(
                     key: const Key('goalNameField'),
                     controller: nameController,
                     autofocus: nameController.text.isEmpty,
+                    keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
                     maxLength: 255,
+                    minLines: 1,
                     maxLines: null,
-                    expands: true,
                     textAlignVertical: TextAlignVertical.center,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: palette.textPrimary,
+                      height: 1.25,
                     ),
                     decoration: InputDecoration(
                       labelText: l10n.goalNameLabel,
@@ -376,6 +420,7 @@ class _IdentityCard extends StatelessWidget {
                       fillColor: palette.softBg,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
+                        vertical: 16,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -390,7 +435,7 @@ class _IdentityCard extends StatelessWidget {
                           required maxLength,
                         }) => null,
                     onChanged: onNameChanged,
-                    textInputAction: TextInputAction.next,
+                    textInputAction: TextInputAction.newline,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -399,6 +444,7 @@ class _IdentityCard extends StatelessWidget {
                   child: TextField(
                     key: const Key('goalNotesField'),
                     controller: notesController,
+                    keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
                     maxLines: null,
                     expands: true,
@@ -497,6 +543,246 @@ class _CompleteButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+String lifeAreaLabel(AppLocalizations l10n, LifeArea area) {
+  return switch (area) {
+    LifeArea.spirituality => l10n.lifeAreaSpirituality,
+    LifeArea.character => l10n.lifeAreaCharacter,
+    LifeArea.health => l10n.lifeAreaHealth,
+    LifeArea.career => l10n.lifeAreaCareer,
+    LifeArea.family => l10n.lifeAreaFamily,
+    LifeArea.relationships => l10n.lifeAreaRelationships,
+    LifeArea.sociality => l10n.lifeAreaSociality,
+    LifeArea.mentality => l10n.lifeAreaMentality,
+    LifeArea.other => l10n.lifeAreaOther,
+  };
+}
+
+class _GoalRecommendSection extends StatelessWidget {
+  const _GoalRecommendSection({
+    required this.palette,
+    required this.selectedArea,
+    required this.recommendations,
+    required this.isLoading,
+    required this.error,
+    required this.onSelectArea,
+    required this.onRecommend,
+    required this.onApply,
+  });
+
+  final TasksUiPalette palette;
+  final LifeArea? selectedArea;
+  final List<RecommendedGoal> recommendations;
+  final bool isLoading;
+  final String? error;
+  final ValueChanged<LifeArea?> onSelectArea;
+  final VoidCallback onRecommend;
+  final ValueChanged<RecommendedGoal> onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.goalRecommendSection,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: palette.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n.goalRecommendLead,
+          style: TextStyle(
+            fontSize: 13.5,
+            height: 1.35,
+            color: palette.textMuted,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          l10n.goalRecommendAreaLabel,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: palette.textMuted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final area in LifeArea.values)
+              ChoiceChip(
+                key: Key('lifeAreaChip_${area.name}'),
+                label: Text(lifeAreaLabel(l10n, area)),
+                selected: selectedArea == area,
+                onSelected: (selected) {
+                  onSelectArea(selected ? area : null);
+                },
+                selectedColor: palette.primary.withValues(alpha: 0.22),
+                labelStyle: TextStyle(
+                  color: selectedArea == area
+                      ? palette.primary
+                      : palette.textPrimary,
+                  fontWeight: selectedArea == area
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                ),
+                side: BorderSide(
+                  color: selectedArea == area
+                      ? palette.primary.withValues(alpha: 0.55)
+                      : palette.cardBorder.withValues(
+                          alpha: palette.isDark ? 0.45 : 0.7,
+                        ),
+                ),
+                backgroundColor: palette.softBg,
+                showCheckmark: false,
+              ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 50,
+          child: OutlinedButton.icon(
+            key: const Key('goalRecommendButton'),
+            onPressed: isLoading ? null : onRecommend,
+            icon: isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: palette.primary,
+                    ),
+                  )
+                : Icon(Icons.auto_awesome, color: palette.primary),
+            label: Text(
+              l10n.goalRecommendButton,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: palette.primary,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: palette.primary,
+              side: BorderSide(color: palette.primary),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+          ),
+        ),
+        if (isLoading) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.goalRecommendLoadingHint,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: palette.textMuted, fontSize: 12.5),
+          ),
+        ],
+        if (error != null && error!.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            error!,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+              fontSize: 13,
+            ),
+          ),
+        ],
+        if (recommendations.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          for (var i = 0; i < recommendations.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _GoalRecommendationCard(
+              palette: palette,
+              recommendation: recommendations[i],
+              applyLabel: l10n.goalRecommendApply,
+              onApply: () => onApply(recommendations[i]),
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _GoalRecommendationCard extends StatelessWidget {
+  const _GoalRecommendationCard({
+    required this.palette,
+    required this.recommendation,
+    required this.applyLabel,
+    required this.onApply,
+  });
+
+  final TasksUiPalette palette;
+  final RecommendedGoal recommendation;
+  final String applyLabel;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        color: palette.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: palette.cardBorder.withValues(
+            alpha: palette.isDark ? 0.4 : 0.65,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            recommendation.name,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: palette.textPrimary,
+              height: 1.3,
+            ),
+          ),
+          if (recommendation.reason.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              recommendation.reason,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.35,
+                color: palette.textMuted,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              key: Key('goalRecommendApply_${recommendation.name}'),
+              onPressed: onApply,
+              icon: Icon(Icons.check_rounded, color: palette.primary, size: 18),
+              label: Text(
+                applyLabel,
+                style: TextStyle(
+                  color: palette.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

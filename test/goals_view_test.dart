@@ -258,4 +258,53 @@ void main() {
     expect(find.text('Read 10 pages'), findsWidgets);
     expect(find.text('No habits for this goal yet.'), findsNothing);
   });
+
+  testWidgets('status filter hides completed goals and unassigned habits', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      _goalsCacheKey: [
+        jsonEncode({
+          'id': 1,
+          'name': 'Active goal',
+          'lastModified': DateTime.utc(2026, 1, 1).toIso8601String(),
+        }),
+        jsonEncode({
+          'id': 2,
+          'name': 'Done goal',
+          'isCompleted': true,
+          'lastModified': DateTime.utc(2026, 1, 2).toIso8601String(),
+        }),
+      ],
+    });
+    await tester.pumpWidget(
+      _buildWidget(habits: [Habit(id: 11, name: 'Train')]),
+    );
+    await _pumpUntilLoaded(tester);
+
+    expect(find.text('Active goal'), findsOneWidget);
+    expect(find.text('Done goal'), findsOneWidget);
+    expect(find.text('Train'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('goalFiltersButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.text('Active'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Active goal'), findsOneWidget);
+    expect(find.text('Done goal'), findsNothing);
+    expect(find.text('Train'), findsOneWidget);
+
+    await tester.tap(find.text('Completed'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Active goal'), findsNothing);
+    expect(find.text('Done goal'), findsOneWidget);
+    expect(find.text('Train'), findsNothing);
+    expect(find.text('*Goal not defined'), findsNothing);
+  });
 }

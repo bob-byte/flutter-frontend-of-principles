@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../core/network/server_required_retry.dart';
 import '../models/habit.dart';
+import '../models/life_area.dart';
+import '../models/recommended_goal.dart';
 import '../models/recommended_habit.dart';
 import '../models/user_goal.dart';
 import '../services/ai_recommendation_service.dart';
@@ -49,10 +51,14 @@ class EditGoalViewModel extends ChangeNotifier {
   bool isCompleted = false;
   bool isSaving = false;
   bool isGenerating = false;
+  bool isRecommendingGoals = false;
   bool hasChanges = false;
   String? generateError;
+  String? recommendGoalsError;
+  LifeArea? selectedLifeArea;
   List<Habit> habits = [];
   List<RecommendedHabit> recommendations = [];
+  List<RecommendedGoal> goalRecommendations = [];
 
   String _snapshotName = '';
   String _snapshotNotes = '';
@@ -74,6 +80,19 @@ class EditGoalViewModel extends ChangeNotifier {
 
   void updateNotes(String value) {
     notes = value;
+    notifyListeners();
+  }
+
+  void selectLifeArea(LifeArea? area) {
+    selectedLifeArea = area;
+    notifyListeners();
+  }
+
+  void applyGoalRecommendation(RecommendedGoal recommendation) {
+    name = recommendation.name.trim();
+    if (notes.trim().isEmpty && recommendation.reason.trim().isNotEmpty) {
+      notes = recommendation.reason.trim();
+    }
     notifyListeners();
   }
 
@@ -203,6 +222,73 @@ class EditGoalViewModel extends ChangeNotifier {
       return true;
     } finally {
       isGenerating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> recommendGoals({
+    required String culture,
+    required String areaOfLifeLabel,
+  }) async {
+    if (isRecommendingGoals) return false;
+    final area = areaOfLifeLabel.trim();
+    if (area.isEmpty) {
+      recommendGoalsError = 'Select an area of life first.';
+      notifyListeners();
+      return false;
+    }
+
+    final ai = _aiRecommendationService;
+    final users = _userService;
+    if (ai == null || users == null) {
+      recommendGoalsError = 'AI is not available.';
+      notifyListeners();
+      return true;
+    }
+
+    isRecommendingGoals = true;
+    recommendGoalsError = null;
+    notifyListeners();
+    try {
+      final user = await users.getCurrentUser();
+      final goals = await _goalService.getGoals();
+      final result = await _serverRetry.run(
+        () => ai.recommendGoals(
+          culture: culture,
+          areaOfLife: area,
+          existingGoals: [
+            for (final item in goals)
+              if (item.name.trim().isNotEmpty) item.name.trim(),
+          ],
+          draft: name.trim().isEmpty ? null : name.trim(),
+          mission: user.mission,
+          slogan: user.mainSlogan,
+          gender: user.gender,
+        ),
+      );
+      if (result == null) {
+        recommendGoalsError =
+            'Technical work on our server is in progress. Please try again later.';
+        return true;
+      }
+      final taken = {
+        for (final item in goals)
+          if (item.name.trim().isNotEmpty) item.name.trim().toLowerCase(),
+      };
+      goalRecommendations = [
+        for (final goal in result)
+          if (!taken.contains(goal.name.trim().toLowerCase())) goal,
+      ];
+      return true;
+    } catch (e) {
+      recommendGoalsError = e.toString().replaceFirst(
+        RegExp(r'^Bad state:\s*'),
+        '',
+      );
+      debugPrint('Recommend goals error: $e');
+      return true;
+    } finally {
+      isRecommendingGoals = false;
       notifyListeners();
     }
   }

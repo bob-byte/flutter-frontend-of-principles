@@ -54,6 +54,30 @@ void main() {
     expect(vm.goals, isEmpty);
     expect(vm.isLoading, isFalse);
   });
+
+  test('status filter hides completed or active goals', () async {
+    goals.items = [
+      UserGoal(id: 1, name: 'Active', isCompleted: false),
+      UserGoal(id: 2, name: 'Done', isCompleted: true),
+    ];
+    await vm.load();
+
+    expect(vm.filteredGoals.map((g) => g.name), ['Active', 'Done']);
+    expect(vm.hasActiveFilters, isFalse);
+
+    vm.setStatusFilter(GoalStatusFilter.active);
+    expect(vm.filteredGoals.map((g) => g.name), ['Active']);
+    expect(vm.hasActiveFilters, isTrue);
+    expect(vm.showsUnassignedHabits, isTrue);
+
+    vm.setStatusFilter(GoalStatusFilter.completed);
+    expect(vm.filteredGoals.map((g) => g.name), ['Done']);
+    expect(vm.showsUnassignedHabits, isFalse);
+
+    vm.clearFilters();
+    expect(vm.statusFilter, GoalStatusFilter.all);
+    expect(vm.hasActiveFilters, isFalse);
+  });
 }
 
 class _FakeGoalService extends GoalService {
