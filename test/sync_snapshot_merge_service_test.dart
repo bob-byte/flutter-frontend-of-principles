@@ -516,10 +516,10 @@ void main() {
       });
     });
 
-    test('skips the orphan sweep for an empty delta', () async {
+    test('sweeps stale task alarms on an empty delta', () async {
       await merge.merge(const SyncBootstrapSnapshot(isDelta: true));
 
-      expect(reminders.sweeps, 0);
+      expect(reminders.sweeps, 1);
     });
   });
 

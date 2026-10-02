@@ -100,7 +100,6 @@ class SyncSnapshotMergeService {
         snapshot.archivedHabits.isNotEmpty ||
         snapshot.deletedHabitIds.isNotEmpty ||
         snapshot.deletedTaskIds.isNotEmpty;
-    if (!touchesTargets) return;
     List<Task>? openTasks;
     List<Habit>? activeHabits;
     Future<void> loadTargets() async {
@@ -108,6 +107,8 @@ class SyncSnapshotMergeService {
       activeHabits ??= await databaseService.getAllHabits();
     }
 
+    // Also on an empty delta: a due-date edit can leave an older alarm id
+    // pending after the stored id has already moved to the next day.
     await reminderService.cancelOrphanedNotifications(() async {
       await loadTargets();
       return ReminderTargets.from(
@@ -115,6 +116,7 @@ class SyncSnapshotMergeService {
         activeHabits: activeHabits!,
       );
     });
+    if (!touchesTargets) return;
     // A silent push may arrive while the app is not running; the background
     // isolate resolves deleted server ids through this copy (no SQLite there).
     await loadTargets();

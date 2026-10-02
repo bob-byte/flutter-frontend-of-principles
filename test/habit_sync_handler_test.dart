@@ -89,7 +89,9 @@ class _ArchiveCall {
 
 class _FakeHabitService extends HabitService {
   _FakeHabitService()
-    : super(AuthService(_TokenStore(), dio: Dio()..httpClientAdapter = _Noop()));
+    : super(
+        AuthService(_TokenStore(), dio: Dio()..httpClientAdapter = _Noop()),
+      );
 
   final pushHabitCalls = <_PushHabitCall>[];
   final deletedIds = <int>[];

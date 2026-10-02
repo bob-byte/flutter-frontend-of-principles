@@ -136,9 +136,7 @@ SyncService _buildSync({
             Response<dynamic>(
               requestOptions: options,
               statusCode: 200,
-              data: <String, dynamic>{
-                'serverTime': '2026-09-09T12:00:00Z',
-              },
+              data: <String, dynamic>{'serverTime': '2026-09-09T12:00:00Z'},
             ),
           );
           return;
