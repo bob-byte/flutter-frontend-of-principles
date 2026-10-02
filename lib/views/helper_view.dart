@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -242,9 +243,27 @@ class _HelperBody extends StatelessWidget {
     );
   }
 
+  void _applySuggestedPrompt(
+    HelperViewModel vm,
+    AppLocalizations l10n,
+    String prompt,
+  ) {
+    if (vm.isBusy || prompt.trim().isEmpty) return;
+    controller.text = prompt;
+    controller.selection = TextSelection.collapsed(offset: prompt.length);
+    onSend(vm, l10n);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final palette = context.watch<ThemeController>().palette;
+    final suggestedPrompts = <String>[
+      l10n.helperPromptPersonality,
+      l10n.helperPromptNextGoal,
+      l10n.helperPromptStickHabits,
+      l10n.helperPromptPlanToday,
+    ];
 
     return Consumer<HelperViewModel>(
       builder: (context, vm, child) => Column(
@@ -283,6 +302,37 @@ class _HelperBody extends StatelessWidget {
                                             context,
                                           ).colorScheme.onSurface,
                                         ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    l10n.helperSuggestedPromptsTitle,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: palette.textMuted,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    key: const Key('helperSuggestedPrompts'),
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    alignment: WrapAlignment.center,
+                                    children: [
+                                      for (final prompt in suggestedPrompts)
+                                        _HelperSuggestedPromptChip(
+                                          label: prompt,
+                                          enabled: !vm.isBusy,
+                                          onTap: () => _applySuggestedPrompt(
+                                            vm,
+                                            l10n,
+                                            prompt,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -335,17 +385,36 @@ class _HelperBody extends StatelessWidget {
           ),
           Padding(
             key: context.read<RoadGuideController>().keys.chatInput,
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            // Bottom pad is small; [bottomBarClearance] owns the gap to the pill.
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
             child: Row(
               children: [
                 Expanded(
-                  child: GlassTextField(
+                  // GlassTextField does not expose textCapitalization; on iOS
+                  // that defaults to none (lowercase keyboard). Build the same
+                  // glass surface with CupertinoTextField so sentences capitalize.
+                  child: AdaptiveGlass(
                     useOwnLayer: true,
-                    controller: controller,
-                    focusNode: focusNode,
-                    placeholder: l10n.helperInputHint,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => onSend(vm, l10n),
+                    shape: const LiquidRoundedRectangle(borderRadius: 10),
+                    settings: const LiquidGlassSettings(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: CupertinoTextField(
+                        key: const Key('helperChatInput'),
+                        controller: controller,
+                        focusNode: focusNode,
+                        placeholder: l10n.helperInputHint,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.sentences,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => onSend(vm, l10n),
+                        padding: EdgeInsets.zero,
+                        decoration: null,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -359,6 +428,55 @@ class _HelperBody extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HelperSuggestedPromptChip extends StatelessWidget {
+  const _HelperSuggestedPromptChip({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.watch<ThemeController>().palette;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('helperSuggestedPrompt:$label'),
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: enabled ? 1 : 0.5,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 280),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: palette.softBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: palette.cardBorder),
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: palette.textPrimary,
+                height: 1.25,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

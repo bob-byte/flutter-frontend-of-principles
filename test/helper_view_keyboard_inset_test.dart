@@ -103,18 +103,23 @@ void main() {
       await tester.pumpWidget(_buildApp(android: true));
       await tester.pump();
 
-      final field = find.byType(GlassTextField);
+      final field = find.byKey(const Key('helperChatInput'));
       expect(field, findsOneWidget);
 
       final helperBottom = tester.getRect(find.byType(HelperView)).bottom;
       final fieldBottom = tester.getRect(field).bottom;
       // Pill top sits at systemBottom + verticalPad + pillHeight from the
-      // screen bottom; input must stay above that.
+      // screen bottom; input must stay above that with only a small gap.
       const pillTopFromBottom =
           systemBottom +
           kMainShellTabBarVerticalPadding +
           kMainShellTabPillHeight;
-      expect(helperBottom - fieldBottom, greaterThan(pillTopFromBottom));
+      final clearance = helperBottom - fieldBottom;
+      expect(clearance, greaterThan(pillTopFromBottom));
+      expect(
+        clearance,
+        lessThan(pillTopFromBottom + kMainShellEmbeddedContentGap + 40),
+      );
     },
   );
 
@@ -141,7 +146,7 @@ void main() {
       await tester.pumpWidget(_buildApp(android: true));
       await tester.pump();
 
-      final field = find.byType(GlassTextField);
+      final field = find.byKey(const Key('helperChatInput'));
       expect(field, findsOneWidget);
 
       tester.view.viewInsets = const FakeViewPadding(bottom: 336 * dpr);
