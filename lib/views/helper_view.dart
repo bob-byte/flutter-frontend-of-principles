@@ -51,6 +51,7 @@ class HelperView extends StatefulWidget {
 class _HelperViewState extends State<HelperView> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -89,17 +90,40 @@ class _HelperViewState extends State<HelperView> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollChatToBottom({int attemptsLeft = 4}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollController.hasClients ||
+          !_scrollController.position.hasContentDimensions) {
+        if (attemptsLeft > 0) {
+          _scrollChatToBottom(attemptsLeft: attemptsLeft - 1);
+        }
+        return;
+      }
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Future<void> _send(HelperViewModel vm, AppLocalizations l10n) async {
     final prompt = _controller.text;
     _controller.clear();
-    await vm.ask(
+    hideSoftKeyboard();
+    final pending = vm.ask(
       prompt,
       fallbackAnswer: l10n.chatFallbackAnswer,
       errorMessage: l10n.genericErrorOccurred,
     );
+    // ask() notifies with the new turn before its first await.
+    _scrollChatToBottom();
+    await pending;
   }
 
   Widget _appBar(AppLocalizations l10n, {List<Widget>? extraActions}) {
@@ -128,6 +152,7 @@ class _HelperViewState extends State<HelperView> {
     final chatBody = _HelperBody(
       controller: _controller,
       focusNode: _focusNode,
+      scrollController: _scrollController,
       onSend: _send,
     );
 
@@ -171,11 +196,13 @@ class _HelperBody extends StatelessWidget {
   const _HelperBody({
     required this.controller,
     required this.focusNode,
+    required this.scrollController,
     required this.onSend,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
+  final ScrollController scrollController;
   final Future<void> Function(HelperViewModel vm, AppLocalizations l10n) onSend;
 
   void _showCopiedToast(AppLocalizations l10n) {
@@ -431,6 +458,7 @@ class _HelperBody extends StatelessWidget {
                     },
                   )
                 : ListView.builder(
+                    controller: scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     itemCount: vm.messages.length,
                     itemBuilder: (_, index) {
