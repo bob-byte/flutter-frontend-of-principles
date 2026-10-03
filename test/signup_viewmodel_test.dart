@@ -19,12 +19,14 @@ void main() {
       email: 'ada@example.com',
       password: 'Secret123!',
       gender: 1,
+      code: 123456,
       genericError: 'generic',
       emailAlreadyExistsError: 'exists',
+      wrongCodeError: 'wrong-code',
     );
   }
 
-  Future<int?> generateSignupCode() {
+  Future<bool> generateSignupCode() {
     return vm.generateSignupCode(
       'ada@example.com',
       genericError: 'generic',
@@ -49,22 +51,28 @@ void main() {
     expect(vm.error, 'exists');
   });
 
-  test('generateSignupCode returns code on success', () async {
-    auth.signupCode = 123456;
-    expect(await generateSignupCode(), 123456);
+  test('maps invalid verification code exception', () async {
+    auth.throwError = Exception('InvalidVerificationCode');
+    expect(await register(), isFalse);
+    expect(vm.error, 'wrong-code');
+  });
+
+  test('generateSignupCode returns true on success', () async {
+    auth.signupCodeSent = true;
+    expect(await generateSignupCode(), isTrue);
     expect(vm.error, isNull);
     expect(vm.isBusy, isFalse);
   });
 
   test('generateSignupCode maps duplicate-email exception', () async {
     auth.signupCodeError = Exception('UserWithIdenticalEmailAlreadyExists');
-    expect(await generateSignupCode(), isNull);
+    expect(await generateSignupCode(), isFalse);
     expect(vm.error, 'exists');
   });
 
-  test('generateSignupCode sets generic error when code is null', () async {
-    auth.signupCode = null;
-    expect(await generateSignupCode(), isNull);
+  test('generateSignupCode sets generic error when send fails', () async {
+    auth.signupCodeSent = false;
+    expect(await generateSignupCode(), isFalse);
     expect(vm.error, 'generic');
   });
 }
@@ -74,7 +82,7 @@ class _FakeAuth extends AuthService {
 
   bool succeed = true;
   Object? throwError;
-  int? signupCode = 111111;
+  bool signupCodeSent = true;
   Object? signupCodeError;
 
   @override
@@ -83,6 +91,7 @@ class _FakeAuth extends AuthService {
     required String email,
     required String password,
     required int gender,
+    required int code,
     String? mission,
     String? slogan,
   }) async {
@@ -92,9 +101,9 @@ class _FakeAuth extends AuthService {
   }
 
   @override
-  Future<int?> generateSignupCode(String email, {String? language}) async {
+  Future<bool> generateSignupCode(String email, {String? language}) async {
     final err = signupCodeError;
     if (err != null) throw err;
-    return signupCode;
+    return signupCodeSent;
   }
 }

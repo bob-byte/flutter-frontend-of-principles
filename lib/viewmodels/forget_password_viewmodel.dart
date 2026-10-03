@@ -12,7 +12,7 @@ class ForgetPasswordViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   String? get error => _error;
 
-  Future<int?> generateCode(
+  Future<bool> generateCode(
     String email, {
     String? language,
     required String genericError,
@@ -24,11 +24,11 @@ class ForgetPasswordViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final code = await _authService.generateCode(email, language: language);
-      if (code == null) {
+      final sent = await _authService.generateCode(email, language: language);
+      if (!sent) {
         _error = genericError;
       }
-      return code;
+      return sent;
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('EmailIsIncorrect')) {
@@ -39,7 +39,7 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       } else {
         _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       }
-      return null;
+      return false;
     } finally {
       _isBusy = false;
       notifyListeners();
@@ -49,14 +49,20 @@ class ForgetPasswordViewModel extends ChangeNotifier {
   Future<bool> changePassword(
     String email,
     String newPassword, {
+    required int code,
     required String genericError,
+    required String wrongCodeError,
   }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
 
     try {
-      final success = await _authService.changePassword(email, newPassword);
+      final success = await _authService.changePassword(
+        email,
+        newPassword,
+        code: code,
+      );
       if (!success) {
         _error = genericError;
       } else {
@@ -67,11 +73,21 @@ class ForgetPasswordViewModel extends ChangeNotifier {
       return success;
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
-      _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      if (_isVerificationCodeError(errorMsg)) {
+        _error = wrongCodeError;
+      } else {
+        _error = errorMsg.isNotEmpty ? errorMsg : genericError;
+      }
       return false;
     } finally {
       _isBusy = false;
       notifyListeners();
     }
+  }
+
+  static bool _isVerificationCodeError(String errorMsg) {
+    return errorMsg.contains('InvalidVerificationCode') ||
+        errorMsg.contains('VerificationCodeExpired') ||
+        errorMsg.contains('VerificationCodeIsRequired');
   }
 }

@@ -72,7 +72,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
     final email = _emailController.text;
     final newPassword = _passwordController.text;
 
-    final validCode = await vm.generateCode(
+    final sent = await vm.generateCode(
       email,
       language: Localizations.localeOf(context).languageCode,
       genericError: l10n.genericErrorOccurred,
@@ -81,58 +81,52 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
     );
 
     if (!mounted) return;
-    if (validCode != null) {
-      _showConfirmCodePopup(validCode, email, newPassword);
+    if (sent) {
+      await _showConfirmCodePopup(email, newPassword);
     }
   }
 
-  Future<void> _showConfirmCodePopup(
-    int validCode,
-    String email,
-    String newPassword,
-  ) async {
-    final confirmed = await showConfirmEmailCodeDialog(
-      context: context,
-      validCode: validCode,
-    );
-    if (!mounted || !confirmed) return;
-    await _doChangePassword(email, newPassword);
-  }
-
-  Future<void> _doChangePassword(String email, String newPassword) async {
+  Future<void> _showConfirmCodePopup(String email, String newPassword) async {
     final vm = context.read<ForgetPasswordViewModel>();
     final l10n = AppLocalizations.of(context)!;
     final navigator = Navigator.of(context);
 
-    final success = await vm.changePassword(
-      email,
-      newPassword,
-      genericError: l10n.genericErrorOccurred,
+    final success = await showConfirmEmailCodeDialog(
+      context: context,
+      onSubmit: (code) async {
+        final ok = await vm.changePassword(
+          email,
+          newPassword,
+          code: code,
+          genericError: l10n.genericErrorOccurred,
+          wrongCodeError: l10n.wrongCodeError,
+        );
+        if (ok) return null;
+        return vm.error ?? l10n.genericErrorOccurred;
+      },
     );
 
-    if (!mounted) return;
-    if (success) {
-      await showDialog(
-        context: context,
-        builder: (ctx) => AppAlertDialog(
-          title: Text(l10n.passwordChangedSuccess, textAlign: TextAlign.center),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      try {
-        context.read<StartupViewModel>().markSignedIn();
-      } catch (_) {}
-      try {
-        context.read<LaunchDataLoader>().reset();
-      } catch (_) {}
-      openPostAuthShell(navigator);
-    }
+    if (!mounted || !success) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) => AppAlertDialog(
+        title: Text(l10n.passwordChangedSuccess, textAlign: TextAlign.center),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+    try {
+      context.read<StartupViewModel>().markSignedIn();
+    } catch (_) {}
+    try {
+      context.read<LaunchDataLoader>().reset();
+    } catch (_) {}
+    openPostAuthShell(navigator);
   }
 
   @override

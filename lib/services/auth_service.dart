@@ -129,6 +129,7 @@ class AuthService {
     required String email,
     required String password,
     required int gender,
+    required int code,
     String? mission,
     String? slogan,
   }) async {
@@ -144,6 +145,7 @@ class AuthService {
           'email': email,
           'password': encryptedPassword,
           'gender': gender,
+          'code': code,
           if (mission != null && mission.isNotEmpty) 'mission': mission,
           if (slogan != null && slogan.isNotEmpty) 'mainSlogan': slogan,
         },
@@ -167,7 +169,8 @@ class AuthService {
     }
   }
 
-  Future<int?> generateCode(String email, {String? language}) async {
+  /// Emails a forget-password code. The code is not returned by the API.
+  Future<bool> generateCode(String email, {String? language}) async {
     try {
       final dio = createDio();
       final response = await dio.get(
@@ -177,24 +180,21 @@ class AuthService {
           if (language != null && language.isNotEmpty) 'language': language,
         },
       );
-      if (response.statusCode == 200) {
-        return response.data['code'] ?? response.data['Code'];
-      }
-      return null;
+      return response.statusCode == 200 || response.statusCode == 204;
     } on DioException catch (e) {
       debugPrint('Generate Code Dio Error: ${e.response?.data}');
       if (e.response?.data is String) {
         throw Exception(e.response!.data);
       }
-      return null;
+      return false;
     } catch (e) {
       debugPrint('Generate Code Error: $e');
-      return null;
+      return false;
     }
   }
 
-  /// Sends a verification code to [email] for signup (email must not be registered).
-  Future<int?> generateSignupCode(String email, {String? language}) async {
+  /// Emails a signup verification code. The code is not returned by the API.
+  Future<bool> generateSignupCode(String email, {String? language}) async {
     try {
       final dio = createDio();
       final response = await dio.get(
@@ -204,29 +204,34 @@ class AuthService {
           if (language != null && language.isNotEmpty) 'language': language,
         },
       );
-      if (response.statusCode == 200) {
-        return response.data['code'] ?? response.data['Code'];
-      }
-      return null;
+      return response.statusCode == 200 || response.statusCode == 204;
     } on DioException catch (e) {
       debugPrint('Generate Signup Code Dio Error: ${e.response?.data}');
       if (e.response?.data is String) {
         throw Exception(e.response!.data);
       }
-      return null;
+      return false;
     } catch (e) {
       debugPrint('Generate Signup Code Error: $e');
-      return null;
+      return false;
     }
   }
 
-  Future<bool> changePassword(String email, String newPassword) async {
+  Future<bool> changePassword(
+    String email,
+    String newPassword, {
+    required int code,
+  }) async {
     try {
       final encryptedPassword = PasswordChanger.encryptNewPassword(newPassword);
       final dio = createDio();
       final response = await dio.put(
         '${baseUrl}/api/account/password',
-        data: {'email': email, 'newPassword': encryptedPassword},
+        data: {
+          'email': email,
+          'newPassword': encryptedPassword,
+          'code': code,
+        },
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {

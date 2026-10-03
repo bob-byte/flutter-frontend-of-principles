@@ -3,6 +3,7 @@ import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../app/post_auth_navigation.dart';
+import '../core/config/principles_site.dart';
 import '../core/helpers/linked_text.dart';
 import '../core/helpers/password_validation.dart';
 import '../core/launch_data_loader.dart';
@@ -12,7 +13,6 @@ import '../viewmodels/startup_viewmodel.dart';
 import 'common/confirm_email_code_dialog.dart';
 import 'common/ui_theme_switcher.dart';
 import 'common/themed_lottie.dart';
-import 'edit_profile_text_view.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,11 +29,11 @@ class _SignupViewState extends State<SignupView> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _missionController = TextEditingController();
+  final _sloganController = TextEditingController();
 
   bool _obscurePassword = true;
   int _selectedGender = 0; // 0: Male, 1: Female, 2: Other
-  String _mission = '';
-  String _slogan = '';
 
   final _formKey = GlobalKey<FormState>();
 
@@ -42,6 +42,8 @@ class _SignupViewState extends State<SignupView> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _missionController.dispose();
+    _sloganController.dispose();
     super.dispose();
   }
 
@@ -63,7 +65,7 @@ class _SignupViewState extends State<SignupView> {
     }
 
     final email = _emailController.text.trim();
-    final validCode = await vm.generateSignupCode(
+    final sent = await vm.generateSignupCode(
       email,
       language: Localizations.localeOf(context).languageCode,
       genericError: l10n.genericErrorOccurred,
@@ -71,66 +73,67 @@ class _SignupViewState extends State<SignupView> {
     );
 
     if (!mounted) return;
-    if (validCode != null) {
-      _showConfirmCodePopup(validCode);
+    if (sent) {
+      await _showConfirmCodePopup();
     }
   }
 
-  Future<void> _showConfirmCodePopup(int validCode) async {
-    final confirmed = await showConfirmEmailCodeDialog(
-      context: context,
-      validCode: validCode,
-    );
-    if (!mounted || !confirmed) return;
-    await _doRegister();
-  }
-
-  Future<void> _doRegister() async {
+  Future<void> _showConfirmCodePopup() async {
     final vm = context.read<SignupViewModel>();
     final l10n = AppLocalizations.of(context)!;
     final navigator = Navigator.of(context);
 
-    final success = await vm.register(
-      name: _nameController.text,
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      gender: _selectedGender,
-      mission: _mission.isEmpty ? null : _mission,
-      slogan: _slogan.isEmpty ? null : _slogan,
-      genericError: l10n.genericErrorOccurred,
-      emailAlreadyExistsError: l10n.errorEmailAlreadyExists,
+    final success = await showConfirmEmailCodeDialog(
+      context: context,
+      onSubmit: (code) async {
+        final ok = await vm.register(
+          name: _nameController.text,
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          gender: _selectedGender,
+          code: code,
+          mission: _missionController.text.isEmpty
+              ? null
+              : _missionController.text,
+          slogan: _sloganController.text.isEmpty
+              ? null
+              : _sloganController.text,
+          genericError: l10n.genericErrorOccurred,
+          emailAlreadyExistsError: l10n.errorEmailAlreadyExists,
+          wrongCodeError: l10n.wrongCodeError,
+        );
+        if (ok) return null;
+        return vm.error ?? l10n.genericErrorOccurred;
+      },
     );
 
-    if (!mounted) return;
-    if (success) {
-      try {
-        context.read<StartupViewModel>().markSignedIn();
-      } catch (_) {}
-      try {
-        context.read<LaunchDataLoader>().reset();
-      } catch (_) {}
-      openPostAuthShell(navigator);
-    }
+    if (!mounted || !success) return;
+    try {
+      context.read<StartupViewModel>().markSignedIn();
+    } catch (_) {}
+    try {
+      context.read<LaunchDataLoader>().reset();
+    } catch (_) {}
+    openPostAuthShell(navigator);
   }
 
-  Future<void> _editMission() async {
-    final result = await EditMissionView.openDraft(
-      context,
-      initialText: _mission,
-      gender: _selectedGender,
+  void _showExplanationSnackBar(String message) {
+    final palette = context.read<ThemeController>().palette;
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: palette.onPrimary)),
+        backgroundColor: palette.primary,
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: l10n.okButton,
+          textColor: palette.onPrimary,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
     );
-    if (!mounted || result == null) return;
-    setState(() => _mission = result);
-  }
-
-  Future<void> _editSlogan() async {
-    final result = await EditSloganView.openDraft(
-      context,
-      initialText: _slogan,
-      gender: _selectedGender,
-    );
-    if (!mounted || result == null) return;
-    setState(() => _slogan = result);
   }
 
   @override
@@ -274,22 +277,60 @@ class _SignupViewState extends State<SignupView> {
                       ),
                       const SizedBox(height: 24),
 
-                      _ProfileTextTile(
-                        key: const Key('signupMissionTile'),
-                        label: l10n.missionLabel,
-                        value: _mission,
-                        emptyLabel: l10n.optionalLabel,
-                        icon: Icons.flag_outlined,
-                        onTap: _editMission,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+                        child: Text(
+                          l10n.missionLabel,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      _ProfileTextTile(
-                        key: const Key('signupSloganTile'),
-                        label: l10n.sloganLabel,
-                        value: _slogan,
-                        emptyLabel: l10n.optionalLabel,
-                        icon: Icons.assignment_outlined,
-                        onTap: _editSlogan,
+                      _CustomTextField(
+                        controller: _missionController,
+                        hintText: l10n.optionalLabel,
+                        prefixIcon: Icons.flag_outlined,
+                        maxLines: 3,
+                        textCapitalization: TextCapitalization.sentences,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            Icons.info_outline,
+                            color: palette.textMuted,
+                          ),
+                          onPressed: () =>
+                              _showExplanationSnackBar(l10n.missionExplanation),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+                        child: Text(
+                          l10n.sloganLabel,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      _CustomTextField(
+                        controller: _sloganController,
+                        hintText: l10n.optionalLabel,
+                        prefixIcon: Icons.assignment_outlined,
+                        maxLines: 3,
+                        textCapitalization: TextCapitalization.sentences,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            Icons.info_outline,
+                            color: palette.textMuted,
+                          ),
+                          onPressed: () => _showExplanationSnackBar(
+                            l10n.mainSloganExplanation,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -352,10 +393,14 @@ class _SignupViewState extends State<SignupView> {
                         ),
                         links: {
                           l10n.userAgreement: () => launchUrl(
-                            Uri.parse('https://principles.top/useragreement'),
+                            PrinciplesSite.userAgreement(
+                              context.read<ThemeController>().uiTheme,
+                            ),
                           ),
                           l10n.privacyPolicy: () => launchUrl(
-                            Uri.parse('https://principles.top/privacypolicy'),
+                            PrinciplesSite.privacyPolicy(
+                              context.read<ThemeController>().uiTheme,
+                            ),
                           ),
                         },
                         style: TextStyle(
@@ -371,81 +416,6 @@ class _SignupViewState extends State<SignupView> {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileTextTile extends StatelessWidget {
-  const _ProfileTextTile({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.emptyLabel,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final String emptyLabel;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final hasValue = value.trim().isNotEmpty;
-    return Material(
-      color: scheme.surface.withValues(alpha: 0.72),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: scheme.outline),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: Colors.grey),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: scheme.onSurface.withValues(alpha: 0.55),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      hasValue ? value : emptyLabel,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: hasValue ? scheme.onSurface : Colors.grey,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.onSurface.withValues(alpha: 0.45),
               ),
             ],
           ),

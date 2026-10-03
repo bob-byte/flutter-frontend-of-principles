@@ -11,9 +11,9 @@ class SignupViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   String? get error => _error;
 
-  /// Emails a signup verification code (from HostEmail) and returns it for
-  /// client-side confirmation, same pattern as forget-password.
-  Future<int?> generateSignupCode(
+  /// Emails a signup verification code. The code is validated on the server
+  /// when [register] is called.
+  Future<bool> generateSignupCode(
     String email, {
     String? language,
     required String genericError,
@@ -24,14 +24,14 @@ class SignupViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final code = await _authService.generateSignupCode(
+      final sent = await _authService.generateSignupCode(
         email,
         language: language,
       );
-      if (code == null) {
+      if (!sent) {
         _error = genericError;
       }
-      return code;
+      return sent;
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('UserWithIdenticalEmailAlreadyExists')) {
@@ -42,7 +42,7 @@ class SignupViewModel extends ChangeNotifier {
       } else {
         _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       }
-      return null;
+      return false;
     } finally {
       _isBusy = false;
       notifyListeners();
@@ -54,22 +54,24 @@ class SignupViewModel extends ChangeNotifier {
     required String email,
     required String password,
     required int gender,
+    required int code,
     String? mission,
     String? slogan,
     required String genericError,
     required String emailAlreadyExistsError,
+    required String wrongCodeError,
   }) async {
     _isBusy = true;
     _error = null;
     notifyListeners();
 
     try {
-      // Pass all fields to auth service
       final success = await _authService.register(
         name: name,
         email: email,
         password: password,
         gender: gender,
+        code: code,
         mission: mission,
         slogan: slogan,
       );
@@ -79,10 +81,11 @@ class SignupViewModel extends ChangeNotifier {
       // Bootstrap sync + reminder recovery run on SyncGate in MainShell.
       return success;
     } catch (e) {
-      // Extract specific backend error if it's an Exception
       final errorMsg = e.toString().replaceAll('Exception: ', '');
       if (errorMsg.contains('UserWithIdenticalEmailAlreadyExists')) {
         _error = emailAlreadyExistsError;
+      } else if (_isVerificationCodeError(errorMsg)) {
+        _error = wrongCodeError;
       } else {
         _error = errorMsg.isNotEmpty ? errorMsg : genericError;
       }
@@ -91,5 +94,11 @@ class SignupViewModel extends ChangeNotifier {
       _isBusy = false;
       notifyListeners();
     }
+  }
+
+  static bool _isVerificationCodeError(String errorMsg) {
+    return errorMsg.contains('InvalidVerificationCode') ||
+        errorMsg.contains('VerificationCodeExpired') ||
+        errorMsg.contains('VerificationCodeIsRequired');
   }
 }
