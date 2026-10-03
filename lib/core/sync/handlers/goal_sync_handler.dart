@@ -23,6 +23,25 @@ class GoalSyncHandler implements SyncQueueHandler {
     final operation = OperationKind.normalize(item.operation);
     final goal = await _loadGoal(item);
 
+    if (operation == OperationKind.setArchiveStatus) {
+      final payload = item.payloadJson == null
+          ? <String, dynamic>{}
+          : Map<String, dynamic>.from(
+              jsonDecode(item.payloadJson!) as Map? ?? {},
+            );
+      final goalId = payload['goalId'] as int? ?? goal.id ?? item.entityId ?? 0;
+      final isArchived = payload['isArchived'] == true;
+      if (goalId == 0) {
+        throw StateError('Missing goalId for SetArchiveStatus.');
+      }
+      await goalService?.pushArchiveStatus(
+        goalId: goalId,
+        isArchived: isArchived,
+        lastModified: payload['lastModified']?.toString(),
+      );
+      return;
+    }
+
     if (operation == OperationKind.save) {
       final serverId = goal.id ?? 0;
       final response = await _apiClient.post(
@@ -30,7 +49,9 @@ class GoalSyncHandler implements SyncQueueHandler {
         data: {
           'id': serverId,
           'name': goal.name,
+          'notes': goal.notes.trim().isEmpty ? null : goal.notes.trim(),
           'isCompleted': goal.isCompleted,
+          'isArchived': goal.isArchived,
         },
       );
       final newId = _readId(response.data);

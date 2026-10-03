@@ -62,6 +62,60 @@ class GoalsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> confirmArchiveGoal(UserGoal goal) {
+    return _dialogService.showConfirmAsync(
+      msg: goal.isArchived
+          ? _dialogService.l10n.unarchiveGoalMessage
+          : _dialogService.l10n.archiveGoalMessage,
+      title: goal.isArchived
+          ? _dialogService.l10n.unarchiveGoalQuestion
+          : _dialogService.l10n.archiveGoalQuestion,
+    );
+  }
+
+  Future<void> archiveGoal(UserGoal goal) async {
+    if (goal.isArchived) return;
+    _releaseHeldCompletedGoal(goal);
+    final updated = await _goalService.applyLocalArchiveStatus(
+      goal.copyWith(isArchived: true),
+    );
+    goals.removeWhere(
+      (item) =>
+          item.localId == goal.localId ||
+          (item.id == goal.id && item.name == goal.name),
+    );
+    notifyListeners();
+    try {
+      await _goalService.setArchiveStatus(updated);
+    } catch (e) {
+      debugPrint('Failed to sync goal archive: $e');
+    }
+  }
+
+  Future<void> unarchiveGoal(UserGoal goal) async {
+    if (!goal.isArchived) return;
+    final updated = await _goalService.applyLocalArchiveStatus(
+      goal.copyWith(isArchived: false),
+    );
+    goals
+      ..removeWhere(
+        (item) =>
+            item.localId == goal.localId ||
+            (item.id == goal.id && item.name == goal.name),
+      )
+      ..add(updated);
+    final sorted = _sorted(goals);
+    goals
+      ..clear()
+      ..addAll(sorted);
+    notifyListeners();
+    try {
+      await _goalService.setArchiveStatus(updated);
+    } catch (e) {
+      debugPrint('Failed to sync goal unarchive: $e');
+    }
+  }
+
   void clear() {
     _clearHeldCompletedGoals();
     goals.clear();

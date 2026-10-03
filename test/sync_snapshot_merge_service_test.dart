@@ -191,6 +191,41 @@ void main() {
     expect(rows.single['id'], 11);
   });
 
+  test('upsert/merge persist remote goal archive status', () async {
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        goals: [
+          UserGoal(
+            id: 11,
+            name: 'Parked',
+            isArchived: true,
+            lastModified: DateTime.utc(2026, 2, 1),
+          ),
+        ],
+      ),
+    );
+
+    final all = await db.getAllGoals();
+    expect(all.single.isArchived, isTrue);
+    expect((await db.getAllGoals(isArchived: true)).single.name, 'Parked');
+    expect(await db.getAllGoals(isArchived: false), isEmpty);
+
+    await merge.merge(
+      SyncBootstrapSnapshot(
+        goals: [
+          UserGoal(
+            id: 11,
+            name: 'Parked',
+            isArchived: false,
+            lastModified: DateTime.utc(2026, 3, 1),
+          ),
+        ],
+      ),
+    );
+
+    expect((await db.getAllGoals()).single.isArchived, isFalse);
+  });
+
   test('keeps newer local goal over older remote', () async {
     await db.upsertGoal(
       UserGoal(id: 11, name: 'Local', lastModified: DateTime.utc(2026, 3, 1)),

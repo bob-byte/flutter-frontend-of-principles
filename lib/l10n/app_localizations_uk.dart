@@ -396,6 +396,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String get goalRecommendApply => 'Використати';
 
   @override
+  String get goalRecommendFirstVisitHint =>
+      'Оберіть сферу життя вище — ми можемо запропонувати цілі для неї.';
+
+  @override
+  String get goalGenerateHabitsFirstVisitHint =>
+      'Згенеруйте ідеї звичок для цієї цілі з AI.';
+
+  @override
   String get lifeAreaSpirituality => 'Духовність';
 
   @override
@@ -490,7 +498,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get helperEmptyDescription =>
-      'Я - ШІ-асистент зі саморозвитку. Ви можете звертатися до мене стосовно різних питань. Наприклад, \"Як моя особистість впливає на моє життя?\"';
+      'Я — ШІ-асистент зі саморозвитку. Запитуйте про що завгодно.';
 
   @override
   String get helperSuggestedPromptsTitle => 'Спробуйте запитати';
@@ -510,7 +518,54 @@ class AppLocalizationsUk extends AppLocalizations {
       'Допоможи спланувати сьогодні з урахуванням звичок і завдань';
 
   @override
+  String get helperActionAddGoal => 'Додати ціль';
+
+  @override
+  String get helperActionAddHabit => 'Додати звичку';
+
+  @override
+  String get helperActionAddTask => 'Додати завдання';
+
+  @override
+  String get helperActionSetMission => 'Встановити місію';
+
+  @override
+  String get helperActionSetSlogan => 'Встановити гасло';
+
+  @override
+  String get helperActionAdded => 'Додано';
+
+  @override
+  String get helperActionAlreadyExists => 'Уже є у вашому списку';
+
+  @override
+  String get helperActionProfileUpdated => 'Збережено';
+
+  @override
+  String get helperActionReplaceMissionTitle => 'Замінити місію?';
+
+  @override
+  String get helperActionReplaceSloganTitle => 'Замінити гасло?';
+
+  @override
+  String get helperActionReplaceMissionMessage =>
+      'Поточну місію буде замінено на пропозицію.';
+
+  @override
+  String get helperActionReplaceSloganMessage =>
+      'Поточне головне гасло буде замінено на пропозицію.';
+
+  @override
   String get copyMessage => 'Копіювати';
+
+  @override
+  String get helperPreviousVersion => 'Попередня версія';
+
+  @override
+  String get helperNextVersion => 'Наступна версія';
+
+  @override
+  String get helperEditingMessage => 'Редагування повідомлення';
 
   @override
   String get successfulCopy => 'Текст успішно скопійовано';
@@ -725,6 +780,10 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get suggestWithAiButton => 'Запропонувати з AI';
+
+  @override
+  String get profileTextAiFirstVisitHint =>
+      'Попросіть AI про ідеї на основі ваших цілей і профілю.';
 
   @override
   String get profileTextSuggestionsTitle => 'Пропозиції AI';
@@ -1100,6 +1159,31 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get archiveHabitMessage =>
       'Ця дія перемістить звичку в архів. Ви зможете відновити роботу над нею пізніше.';
+
+  @override
+  String get archiveGoalQuestion => 'Перемістити ціль в архів?';
+
+  @override
+  String get archiveGoalMessage =>
+      'Ця дія перемістить ціль в архів. Пов’язані звички залишаться активними. Ви зможете повернути ціль пізніше.';
+
+  @override
+  String get unarchiveGoalQuestion => 'Видалити ціль з архіву?';
+
+  @override
+  String get unarchiveGoalMessage =>
+      'Ця дія відновить ціль у ваш активний список.';
+
+  @override
+  String get goalArchiveEmptyDescription =>
+      'Тут відображаються твої архівовані цілі. Ти можеш повернутися до них, коли знову будеш готовий над ними працювати.';
+
+  @override
+  String get goalArchiveInfoDescription =>
+      'Навіщо архівувати ціль?\n✅ Призупинити цілі, до яких ти ще не готовий, без видалення.\n🔁 Зберегти історію цілей, до яких можна повернутися.\n🌱 Відновити ціль, коли зміняться пріоритети чи час.\n\nПорада: архівування цілі не архівує її звички — архівуй звички окремо, якщо хочеш прибрати їх з активного списку.';
+
+  @override
+  String get goalArchiveInfoTooltip => 'Навіщо архівувати цілі?';
 
   @override
   String get cannotCompleteHabitInTheFuture =>

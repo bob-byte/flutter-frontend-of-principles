@@ -82,7 +82,10 @@ class _FakeGoalService extends GoalService {
   final deleted = <UserGoal>[];
 
   @override
-  Future<List<UserGoal>> getGoals() async => List.of(items);
+  Future<List<UserGoal>> getGoals({bool? isArchived = false}) async {
+    if (isArchived == null) return List.of(items);
+    return items.where((g) => g.isArchived == isArchived).toList();
+  }
 
   @override
   Future<void> deleteGoal(UserGoal goal) async {

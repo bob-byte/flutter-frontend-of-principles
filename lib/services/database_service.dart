@@ -260,9 +260,19 @@ class DatabaseService {
     return maps.map((e) => Habit.fromMap(e)).toList();
   }
 
-  Future<List<UserGoal>> getAllGoals() async {
+  /// All goals by default (`null`); pass `false`/`true` to filter by archive.
+  ///
+  /// Unlike [getAllHabits], this keeps the historical “return everything”
+  /// default so sync/infra callers are not silently filtered to active-only.
+  Future<List<UserGoal>> getAllGoals({bool? isArchived}) async {
     final db = await database;
-    final rows = await db.query('user_goals');
+    final rows = isArchived == null
+        ? await db.query('user_goals')
+        : await db.query(
+            'user_goals',
+            where: 'isArchived = ?',
+            whereArgs: [isArchived ? 1 : 0],
+          );
     return rows.map((row) => UserGoal.fromJson(row)).toList();
   }
 
@@ -614,6 +624,7 @@ class DatabaseService {
           'name': goal.name,
           'notes': goal.notes.trim().isEmpty ? null : goal.notes.trim(),
           'isCompleted': goal.isCompleted ? 1 : 0,
+          'isArchived': goal.isArchived ? 1 : 0,
           'lastModified': goal.lastModified.toUtc().toIso8601String(),
         };
         final localId =

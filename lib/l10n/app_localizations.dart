@@ -806,6 +806,18 @@ abstract class AppLocalizations {
   /// **'Use this'**
   String get goalRecommendApply;
 
+  /// First-visit coachmark above Suggest goals with AI
+  ///
+  /// In en, this message translates to:
+  /// **'Select an area of life above — we can suggest goals for it.'**
+  String get goalRecommendFirstVisitHint;
+
+  /// First-visit coachmark above Generate with AI on the goal page
+  ///
+  /// In en, this message translates to:
+  /// **'Generate habit ideas for this goal with AI.'**
+  String get goalGenerateHabitsFirstVisitHint;
+
   /// Life-area chip label
   ///
   /// In en, this message translates to:
@@ -971,7 +983,7 @@ abstract class AppLocalizations {
   /// Empty-state text shown below the AI helper animation
   ///
   /// In en, this message translates to:
-  /// **'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"'**
+  /// **'I\'m an AI assistant for self-development. Ask me anything.'**
   String get helperEmptyDescription;
 
   /// Label above common AI helper prompt suggestions
@@ -1004,11 +1016,101 @@ abstract class AppLocalizations {
   /// **'Help me plan today around my habits and tasks'**
   String get helperPromptPlanToday;
 
+  /// Button on an AI helper suggestion to create a goal
+  ///
+  /// In en, this message translates to:
+  /// **'Add goal'**
+  String get helperActionAddGoal;
+
+  /// Button on an AI helper suggestion to create a habit
+  ///
+  /// In en, this message translates to:
+  /// **'Add habit'**
+  String get helperActionAddHabit;
+
+  /// Button on an AI helper suggestion to open a new task draft
+  ///
+  /// In en, this message translates to:
+  /// **'Add task'**
+  String get helperActionAddTask;
+
+  /// Button on an AI helper suggestion to save mission
+  ///
+  /// In en, this message translates to:
+  /// **'Set mission'**
+  String get helperActionSetMission;
+
+  /// Button on an AI helper suggestion to save main slogan
+  ///
+  /// In en, this message translates to:
+  /// **'Set slogan'**
+  String get helperActionSetSlogan;
+
+  /// Toast after creating a goal/habit from the AI helper
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get helperActionAdded;
+
+  /// Toast when the suggested goal/habit already exists
+  ///
+  /// In en, this message translates to:
+  /// **'Already in your list'**
+  String get helperActionAlreadyExists;
+
+  /// Toast after saving mission or slogan from the AI helper
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get helperActionProfileUpdated;
+
+  /// Confirm dialog title before overwriting mission from chat
+  ///
+  /// In en, this message translates to:
+  /// **'Replace mission?'**
+  String get helperActionReplaceMissionTitle;
+
+  /// Confirm dialog title before overwriting slogan from chat
+  ///
+  /// In en, this message translates to:
+  /// **'Replace slogan?'**
+  String get helperActionReplaceSloganTitle;
+
+  /// Confirm dialog body before overwriting mission from chat
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace your current mission with the suggestion.'**
+  String get helperActionReplaceMissionMessage;
+
+  /// Confirm dialog body before overwriting slogan from chat
+  ///
+  /// In en, this message translates to:
+  /// **'This will replace your current main slogan with the suggestion.'**
+  String get helperActionReplaceSloganMessage;
+
   /// Tooltip / semantics for copying an AI helper message
   ///
   /// In en, this message translates to:
   /// **'Copy'**
   String get copyMessage;
+
+  /// Tooltip on the chevron that shows the previous version of an edited prompt or retried AI reply
+  ///
+  /// In en, this message translates to:
+  /// **'Previous version'**
+  String get helperPreviousVersion;
+
+  /// Tooltip on the chevron that shows the next version of an edited prompt or retried AI reply
+  ///
+  /// In en, this message translates to:
+  /// **'Next version'**
+  String get helperNextVersion;
+
+  /// Banner above the Helper composer while rewriting an earlier prompt; sending adds a new version
+  ///
+  /// In en, this message translates to:
+  /// **'Editing message'**
+  String get helperEditingMessage;
 
   /// Toast after copying an AI helper message to the clipboard
   ///
@@ -1405,6 +1507,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suggest with AI'**
   String get suggestWithAiButton;
+
+  /// First-visit coachmark above Suggest with AI on mission/slogan pages
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI for ideas based on your goals and profile.'**
+  String get profileTextAiFirstVisitHint;
 
   /// Heading above AI slogan/mission suggestion cards
   ///
@@ -1994,7 +2102,7 @@ abstract class AppLocalizations {
   /// **'*Goal not defined'**
   String get undefinedGoalLabel;
 
-  /// Explanation shown when tapping the streak counter on the habits tab
+  /// Explanation shown when tapping the streak counter on the tasks tab
   ///
   /// In en, this message translates to:
   /// **'Shows how many days in a row you opened the app and completed habits. If you skip even one day, the streak resets.'**
@@ -2083,6 +2191,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will move the habit to the archive. You can resume working on it later.'**
   String get archiveHabitMessage;
+
+  /// Title of the archive goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Move goal to archive?'**
+  String get archiveGoalQuestion;
+
+  /// Body of the archive goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This will move the goal to the archive. Linked habits stay active. You can restore the goal later.'**
+  String get archiveGoalMessage;
+
+  /// Title of the unarchive goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive Goal?'**
+  String get unarchiveGoalQuestion;
+
+  /// Body of the unarchive goal confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This action will restore the goal to your active list.'**
+  String get unarchiveGoalMessage;
+
+  /// Empty-state text shown when there are no archived goals
+  ///
+  /// In en, this message translates to:
+  /// **'This section displays the goals you have archived. You can return to them whenever you are ready to work on them again.'**
+  String get goalArchiveEmptyDescription;
+
+  /// Full archive explanation for goals
+  ///
+  /// In en, this message translates to:
+  /// **'Why archive a goal?\n✅ Pause goals you are not ready to pursue without deleting them.\n🔁 Keep history of goals you may revisit later.\n🌱 Restore a goal when timing or priorities change.\n\nTip: archiving a goal does not archive its habits — archive habits separately if you want them out of the active list.'**
+  String get goalArchiveInfoDescription;
+
+  /// Tooltip for the goals archive info button
+  ///
+  /// In en, this message translates to:
+  /// **'Why archive goals?'**
+  String get goalArchiveInfoTooltip;
 
   /// Error shown when tapping a future day on the habit calendar
   ///

@@ -23,6 +23,8 @@ class ApiEndpoints {
   static const allReminders = '$reminder/all';
   static const logs = '/logs';
   static const goals = '/goals';
+  static const goalsArchive = '$goals/archive';
+  static const goalArchiveStatus = '$goals/archivestatus';
   static const habits = '/habits';
   static const habitsInProgress = '$habits/inprogress';
   static const habitsArchive = '$habits/archive';

@@ -395,6 +395,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goalRecommendApply => 'Use this';
 
   @override
+  String get goalRecommendFirstVisitHint =>
+      'Select an area of life above — we can suggest goals for it.';
+
+  @override
+  String get goalGenerateHabitsFirstVisitHint =>
+      'Generate habit ideas for this goal with AI.';
+
+  @override
   String get lifeAreaSpirituality => 'Spirituality';
 
   @override
@@ -487,7 +495,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helperEmptyDescription =>
-      'I am an AI assistant for self-development. You can ask me about different questions. For example, \"How does my personality affect my life?\"';
+      'I\'m an AI assistant for self-development. Ask me anything.';
 
   @override
   String get helperSuggestedPromptsTitle => 'Try asking';
@@ -507,7 +515,54 @@ class AppLocalizationsEn extends AppLocalizations {
       'Help me plan today around my habits and tasks';
 
   @override
+  String get helperActionAddGoal => 'Add goal';
+
+  @override
+  String get helperActionAddHabit => 'Add habit';
+
+  @override
+  String get helperActionAddTask => 'Add task';
+
+  @override
+  String get helperActionSetMission => 'Set mission';
+
+  @override
+  String get helperActionSetSlogan => 'Set slogan';
+
+  @override
+  String get helperActionAdded => 'Added';
+
+  @override
+  String get helperActionAlreadyExists => 'Already in your list';
+
+  @override
+  String get helperActionProfileUpdated => 'Saved';
+
+  @override
+  String get helperActionReplaceMissionTitle => 'Replace mission?';
+
+  @override
+  String get helperActionReplaceSloganTitle => 'Replace slogan?';
+
+  @override
+  String get helperActionReplaceMissionMessage =>
+      'This will replace your current mission with the suggestion.';
+
+  @override
+  String get helperActionReplaceSloganMessage =>
+      'This will replace your current main slogan with the suggestion.';
+
+  @override
   String get copyMessage => 'Copy';
+
+  @override
+  String get helperPreviousVersion => 'Previous version';
+
+  @override
+  String get helperNextVersion => 'Next version';
+
+  @override
+  String get helperEditingMessage => 'Editing message';
 
   @override
   String get successfulCopy => 'Text successfully copied';
@@ -720,6 +775,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suggestWithAiButton => 'Suggest with AI';
+
+  @override
+  String get profileTextAiFirstVisitHint =>
+      'Ask AI for ideas based on your goals and profile.';
 
   @override
   String get profileTextSuggestionsTitle => 'AI suggestions';
@@ -1094,6 +1153,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get archiveHabitMessage =>
       'This will move the habit to the archive. You can resume working on it later.';
+
+  @override
+  String get archiveGoalQuestion => 'Move goal to archive?';
+
+  @override
+  String get archiveGoalMessage =>
+      'This will move the goal to the archive. Linked habits stay active. You can restore the goal later.';
+
+  @override
+  String get unarchiveGoalQuestion => 'Unarchive Goal?';
+
+  @override
+  String get unarchiveGoalMessage =>
+      'This action will restore the goal to your active list.';
+
+  @override
+  String get goalArchiveEmptyDescription =>
+      'This section displays the goals you have archived. You can return to them whenever you are ready to work on them again.';
+
+  @override
+  String get goalArchiveInfoDescription =>
+      'Why archive a goal?\n✅ Pause goals you are not ready to pursue without deleting them.\n🔁 Keep history of goals you may revisit later.\n🌱 Restore a goal when timing or priorities change.\n\nTip: archiving a goal does not archive its habits — archive habits separately if you want them out of the active list.';
+
+  @override
+  String get goalArchiveInfoTooltip => 'Why archive goals?';
 
   @override
   String get cannotCompleteHabitInTheFuture =>

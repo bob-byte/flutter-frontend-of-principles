@@ -12,7 +12,7 @@ class LocalDb {
   static final LocalDb instance = LocalDb();
 
   static const fileName = 'principles.db';
-  static const schemaVersion = 11;
+  static const schemaVersion = 13;
   static const _legacyMigratedKey = 'local_db_legacy_migrated_v2';
 
   final String? pathOverride;
@@ -107,6 +107,17 @@ class LocalDb {
         }
         if (oldVersion < 11) {
           await _addColumnIfMissing(db, 'user_goals', 'notes', 'TEXT');
+        }
+        if (oldVersion < 12) {
+          await _addColumnIfMissing(
+            db,
+            'user_goals',
+            'isArchived',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (oldVersion < 13) {
+          await _createAiConversationTables(db);
         }
       },
     );
@@ -236,6 +247,7 @@ class LocalDb {
         name TEXT NOT NULL,
         notes TEXT,
         isCompleted INTEGER NOT NULL DEFAULT 0,
+        isArchived INTEGER NOT NULL DEFAULT 0,
         lastModified TEXT
       )
     ''');
@@ -385,6 +397,14 @@ class LocalDb {
       'CREATE INDEX IF NOT EXISTS idx_ai_messages_conversationId '
       'ON ai_messages (conversationId)',
     );
+    // Device-only: every prompt/reply version as a JSON tree. Only the active
+    // thread lives in ai_messages and syncs.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ai_conversation_branches (
+        conversationId TEXT PRIMARY KEY,
+        treeJson TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _addColumnIfMissing(
@@ -547,6 +567,8 @@ class LocalDb {
                     map['isCompleted'] == true || map['isCompleted'] == 1
                     ? 1
                     : 0,
+                'isArchived':
+                    map['isArchived'] == true || map['isArchived'] == 1 ? 1 : 0,
                 'lastModified': map['lastModified'],
               });
             }
@@ -597,6 +619,7 @@ class LocalDb {
       'tasks_module_ui_theme_v1',
       'tasks_module_meta_v1',
       'ai_conversations_v1',
+      'ai_conversation_branches_v1',
       'sync_queue_v1',
       'LastOpenDate',
       'LastMissedDate',
@@ -620,6 +643,7 @@ class LocalDb {
           'tasks',
           'task_subtasks',
           'ai_messages',
+          'ai_conversation_branches',
           'ai_conversations',
           'users',
           'SyncQueueItem',

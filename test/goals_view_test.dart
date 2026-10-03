@@ -20,6 +20,7 @@ import 'package:principles_app/services/habit_service.dart';
 import 'package:principles_app/services/user_service.dart';
 import 'package:principles_app/viewmodels/goals_viewmodel.dart';
 import 'package:principles_app/viewmodels/habit_progress_viewmodel.dart';
+import 'package:principles_app/views/edit_goal_view.dart';
 import 'package:principles_app/views/goals_view.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -124,6 +125,16 @@ void main() {
     expect(find.byKey(const Key('goalNameField')), findsOneWidget);
     expect(find.byKey(const Key('goalNotesField')), findsOneWidget);
     expect(find.byKey(const Key('goalCompleteButton')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('goalCreateHabit')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(EditGoalView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.byKey(const Key('goalCreateHabit')), findsOneWidget);
     expect(find.byKey(const Key('goalGenerateHabits')), findsOneWidget);
     expect(find.text('Be a reader'), findsWidgets);

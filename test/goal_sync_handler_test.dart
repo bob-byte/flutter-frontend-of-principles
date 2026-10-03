@@ -67,18 +67,68 @@ void main() {
     expect(requests.single.method, 'DELETE');
     expect(requests.single.path, '${ApiEndpoints.goals}/14');
   });
+
+  test(
+    'pushes archive status from payload even when local goal is archived',
+    () async {
+      goals.localGoal = UserGoal(
+        id: 12,
+        localId: 3,
+        name: 'Archived',
+        isArchived: true,
+      );
+      await GoalSyncHandler(apiClient, goalService: goals).handle(
+        SyncQueueItem(
+          handlerType: SyncHandlerType.userGoal,
+          operation: OperationKind.setArchiveStatus,
+          entityId: 12,
+          entityLocalId: 3,
+          payloadJson: jsonEncode({
+            'goalId': 12,
+            'isArchived': false,
+            'lastModified': '2026-01-01T00:00:00.000Z',
+          }),
+        ),
+      );
+
+      expect(goals.archiveCalls, hasLength(1));
+      expect(goals.archiveCalls.single.goalId, 12);
+      expect(goals.archiveCalls.single.isArchived, isFalse);
+    },
+  );
+}
+
+class _ArchiveCall {
+  _ArchiveCall(this.goalId, this.isArchived);
+  final int goalId;
+  final bool isArchived;
 }
 
 class _FakeGoalService extends GoalService {
   _FakeGoalService(AuthService auth) : super(auth);
 
   final assignedIds = <int>[];
+  final archiveCalls = <_ArchiveCall>[];
+  UserGoal? localGoal;
 
   @override
-  Future<UserGoal?> getGoalByLocalId(int localId) async => null;
+  Future<UserGoal?> getGoalByLocalId(int localId) async {
+    final goal = localGoal;
+    if (goal == null || goal.localId != localId) return null;
+    return goal;
+  }
 
   @override
   Future<void> assignServerId(UserGoal goal, int serverId) async {
     assignedIds.add(serverId);
+  }
+
+  @override
+  Future<void> pushArchiveStatus({
+    required int goalId,
+    required bool isArchived,
+    String? lastModified,
+  }) async {
+    archiveCalls.add(_ArchiveCall(goalId, isArchived));
   }
 }

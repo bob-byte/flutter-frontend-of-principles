@@ -208,7 +208,7 @@ class _GoalSelectionSheetContent extends StatelessWidget {
         animation: animation,
         palette: palette,
         anchor: anchor,
-        estimatedHeight: 272,
+        estimatedHeight: 320,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -251,6 +251,17 @@ class _GoalSelectionSheetContent extends StatelessWidget {
                       );
                     }
                     vm.setGoalCompleted(goal, isCompleted: !goal.isCompleted);
+                  },
+                ),
+                ContextMenuAction(
+                  label: l10n.archiveTooltip,
+                  icon: Icons.archive_outlined,
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    final confirmed = await vm.confirmArchiveGoal(goal);
+                    if (confirmed) {
+                      await vm.archiveGoal(goal);
+                    }
                   },
                 ),
                 ContextMenuAction(

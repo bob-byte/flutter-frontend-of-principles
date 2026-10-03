@@ -10,6 +10,7 @@ import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
 import '../models/user_goal.dart';
+import '../services/dialog_service.dart';
 import '../viewmodels/goals_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import 'common/app_liquid_background.dart';
@@ -21,7 +22,7 @@ import 'edit_goal_view.dart';
 import 'habit_detail_view.dart';
 
 Color _primarySoft(TasksUiPalette palette) =>
-    Color.alphaBlend(palette.primary.withValues(alpha: 0.16), palette.softBg);
+    palette.primary.withValues(alpha: palette.isDark ? 0.22 : 0.14);
 
 class GoalsView extends StatefulWidget {
   const GoalsView({super.key, this.embedded = false});
@@ -91,29 +92,7 @@ class _GoalsViewState extends State<GoalsView> {
               builder: (context, goalsVm, _) {
                 return Column(
                   children: [
-                    GlassAppBar(
-                      title: Text(l10n.goalsTitle),
-                      leading: widget.embedded
-                          ? null
-                          : GlassIconButton(
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                              ),
-                              onPressed: () => Navigator.maybePop(context),
-                            ),
-                      actions: [
-                        _GoalsFilterButton(
-                          key: const Key('goalFiltersButton'),
-                          palette: palette,
-                          tooltip: l10n.goalFiltersTooltip,
-                          emphasized:
-                              goalsVm.filtersVisible ||
-                              goalsVm.hasActiveFilters,
-                          showBadge: goalsVm.hasActiveFilters,
-                          onTap: goalsVm.toggleFiltersVisible,
-                        ),
-                      ],
-                    ),
+                    _buildHeader(context, goalsVm, palette, l10n),
                     _GoalsFiltersPanelHost(palette: palette),
                     Expanded(child: _GoalsBody(embedded: widget.embedded)),
                   ],
@@ -129,6 +108,78 @@ class _GoalsViewState extends State<GoalsView> {
           children: [const AppLiquidBackground(), scaffold],
         );
       },
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    GoalsViewModel goalsVm,
+    TasksUiPalette palette,
+    AppLocalizations l10n,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, left: 24, right: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (!widget.embedded) ...[
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: palette.textPrimary,
+                size: 20,
+              ),
+              onPressed: () => Navigator.maybePop(context),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Expanded(
+            child: Text(
+              l10n.goalsTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: palette.textPrimary,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              _GoalsFilterButton(
+                key: const Key('goalFiltersButton'),
+                palette: palette,
+                tooltip: l10n.goalFiltersTooltip,
+                emphasized: goalsVm.filtersVisible || goalsVm.hasActiveFilters,
+                showBadge: goalsVm.hasActiveFilters,
+                onPressed: goalsVm.toggleFiltersVisible,
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                key: const Key('goalArchiveButton'),
+                tooltip: l10n.archiveTooltip,
+                icon: Icon(
+                  Icons.archive_outlined,
+                  color: palette.primary,
+                  size: 24,
+                ),
+                onPressed: () {
+                  DialogService()
+                      .showCustomSheet(variant: BottomSheetType.goalArchive)
+                      .then((_) {
+                        if (!context.mounted) return;
+                        context.read<GoalsViewModel>().load(silent: true);
+                      });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -166,7 +217,7 @@ class _GoalsBody extends StatelessWidget {
         animation: animation,
         palette: palette,
         anchor: anchor,
-        estimatedHeight: 272,
+        estimatedHeight: 320,
         child: Column(
           key: const Key('goalContextMenu'),
           mainAxisSize: MainAxisSize.min,
@@ -210,6 +261,17 @@ class _GoalsBody extends StatelessWidget {
                       );
                     }
                     vm.setGoalCompleted(goal, isCompleted: !goal.isCompleted);
+                  },
+                ),
+                ContextMenuAction(
+                  label: l10n.archiveTooltip,
+                  icon: Icons.archive_outlined,
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    final confirmed = await vm.confirmArchiveGoal(goal);
+                    if (confirmed) {
+                      await vm.archiveGoal(goal);
+                    }
                   },
                 ),
                 ContextMenuAction(
@@ -589,43 +651,43 @@ class _GoalsFilterButton extends StatelessWidget {
   const _GoalsFilterButton({
     super.key,
     required this.palette,
-    required this.onTap,
+    required this.onPressed,
     required this.tooltip,
     this.emphasized = false,
     this.showBadge = false,
   });
 
   final TasksUiPalette palette;
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
   final String tooltip;
   final bool emphasized;
   final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
+    final iconWidget = Icon(Icons.tune, color: palette.primary, size: 24);
+    final button = emphasized
+        ? GestureDetector(
+            onTap: onPressed,
+            child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: emphasized ? _primarySoft(palette) : palette.softBg,
-                shape: BoxShape.circle,
+                color: _primarySoft(palette),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                Icons.tune,
-                color: emphasized ? palette.primary : palette.textMuted,
-                size: 22,
-              ),
+              child: iconWidget,
             ),
-            if (showBadge)
+          )
+        : IconButton(onPressed: onPressed, icon: iconWidget);
+
+    final badged = showBadge
+        ? Stack(
+            clipBehavior: Clip.none,
+            children: [
+              button,
               Positioned(
-                right: 2,
-                top: 2,
+                right: 8,
+                top: 8,
                 child: Container(
                   width: 8,
                   height: 8,
@@ -636,10 +698,11 @@ class _GoalsFilterButton extends StatelessWidget {
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
+            ],
+          )
+        : button;
+
+    return Tooltip(message: tooltip, child: badged);
   }
 }
 

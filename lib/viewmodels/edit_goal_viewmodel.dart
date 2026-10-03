@@ -68,6 +68,10 @@ class EditGoalViewModel extends ChangeNotifier {
 
   bool get canToggleCompleted => goal != null;
 
+  bool get canArchive => goal != null;
+
+  bool get isArchived => goal?.isArchived ?? false;
+
   bool get isDirty =>
       name.trim() != _snapshotName ||
       notes.trim() != _snapshotNotes ||
@@ -150,6 +154,24 @@ class EditGoalViewModel extends ChangeNotifier {
       isSaving = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> toggleArchived() async {
+    final current = goal;
+    if (current == null) return false;
+    final next = !current.isArchived;
+    final updated = await _goalService.applyLocalArchiveStatus(
+      current.copyWith(isArchived: next),
+    );
+    goal = updated;
+    hasChanges = true;
+    notifyListeners();
+    try {
+      await _goalService.setArchiveStatus(updated);
+    } catch (e) {
+      debugPrint('Failed to sync goal archive from editor: $e');
+    }
+    return true;
   }
 
   /// Persists when the form changed. Returns the stored goal.

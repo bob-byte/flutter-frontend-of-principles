@@ -17,6 +17,7 @@ import 'services/push_sync_service.dart';
 import 'services/reminder_service.dart';
 import 'views/widgets/archive_bottom_sheet.dart';
 import 'views/widgets/frequency_dialog.dart';
+import 'views/widgets/goal_archive_bottom_sheet.dart';
 import 'views/widgets/goal_selection_sheet.dart';
 
 void _setupDialogService() {
@@ -35,6 +36,12 @@ void _setupDialogService() {
   });
   dialogService.registerSheetBuilder(BottomSheetType.archive, (context, data) {
     return const ArchiveBottomSheet();
+  });
+  dialogService.registerSheetBuilder(BottomSheetType.goalArchive, (
+    context,
+    data,
+  ) {
+    return const GoalArchiveBottomSheet();
   });
 }
 

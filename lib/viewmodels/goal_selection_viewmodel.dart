@@ -55,6 +55,26 @@ class GoalSelectionViewModel extends ChangeNotifier {
     await loadGoals();
   }
 
+  Future<bool> confirmArchiveGoal(UserGoal goal) {
+    return _dialogService.showConfirmAsync(
+      msg: _dialogService.l10n.archiveGoalMessage,
+      title: _dialogService.l10n.archiveGoalQuestion,
+    );
+  }
+
+  Future<void> archiveGoal(UserGoal goal) async {
+    if (_goalsViewModel != null) {
+      await _goalsViewModel.archiveGoal(goal);
+    } else {
+      final updated = await _goalService.applyLocalArchiveStatus(
+        goal.copyWith(isArchived: true),
+      );
+      await _goalService.setArchiveStatus(updated);
+    }
+    _editHabitViewModel?.clearTargetGoalIfMatching(goal);
+    await loadGoals();
+  }
+
   Future<void> setGoalCompleted(
     UserGoal goal, {
     required bool isCompleted,

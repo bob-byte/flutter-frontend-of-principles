@@ -5,6 +5,7 @@ class UserGoal {
     required this.name,
     this.notes = '',
     this.isCompleted = false,
+    this.isArchived = false,
     DateTime? lastModified,
   }) : lastModified = lastModified ?? DateTime.now().toUtc();
 
@@ -13,6 +14,7 @@ class UserGoal {
   final String name;
   final String notes;
   final bool isCompleted;
+  final bool isArchived;
   final DateTime lastModified;
 
   UserGoal copyWith({
@@ -21,6 +23,7 @@ class UserGoal {
     String? name,
     String? notes,
     bool? isCompleted,
+    bool? isArchived,
     DateTime? lastModified,
   }) {
     return UserGoal(
@@ -29,6 +32,7 @@ class UserGoal {
       name: name ?? this.name,
       notes: notes ?? this.notes,
       isCompleted: isCompleted ?? this.isCompleted,
+      isArchived: isArchived ?? this.isArchived,
       lastModified: lastModified ?? this.lastModified,
     );
   }
@@ -39,6 +43,7 @@ class UserGoal {
     'name': name,
     'notes': notes.trim().isEmpty ? null : notes.trim(),
     'isCompleted': isCompleted,
+    'isArchived': isArchived,
     'lastModified': lastModified.toUtc().toIso8601String(),
   };
 
@@ -49,6 +54,7 @@ class UserGoal {
       name: '${map['name'] ?? map['Name'] ?? ''}',
       notes: '${map['notes'] ?? map['Notes'] ?? ''}',
       isCompleted: _asBool(map['isCompleted'] ?? map['IsCompleted']),
+      isArchived: _asBool(map['isArchived'] ?? map['IsArchived']),
       lastModified: _asDate(map['lastModified'] ?? map['LastModified']),
     );
   }

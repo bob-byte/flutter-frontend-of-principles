@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:super_tooltip/super_tooltip.dart';
 
 import '../core/network/server_required_retry.dart';
 import '../core/theme/task_theme_palette.dart';
@@ -21,6 +22,7 @@ import '../viewmodels/edit_goal_viewmodel.dart';
 import '../viewmodels/habit_progress_viewmodel.dart';
 import 'common/app_liquid_background.dart';
 import 'common/completion_burst.dart';
+import 'common/ok_hint_popover.dart';
 import 'common/themed_lottie.dart';
 import 'edit_habit_view.dart';
 import 'habit_detail_view.dart';
@@ -48,9 +50,15 @@ class EditGoalView extends StatefulWidget {
 }
 
 class _EditGoalViewState extends State<EditGoalView> {
+  static const _hasSeenGoalRecommendHintKey = 'hasSeenGoalRecommendHint';
+  static const _hasSeenGoalGenerateHabitsHintKey =
+      'hasSeenGoalGenerateHabitsHint';
+
   late final EditGoalViewModel _vm;
   late final TextEditingController _nameController;
   late final TextEditingController _notesController;
+  final _recommendHintController = SuperTooltipController();
+  final _generateHabitsHintController = SuperTooltipController();
   bool _allowPop = false;
   bool _popResult = false;
   bool _leaving = false;
@@ -71,14 +79,33 @@ class _EditGoalViewState extends State<EditGoalView> {
     _notesController = TextEditingController(text: _vm.notes);
     _vm.syncFrom(context.read<HabitProgressViewModel>().habits);
     _vm.refreshFromDatabase();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeShowAiHints();
+    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _notesController.dispose();
+    _recommendHintController.dispose();
+    _generateHabitsHintController.dispose();
     _vm.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeShowAiHints() async {
+    final showedRecommend = await showOkHintOnce(
+      context: context,
+      controller: _recommendHintController,
+      prefsKey: _hasSeenGoalRecommendHintKey,
+    );
+    if (!mounted || showedRecommend) return;
+    await showOkHintOnce(
+      context: context,
+      controller: _generateHabitsHintController,
+      prefsKey: _hasSeenGoalGenerateHabitsHintKey,
+    );
   }
 
   Future<void> _leave() async {
@@ -115,6 +142,25 @@ class _EditGoalViewState extends State<EditGoalView> {
     await _leave();
   }
 
+  Future<void> _confirmArchive() async {
+    final l10n = AppLocalizations.of(context)!;
+    final archived = _vm.isArchived;
+    final confirmed = await DialogService().showConfirmAsync(
+      msg: archived ? l10n.unarchiveGoalMessage : l10n.archiveGoalMessage,
+      title: archived ? l10n.unarchiveGoalQuestion : l10n.archiveGoalQuestion,
+    );
+    if (!confirmed || !mounted) return;
+    await _vm.toggleArchived();
+    if (!mounted) return;
+    setState(() {
+      _allowPop = true;
+      _popResult = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop(true);
+    });
+  }
+
   Future<UserGoal?> _readyGoal() async {
     _vm.name = _nameController.text;
     _vm.notes = _notesController.text;
@@ -147,6 +193,10 @@ class _EditGoalViewState extends State<EditGoalView> {
   }
 
   Future<void> _generateHabits() async {
+    if (_generateHabitsHintController.isVisible) {
+      await _generateHabitsHintController.hideTooltip();
+    }
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     _vm.name = _nameController.text;
     _vm.notes = _notesController.text;
@@ -162,6 +212,10 @@ class _EditGoalViewState extends State<EditGoalView> {
   }
 
   Future<void> _recommendGoals() async {
+    if (_recommendHintController.isVisible) {
+      await _recommendHintController.hideTooltip();
+    }
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     _vm.name = _nameController.text;
     _vm.notes = _notesController.text;
@@ -255,6 +309,21 @@ class _EditGoalViewState extends State<EditGoalView> {
                     _leave();
                   },
                 ),
+                actions: [
+                  if (vm.canArchive)
+                    GlassIconButton(
+                      key: const Key('editGoalArchiveButton'),
+                      icon: Icon(
+                        vm.isArchived
+                            ? Icons.unarchive_outlined
+                            : Icons.archive_outlined,
+                      ),
+                      semanticLabel: vm.isArchived
+                          ? l10n.unarchiveTooltip
+                          : l10n.archiveTooltip,
+                      onPressed: _confirmArchive,
+                    ),
+                ],
               ),
               body: Material(
                 color: Colors.transparent,
@@ -281,6 +350,7 @@ class _EditGoalViewState extends State<EditGoalView> {
                             recommendations: vm.goalRecommendations,
                             isLoading: vm.isRecommendingGoals,
                             error: vm.recommendGoalsError,
+                            hintController: _recommendHintController,
                             onSelectArea: vm.selectLifeArea,
                             onRecommend: _recommendGoals,
                             onApply: _applyGoalRecommendation,
@@ -292,6 +362,8 @@ class _EditGoalViewState extends State<EditGoalView> {
                             recommendations: vm.recommendations,
                             isGenerating: vm.isGenerating,
                             generateError: vm.generateError,
+                            generateHintController:
+                                _generateHabitsHintController,
                             onCreate: _createHabit,
                             onGenerate: _generateHabits,
                             onAddRecommendation: _addRecommendation,
@@ -568,6 +640,7 @@ class _GoalRecommendSection extends StatelessWidget {
     required this.recommendations,
     required this.isLoading,
     required this.error,
+    required this.hintController,
     required this.onSelectArea,
     required this.onRecommend,
     required this.onApply,
@@ -578,6 +651,7 @@ class _GoalRecommendSection extends StatelessWidget {
   final List<RecommendedGoal> recommendations;
   final bool isLoading;
   final String? error;
+  final SuperTooltipController hintController;
   final ValueChanged<LifeArea?> onSelectArea;
   final VoidCallback onRecommend;
   final ValueChanged<RecommendedGoal> onApply;
@@ -651,34 +725,52 @@ class _GoalRecommendSection extends StatelessWidget {
         const SizedBox(height: 14),
         SizedBox(
           height: 50,
-          child: OutlinedButton.icon(
-            key: const Key('goalRecommendButton'),
-            onPressed: isLoading ? null : onRecommend,
-            icon: isLoading
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
+          width: double.infinity,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: OkHintPopover(
+                    controller: hintController,
+                    message: l10n.goalRecommendFirstVisitHint,
+                    okLabel: l10n.okButton,
+                    showOnTap: false,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: OutlinedButton.icon(
+                  key: const Key('goalRecommendButton'),
+                  onPressed: isLoading ? null : onRecommend,
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: palette.primary,
+                          ),
+                        )
+                      : Icon(Icons.auto_awesome, color: palette.primary),
+                  label: Text(
+                    l10n.goalRecommendButton,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       color: palette.primary,
                     ),
-                  )
-                : Icon(Icons.auto_awesome, color: palette.primary),
-            label: Text(
-              l10n.goalRecommendButton,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: palette.primary,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.primary,
+                    side: BorderSide(color: palette.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: palette.primary,
-              side: BorderSide(color: palette.primary),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
+            ],
           ),
         ),
         if (isLoading) ...[
@@ -794,6 +886,7 @@ class _HabitsSection extends StatelessWidget {
     required this.recommendations,
     required this.isGenerating,
     required this.generateError,
+    required this.generateHintController,
     required this.onCreate,
     required this.onGenerate,
     required this.onAddRecommendation,
@@ -805,6 +898,7 @@ class _HabitsSection extends StatelessWidget {
   final List<RecommendedHabit> recommendations;
   final bool isGenerating;
   final String? generateError;
+  final SuperTooltipController generateHintController;
   final VoidCallback onCreate;
   final VoidCallback onGenerate;
   final ValueChanged<RecommendedHabit> onAddRecommendation;
@@ -860,15 +954,32 @@ class _HabitsSection extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _ActionCard(
-                  key: const Key('goalGenerateHabits'),
-                  palette: palette,
-                  icon: Icons.auto_awesome_rounded,
-                  title: l10n.goalGenerateHabits,
-                  subtitle: l10n.goalGenerateHabitsHint,
-                  emphasized: true,
-                  busy: isGenerating,
-                  onTap: isGenerating ? null : onGenerate,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: OkHintPopover(
+                          controller: generateHintController,
+                          message: l10n.goalGenerateHabitsFirstVisitHint,
+                          okLabel: l10n.okButton,
+                          showOnTap: false,
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: _ActionCard(
+                        key: const Key('goalGenerateHabits'),
+                        palette: palette,
+                        icon: Icons.auto_awesome_rounded,
+                        title: l10n.goalGenerateHabits,
+                        subtitle: l10n.goalGenerateHabitsHint,
+                        emphasized: true,
+                        busy: isGenerating,
+                        onTap: isGenerating ? null : onGenerate,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

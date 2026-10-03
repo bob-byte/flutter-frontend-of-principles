@@ -78,6 +78,15 @@ void main() {
     expect(vm.statusFilter, GoalStatusFilter.all);
     expect(vm.hasActiveFilters, isFalse);
   });
+
+  test('archiveGoal removes goal from the active list', () async {
+    final goal = UserGoal(id: 4, name: 'Shelve');
+    goals.items = [goal];
+    await vm.load();
+    await vm.archiveGoal(goal);
+    expect(goals.archived.single.name, 'Shelve');
+    expect(vm.goals, isEmpty);
+  });
 }
 
 class _FakeGoalService extends GoalService {
@@ -86,9 +95,13 @@ class _FakeGoalService extends GoalService {
   List<UserGoal> items = [];
   final saved = <UserGoal>[];
   final deleted = <UserGoal>[];
+  final archived = <UserGoal>[];
 
   @override
-  Future<List<UserGoal>> getGoals() async => List.of(items);
+  Future<List<UserGoal>> getGoals({bool? isArchived = false}) async {
+    if (isArchived == null) return List.of(items);
+    return items.where((g) => g.isArchived == isArchived).toList();
+  }
 
   @override
   Future<UserGoal> saveGoal(UserGoal goal) async {
@@ -96,6 +109,19 @@ class _FakeGoalService extends GoalService {
     items = [...items, goal];
     return goal;
   }
+
+  @override
+  Future<UserGoal> applyLocalArchiveStatus(UserGoal goal) async {
+    archived.add(goal);
+    items = [
+      for (final item in items)
+        if (item.id == goal.id && item.name == goal.name) goal else item,
+    ];
+    return goal;
+  }
+
+  @override
+  Future<bool> setArchiveStatus(UserGoal goal) async => true;
 
   @override
   Future<void> deleteGoal(UserGoal goal) async {

@@ -9,7 +9,7 @@ import '../views/common/app_alert_dialog.dart';
 
 enum DialogType { frequencyConfig }
 
-enum BottomSheetType { goalSelection, archive }
+enum BottomSheetType { goalSelection, archive, goalArchive }
 
 class DialogResponse {
   final bool confirmed;

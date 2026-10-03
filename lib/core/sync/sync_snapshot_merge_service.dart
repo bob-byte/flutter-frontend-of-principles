@@ -171,7 +171,7 @@ class SyncSnapshotMergeService {
     SyncBootstrapSnapshot snapshot,
     PendingSyncIndex pending,
   ) async {
-    final localGoals = await databaseService.getAllGoals();
+    final localGoals = await databaseService.getAllGoals(isArchived: null);
     final localByServerId = <int, UserGoal>{
       for (final goal in localGoals)
         if (goal.id != null && goal.id != 0) goal.id!: goal,
@@ -190,6 +190,7 @@ class SyncSnapshotMergeService {
       if (local != null &&
           local.name == goal.name &&
           local.isCompleted == goal.isCompleted &&
+          local.isArchived == goal.isArchived &&
           !local.lastModified.isBefore(goal.lastModified) &&
           !goal.lastModified.isBefore(local.lastModified)) {
         continue;
