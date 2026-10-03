@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app/post_auth_navigation.dart';
+import '../core/config/principles_site.dart';
 import '../core/helpers/linked_text.dart';
 import '../core/launch_data_loader.dart';
 import '../core/theme/theme_controller.dart';
@@ -297,10 +298,14 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     links: {
                       l10n.userAgreement: () => launchUrl(
-                        Uri.parse('https://principles.top/useragreement'),
+                        PrinciplesSite.userAgreement(
+                          context.read<ThemeController>().uiTheme,
+                        ),
                       ),
                       l10n.privacyPolicy: () => launchUrl(
-                        Uri.parse('https://principles.top/privacypolicy'),
+                        PrinciplesSite.privacyPolicy(
+                          context.read<ThemeController>().uiTheme,
+                        ),
                       ),
                     },
                     style: TextStyle(fontSize: 11, color: palette.textMuted),

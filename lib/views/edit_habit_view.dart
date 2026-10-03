@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:super_tooltip/super_tooltip.dart';
 
-import '../core/road_guide/road_guide_controller.dart';
 import '../core/theme/theme_controller.dart';
 import '../models/habit.dart';
 import '../viewmodels/edit_habit_viewmodel.dart';
 import '../viewmodels/schedule_draft.dart';
 import 'common/app_liquid_background.dart';
+import 'common/ok_hint_popover.dart';
 import 'widgets/recommended_habits_sheet.dart';
 import 'widgets/schedule/schedule_bottom_sheet.dart';
 import 'widgets/schedule/schedule_format.dart';
@@ -120,31 +119,13 @@ class _EditHabitViewState extends State<EditHabitView> {
   }
 
   Future<void> _maybeShowRecommendedHabitsHint() async {
-    try {
-      if (context.read<RoadGuideController>().isActive) return;
-    } on ProviderNotFoundException {
-      // Widget tests may mount without the road guide.
-    }
     final vm = context.read<EditHabitViewModel>();
-    if (!vm.isNewHabit) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_hasSeenRecommendedHabitsHintKey) ?? false) return;
-
-    await _waitUntilPageReady();
-    if (!mounted) return;
-
-    await prefs.setBool(_hasSeenRecommendedHabitsHintKey, true);
-    await _recommendedHabitsTooltipController.showTooltip();
-  }
-
-  Future<void> _waitUntilPageReady() async {
-    await WidgetsBinding.instance.endOfFrame;
-    final animation = ModalRoute.of(context)?.animation;
-    if (animation == null || animation.status == AnimationStatus.completed) {
-      return;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+    await showOkHintOnce(
+      context: context,
+      controller: _recommendedHabitsTooltipController,
+      prefsKey: _hasSeenRecommendedHabitsHintKey,
+      skip: !vm.isNewHabit,
+    );
   }
 
   Future<void> _selectHabitType({required bool flexible}) async {
@@ -428,7 +409,7 @@ class _EditHabitViewState extends State<EditHabitView> {
                         children: [
                           Positioned.fill(
                             child: IgnorePointer(
-                              child: _HabitInfoPopover(
+                              child: OkHintPopover(
                                 controller: _recommendedHabitsTooltipController,
                                 message: vm.targetGoal.trim().isEmpty
                                     ? l10n.recommendedHabitsCaptionNoGoal
@@ -546,7 +527,7 @@ class _TypeButton extends StatelessWidget {
       children: [
         Positioned.fill(
           child: IgnorePointer(
-            child: _HabitInfoPopover(
+            child: OkHintPopover(
               controller: tooltipController,
               message: tooltipMessage,
               okLabel: okLabel,
@@ -622,69 +603,6 @@ class _SelectField extends StatelessWidget {
   }
 }
 
-class _HabitInfoPopover extends StatelessWidget {
-  const _HabitInfoPopover({
-    required this.controller,
-    required this.message,
-    required this.okLabel,
-    required this.child,
-    this.direction = TooltipDirection.up,
-    this.showOnTap = true,
-  });
-
-  final SuperTooltipController controller;
-  final String message;
-  final String okLabel;
-  final Widget child;
-  final TooltipDirection direction;
-  final bool showOnTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SuperTooltip(
-      controller: controller,
-      style: TooltipStyle(backgroundColor: scheme.primary, hasShadow: false),
-      positionConfig: PositionConfiguration(preferredDirection: direction),
-      interactionConfig: InteractionConfiguration(showOnTap: showOnTap),
-      content: SizedBox(
-        width: 280,
-        child: Material(
-          color: Colors.transparent,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(color: scheme.onPrimary, fontSize: 13),
-                ),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: scheme.onPrimary,
-                ),
-                onPressed: () => controller.hideTooltip(),
-                child: Text(
-                  okLabel,
-                  style: TextStyle(
-                    color: scheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      child: child,
-    );
-  }
-}
-
 class _InfoTooltip extends StatelessWidget {
   const _InfoTooltip({
     required this.controller,
@@ -704,7 +622,7 @@ class _InfoTooltip extends StatelessWidget {
     return SizedBox(
       width: 48,
       height: 48,
-      child: _HabitInfoPopover(
+      child: OkHintPopover(
         controller: controller,
         message: message,
         okLabel: okLabel,

@@ -226,6 +226,77 @@ class _SettingsBody extends StatelessWidget {
                   ],
                 ),
               ],
+              if (!kIsWeb) ...[
+                const SizedBox(height: 12),
+                GlassGroupedSection(
+                  useOwnLayer: true,
+                  margin: _settingsSectionMargin,
+                  header: Text(l10n.settingsRemindersTitle),
+                  children: [
+                    GlassListTile(
+                      key: const Key('settingsRemindersTile'),
+                      contentPadding: _settingsTilePadding,
+                      leading: const Icon(Icons.notifications_none),
+                      title: Text(l10n.settingsRemindersTitle),
+                      subtitle: Text(
+                        l10n.settingsRemindersSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: GlassListTile.chevron,
+                      onTap: openNotificationSettings,
+                    ),
+                    GlassListTile(
+                      key: const Key('settingsNotificationSoundTile'),
+                      contentPadding: _settingsTilePadding,
+                      leading: const Icon(Icons.music_note_outlined),
+                      title: Text(l10n.settingsNotificationSoundTitle),
+                      subtitle: Text(
+                        l10n.settingsNotificationSoundSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: PopupMenuButton<AppNotificationSound>(
+                        tooltip: l10n.settingsNotificationSoundTitle,
+                        onSelected: (sound) {
+                          // Preview immediately — do not wait for reminder
+                          // reschedule, which can take long enough that iOS
+                          // drops a late one-shot AudioPlayer play.
+                          unawaited(
+                            NotificationSoundPreview.instance.play(sound),
+                          );
+                          unawaited(vm.setNotificationSound(sound));
+                        },
+                        itemBuilder: (context) => [
+                          for (final sound in AppNotificationSound.selectable)
+                            PopupMenuItem<AppNotificationSound>(
+                              value: sound,
+                              child: Text(_notificationSoundName(l10n, sound)),
+                            ),
+                        ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 120),
+                              child: Text(
+                                _notificationSoundName(
+                                  l10n,
+                                  vm.notificationSound,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               GlassGroupedSection(
                 useOwnLayer: true,
@@ -303,77 +374,6 @@ class _SettingsBody extends StatelessWidget {
                   ),
                 ],
               ),
-              if (!kIsWeb) ...[
-                const SizedBox(height: 12),
-                GlassGroupedSection(
-                  useOwnLayer: true,
-                  margin: _settingsSectionMargin,
-                  header: Text(l10n.settingsRemindersTitle),
-                  children: [
-                    GlassListTile(
-                      key: const Key('settingsRemindersTile'),
-                      contentPadding: _settingsTilePadding,
-                      leading: const Icon(Icons.notifications_none),
-                      title: Text(l10n.settingsRemindersTitle),
-                      subtitle: Text(
-                        l10n.settingsRemindersSubtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: GlassListTile.chevron,
-                      onTap: openNotificationSettings,
-                    ),
-                    GlassListTile(
-                      key: const Key('settingsNotificationSoundTile'),
-                      contentPadding: _settingsTilePadding,
-                      leading: const Icon(Icons.music_note_outlined),
-                      title: Text(l10n.settingsNotificationSoundTitle),
-                      subtitle: Text(
-                        l10n.settingsNotificationSoundSubtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: PopupMenuButton<AppNotificationSound>(
-                        tooltip: l10n.settingsNotificationSoundTitle,
-                        onSelected: (sound) {
-                          // Preview immediately — do not wait for reminder
-                          // reschedule, which can take long enough that iOS
-                          // drops a late one-shot AudioPlayer play.
-                          unawaited(
-                            NotificationSoundPreview.instance.play(sound),
-                          );
-                          unawaited(vm.setNotificationSound(sound));
-                        },
-                        itemBuilder: (context) => [
-                          for (final sound in AppNotificationSound.selectable)
-                            PopupMenuItem<AppNotificationSound>(
-                              value: sound,
-                              child: Text(_notificationSoundName(l10n, sound)),
-                            ),
-                        ],
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 120),
-                              child: Text(
-                                _notificationSoundName(
-                                  l10n,
-                                  vm.notificationSound,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                            const Icon(Icons.arrow_drop_down),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
               const SizedBox(height: 12),
               GlassGroupedSection(
                 useOwnLayer: true,

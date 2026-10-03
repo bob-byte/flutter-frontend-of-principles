@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:super_tooltip/super_tooltip.dart';
 
 import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
@@ -12,6 +13,7 @@ import '../services/user_service.dart';
 import '../viewmodels/edit_profile_text_viewmodel.dart';
 import '../viewmodels/settings_viewmodel.dart';
 import 'common/app_liquid_background.dart';
+import 'common/ok_hint_popover.dart';
 
 /// Dedicated page for editing the main slogan (Settings → Main slogan).
 class EditSloganView extends StatelessWidget {
@@ -157,12 +159,20 @@ class EditProfileTextView extends StatefulWidget {
 }
 
 class _EditProfileTextViewState extends State<EditProfileTextView> {
+  static const _hasSeenMissionAiHintKey = 'hasSeenMissionAiHint';
+  static const _hasSeenSloganAiHintKey = 'hasSeenSloganAiHint';
+
   late final EditProfileTextViewModel _vm;
   late final TextEditingController _textController;
   late final TextEditingController _hintController;
+  final _aiHintController = SuperTooltipController();
   bool _allowPop = false;
   Object? _popResult;
   bool _leaving = false;
+
+  String get _aiHintPrefsKey => widget.kind == ProfileTextKind.mission
+      ? _hasSeenMissionAiHintKey
+      : _hasSeenSloganAiHintKey;
 
   @override
   void initState() {
@@ -196,14 +206,28 @@ class _EditProfileTextViewState extends State<EditProfileTextView> {
     );
     _textController = TextEditingController(text: _vm.text);
     _hintController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _maybeShowAiHint();
+    });
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _hintController.dispose();
+    _aiHintController.dispose();
     _vm.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeShowAiHint() async {
+    final showAi = _vm.canSuggestWithAi && !widget.draftMode;
+    await showOkHintOnce(
+      context: context,
+      controller: _aiHintController,
+      prefsKey: _aiHintPrefsKey,
+      skip: !showAi,
+    );
   }
 
   Future<void> _leave({Object? result}) async {
@@ -251,6 +275,10 @@ class _EditProfileTextViewState extends State<EditProfileTextView> {
   }
 
   Future<void> _suggest() async {
+    if (_aiHintController.isVisible) {
+      await _aiHintController.hideTooltip();
+    }
+    if (!mounted) return;
     _vm.updateText(_textController.text);
     _vm.updateHint(_hintController.text);
     await _vm.suggestWithAi(
@@ -330,6 +358,9 @@ class _EditProfileTextViewState extends State<EditProfileTextView> {
                             isLoading: _vm.isSuggesting,
                             label: l10n.suggestWithAiButton,
                             loadingHint: l10n.profileTextAiLoadingHint,
+                            hintMessage: l10n.profileTextAiFirstVisitHint,
+                            okLabel: l10n.okButton,
+                            hintController: _aiHintController,
                             onPressed: _vm.isSaving ? null : _suggest,
                           ),
                           if (_vm.suggestError != null) ...[
@@ -674,6 +705,9 @@ class _AiSuggestButton extends StatelessWidget {
     required this.isLoading,
     required this.label,
     required this.loadingHint,
+    required this.hintMessage,
+    required this.okLabel,
+    required this.hintController,
     required this.onPressed,
   });
 
@@ -681,6 +715,9 @@ class _AiSuggestButton extends StatelessWidget {
   final bool isLoading;
   final String label;
   final String loadingHint;
+  final String hintMessage;
+  final String okLabel;
+  final SuperTooltipController hintController;
   final VoidCallback? onPressed;
 
   @override
@@ -691,33 +728,51 @@ class _AiSuggestButton extends StatelessWidget {
         SizedBox(
           key: const Key('editProfileTextSuggestButton'),
           height: 50,
-          child: OutlinedButton.icon(
-            onPressed: isLoading ? null : onPressed,
-            icon: isLoading
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
+          width: double.infinity,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: OkHintPopover(
+                    controller: hintController,
+                    message: hintMessage,
+                    okLabel: okLabel,
+                    showOnTap: false,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: OutlinedButton.icon(
+                  onPressed: isLoading ? null : onPressed,
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: palette.primary,
+                          ),
+                        )
+                      : Icon(Icons.auto_awesome, color: palette.primary),
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       color: palette.primary,
                     ),
-                  )
-                : Icon(Icons.auto_awesome, color: palette.primary),
-            label: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: palette.primary,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.primary,
+                    side: BorderSide(color: palette.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: palette.primary,
-              side: BorderSide(color: palette.primary),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
+            ],
           ),
         ),
         if (isLoading) ...[

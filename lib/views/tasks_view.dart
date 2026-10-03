@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -131,51 +132,25 @@ class _TasksViewState extends State<TasksView> {
             child: Scaffold(
               extendBody: true,
               backgroundColor: Colors.transparent,
-              appBar: TasksGlassAppBar(
-                palette: palette,
-                showLeading: !widget.embedded,
-                title: Text(
-                  vm.listModeTitle(strings),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.4,
-                    color: palette.textPrimary,
-                  ),
-                ),
-                actions: [
-                  Builder(
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      final time = _dailyReminderTime;
-                      final tooltip = _dailyReminderEnabled && time != null
-                          ? l10n.habitsReportReminderOnTooltip(
-                              time.format(context),
-                            )
-                          : l10n.habitsReportReminderOffTooltip;
-                      return IconButton(
-                        tooltip: tooltip,
-                        icon: Icon(
-                          _dailyReminderEnabled
-                              ? Icons.notifications_active
-                              : Icons.notifications_none,
-                          color: palette.primary,
-                          size: 24,
-                        ),
-                        onPressed: _openDailyReminder,
-                      );
-                    },
-                  ),
-                ],
-              ),
-              body: vm.isLoading && vm.tasks.isEmpty
-                  ? const AppLoadingIndicator()
-                  : _TasksBody(
-                      strings: strings,
-                      palette: palette,
-                      embedded: widget.embedded,
-                      onOpenDailyReminder: _openDailyReminder,
+              body: SafeArea(
+                bottom: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(context, vm, strings, palette),
+                    Expanded(
+                      child: vm.isLoading && vm.tasks.isEmpty
+                          ? const AppLoadingIndicator()
+                          : _TasksBody(
+                              strings: strings,
+                              palette: palette,
+                              embedded: widget.embedded,
+                              onOpenDailyReminder: _openDailyReminder,
+                            ),
                     ),
+                  ],
+                ),
+              ),
               bottomNavigationBar: SafeArea(
                 child: Padding(
                   padding: EdgeInsets.only(
@@ -222,6 +197,177 @@ class _TasksViewState extends State<TasksView> {
         );
       },
     );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    TasksViewModel vm,
+    TaskStrings strings,
+    TasksUiPalette palette,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final dateLocale = Localizations.localeOf(context).languageCode;
+    final dateTitle = _headerDateTitle(vm, l10n, dateLocale);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, left: 24, right: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (!widget.embedded) ...[
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: palette.textPrimary,
+                size: 20,
+              ),
+              onPressed: () => Navigator.maybePop(context),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dateTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: palette.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  vm.listModeTitle(strings),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: palette.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              Consumer<HabitProgressViewModel>(
+                builder: (context, habitVm, _) {
+                  final softPrimary = palette.primary.withValues(
+                    alpha: palette.isDark ? 0.22 : 0.14,
+                  );
+                  return GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            l10n.habitStreakExplanation,
+                            style: TextStyle(color: palette.onPrimary),
+                          ),
+                          backgroundColor: palette.primary,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          action: SnackBarAction(
+                            label: l10n.okButton,
+                            textColor: palette.onPrimary,
+                            onPressed: () {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: softPrimary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department_outlined,
+                            color: palette.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${habitVm.currentStreak}',
+                            style: TextStyle(
+                              color: palette.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
+              Builder(
+                builder: (context) {
+                  final time = _dailyReminderTime;
+                  final tooltip = _dailyReminderEnabled && time != null
+                      ? l10n.habitsReportReminderOnTooltip(time.format(context))
+                      : l10n.habitsReportReminderOffTooltip;
+                  return IconButton(
+                    tooltip: tooltip,
+                    icon: Icon(
+                      _dailyReminderEnabled
+                          ? Icons.notifications_active_outlined
+                          : Icons.notifications_outlined,
+                      color: palette.primary,
+                      size: 24,
+                    ),
+                    onPressed: _openDailyReminder,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _headerDateTitle(
+    TasksViewModel vm,
+    AppLocalizations l10n,
+    String dateLocale,
+  ) {
+    final today = DateTime.now();
+    final focusDate = switch (vm.listMode) {
+      TasksListMode.today => today,
+      TasksListMode.tomorrow => today.add(const Duration(days: 1)),
+      TasksListMode.day => vm.selectedDay,
+      TasksListMode.inbox || TasksListMode.completed => today,
+    };
+    final isToday =
+        focusDate.year == today.year &&
+        focusDate.month == today.month &&
+        focusDate.day == today.day;
+    final weekday = DateFormat('E', dateLocale).format(focusDate);
+    if (isToday) {
+      return '${l10n.habitsTodayLabel}, $weekday';
+    }
+    return DateFormat('d MMMM, E', dateLocale).format(focusDate);
   }
 }
 

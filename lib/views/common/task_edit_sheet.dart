@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:super_tooltip/super_tooltip.dart';
 
 import '../../core/theme/task_theme_palette.dart';
 import '../../core/utils/date_helpers.dart';
@@ -17,6 +19,7 @@ import '../widgets/schedule/schedule_bottom_sheet.dart';
 import '../widgets/schedule/schedule_format.dart';
 import 'app_loading_indicator.dart';
 import 'expandable_bottom_sheet.dart';
+import 'ok_hint_popover.dart';
 import 'task_ai_assist_sheet.dart';
 import 'theme_picker_section.dart';
 import 'completion_check.dart';
@@ -179,9 +182,12 @@ class TaskEditSheet extends StatefulWidget {
 }
 
 class _TaskEditSheetState extends State<TaskEditSheet> {
+  static const _hasSeenTaskAiAssistHintKey = 'hasSeenTaskAiAssistHint';
+
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _titleFocus = FocusNode();
+  final _aiHintController = SuperTooltipController();
   bool _optionsExpanded = false;
   bool _titleError = false;
   bool _controllersSynced = false;
@@ -206,6 +212,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
       _syncControllers(vm);
       if (widget.taskId == null) {
         _titleFocus.requestFocus();
+        _maybeShowAiHint();
       }
     });
   }
@@ -225,11 +232,25 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
     _titleController.dispose();
     _descriptionController.dispose();
     _titleFocus.dispose();
+    _aiHintController.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeShowAiHint() async {
+    await showOkHintOnce(
+      context: context,
+      controller: _aiHintController,
+      prefsKey: _hasSeenTaskAiAssistHintKey,
+      skip: widget.taskId != null,
+    );
   }
 
   Future<void> _openAiAssist(EditTaskViewModel vm) async {
     if (vm.isSaving) return;
+    if (_aiHintController.isVisible) {
+      await _aiHintController.hideTooltip();
+    }
+    if (!mounted) return;
     final aiDraft = await showTaskAiAssistSheet(context);
     if (!mounted || aiDraft == null) return;
 
@@ -378,17 +399,28 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
                                   fontSize: 17,
                                 ),
                                 suffixIcon: widget.taskId == null
-                                    ? Tooltip(
-                                        message: strings.taskAiAssistTitle,
-                                        child: GestureDetector(
-                                          onTap: vm.isSaving
-                                              ? null
-                                              : () => _openAiAssist(vm),
-                                          behavior: HitTestBehavior.opaque,
-                                          child: Icon(
-                                            Icons.auto_awesome,
-                                            size: 20,
-                                            color: palette.primary,
+                                    ? OkHintPopover(
+                                        controller: _aiHintController,
+                                        message:
+                                            strings.taskAiAssistFirstVisitHint,
+                                        okLabel: AppLocalizations.of(
+                                          context,
+                                        )!.okButton,
+                                        direction: TooltipDirection.down,
+                                        showOnTap: false,
+                                        contentWidth: 240,
+                                        child: Tooltip(
+                                          message: strings.taskAiAssistTitle,
+                                          child: GestureDetector(
+                                            onTap: vm.isSaving
+                                                ? null
+                                                : () => _openAiAssist(vm),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Icon(
+                                              Icons.auto_awesome,
+                                              size: 20,
+                                              color: palette.primary,
+                                            ),
                                           ),
                                         ),
                                       )

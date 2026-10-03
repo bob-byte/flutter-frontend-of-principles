@@ -64,6 +64,7 @@ class TaskStrings {
     required this.taskUiThemeTooltip,
     required this.taskAiAssistTitle,
     required this.taskAiAssistHint,
+    required this.taskAiAssistFirstVisitHint,
     required this.taskAiPromptHint,
     required this.taskAiMicTooltip,
     required this.taskAiSendTooltip,
@@ -146,6 +147,7 @@ class TaskStrings {
   final String taskUiThemeTooltip;
   final String taskAiAssistTitle;
   final String taskAiAssistHint;
+  final String taskAiAssistFirstVisitHint;
   final String taskAiPromptHint;
   final String taskAiMicTooltip;
   final String taskAiSendTooltip;
@@ -257,6 +259,8 @@ class TaskStrings {
     taskAiAssistTitle: 'AI task assistant',
     taskAiAssistHint:
         'Example: “Buy groceries tomorrow at 6pm, remind me 30 minutes before — milk, bread, eggs”',
+    taskAiAssistFirstVisitHint:
+        'Describe a task in your own words — AI can draft title, date, and checklist.',
     taskAiPromptHint: 'Describe the task…',
     taskAiMicTooltip: 'Dictate',
     taskAiSendTooltip: 'Create draft',
@@ -341,6 +345,8 @@ class TaskStrings {
     taskAiAssistTitle: 'ШІ-помічник завдань',
     taskAiAssistHint:
         'Наприклад: «Купити продукти завтра о 18:00, нагадай за 30 хвилин — молоко, хліб, яйця»',
+    taskAiAssistFirstVisitHint:
+        'Опишіть завдання своїми словами — AI може скласти назву, дату та чекліст.',
     taskAiPromptHint: 'Опишіть завдання…',
     taskAiMicTooltip: 'Диктувати',
     taskAiSendTooltip: 'Створити чернетку',

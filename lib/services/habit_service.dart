@@ -68,7 +68,6 @@ Map<String, dynamic> buildEditUserHabitDto(
     'id': isNew ? 0 : (confirmedServerHabitId(habit) ?? habit.id ?? 0),
     'name': habit.name.trim(),
     'type': habit.isFlexible ? kTypeOfHabitFlexible : kTypeOfHabitPrincipled,
-    'areasOfLife': <Map<String, dynamic>>[],
     'description': habit.notes.trim().isEmpty ? null : habit.notes.trim(),
     'goal': goalName.isEmpty
         ? null

@@ -43,6 +43,14 @@ enum TasksUiTheme {
 
   String get storageKey => name;
 
+  /// Website `data-theme` / `?theme=` value on [principles.top](https://principles.top).
+  String get siteThemeId => switch (this) {
+    darkOrange => 'dark-orange',
+    darkBlue => 'dark-blue',
+    lightOrange => 'light-orange',
+    lightBlue => 'light-blue',
+  };
+
   static TasksUiTheme fromStorage(String? value) => switch (value) {
     'darkBlue' => darkBlue,
     'lightOrange' => lightOrange,

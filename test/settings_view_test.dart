@@ -69,6 +69,7 @@ Widget _buildWidget() {
             localeController: ctx.read<LocaleController>(),
             userService: ctx.read<UserService>(),
             localDataCleaner: ctx.read<LocalDataCleaner>(),
+            themeController: ctx.read<ThemeController>(),
           ),
         ),
       ],

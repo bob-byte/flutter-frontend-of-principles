@@ -209,91 +209,31 @@ class _HabitProgressViewState extends State<HabitProgressView> {
           ),
           Row(
             children: [
-              // Стрік
-              GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n.habitStreakExplanation,
-                        style: TextStyle(color: palette.onPrimary),
-                      ),
-                      backgroundColor: palette.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      action: SnackBarAction(
-                        label: l10n.okButton,
-                        textColor: palette.onPrimary,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        },
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _primarySoft(palette),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.local_fire_department,
-                        color: palette.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${vm.currentStreak}',
-                        style: TextStyle(
-                          color: palette.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _HabitHeaderCircleButton(
+              _HabitHeaderActionButton(
                 key: const Key('habitFiltersButton'),
                 palette: palette,
                 icon: Icons.tune,
                 tooltip: l10n.habitFiltersTooltip,
                 emphasized: vm.filtersVisible || vm.hasActiveFilters,
                 showBadge: vm.hasActiveFilters,
-                onTap: vm.toggleFiltersVisible,
+                onPressed: vm.toggleFiltersVisible,
               ),
-              const SizedBox(width: 12),
-              // Архів
-              GestureDetector(
-                onTap: () {
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: l10n.archiveTooltip,
+                icon: Icon(
+                  Icons.archive_outlined,
+                  color: palette.primary,
+                  size: 24,
+                ),
+                onPressed: () {
                   DialogService()
                       .showCustomSheet(variant: BottomSheetType.archive)
                       .then((_) {
+                        if (!context.mounted) return;
                         context.read<HabitProgressViewModel>().load();
                       });
                 },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: palette.softBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.archive_outlined,
-                    color: palette.textMuted,
-                    size: 24,
-                  ),
-                ),
               ),
             ],
           ),
@@ -728,12 +668,12 @@ class _HabitProgressViewState extends State<HabitProgressView> {
   }
 }
 
-class _HabitHeaderCircleButton extends StatelessWidget {
-  const _HabitHeaderCircleButton({
+class _HabitHeaderActionButton extends StatelessWidget {
+  const _HabitHeaderActionButton({
     super.key,
     required this.palette,
     required this.icon,
-    required this.onTap,
+    required this.onPressed,
     this.tooltip,
     this.emphasized = false,
     this.showBadge = false,
@@ -741,49 +681,52 @@ class _HabitHeaderCircleButton extends StatelessWidget {
 
   final TasksUiPalette palette;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback onPressed;
   final String? tooltip;
   final bool emphasized;
   final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
-    final button = GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: emphasized ? _primarySoft(palette) : palette.softBg,
-              shape: BoxShape.circle,
+    final iconWidget = Icon(icon, color: palette.primary, size: 24);
+    final button = emphasized
+        ? GestureDetector(
+            onTap: onPressed,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _primarySoft(palette),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: iconWidget,
             ),
-            child: Icon(
-              icon,
-              color: emphasized ? palette.primary : palette.textMuted,
-              size: 24,
-            ),
-          ),
-          if (showBadge)
-            Positioned(
-              right: 2,
-              top: 2,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: palette.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: palette.cardBg, width: 1.5),
+          )
+        : IconButton(onPressed: onPressed, icon: iconWidget);
+
+    final badged = showBadge
+        ? Stack(
+            clipBehavior: Clip.none,
+            children: [
+              button,
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: palette.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: palette.cardBg, width: 1.5),
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-    );
-    if (tooltip == null) return button;
-    return Tooltip(message: tooltip!, child: button);
+            ],
+          )
+        : button;
+
+    if (tooltip == null) return badged;
+    return Tooltip(message: tooltip!, child: badged);
   }
 }
 
