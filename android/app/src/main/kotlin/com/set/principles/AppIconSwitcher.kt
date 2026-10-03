@@ -6,15 +6,16 @@ import android.content.pm.PackageManager
 import android.util.Log
 
 /**
- * Swaps the home-screen icon between orange (default) and blue via activity-aliases.
+ * Keeps a single launcher activity-alias healthy.
  *
  * MainActivity itself stays enabled and has no LAUNCHER filter — only the aliases
  * do. That avoids the "Activity class does not exist" / broken flutter-run state
  * that happens when plugins disable MainActivity.
  *
- * Samsung One UI often never delivers [android.app.Service.onTaskRemoved], so the
- * flutter_dynamic_icon_plus defer-until-kill path is unreliable here. Callers
- * should [setDesired] then [applyPending] when the app is backgrounded.
+ * We intentionally do **not** swap orange ↔ blue when the in-app theme changes.
+ * Disabling the active launcher alias removes the home-screen shortcut on many
+ * OEMs (Samsung One UI especially). [applyPending] only repairs invalid states
+ * (both aliases on, or neither).
  */
 object AppIconSwitcher {
     private const val TAG = "AppIconSwitcher"
@@ -42,19 +43,22 @@ object AppIconSwitcher {
         )
     }
 
-    /** Ensures MainActivity is enabled and exactly one launcher alias matches [desired]. */
+    /**
+     * Ensures MainActivity is enabled and that exactly one launcher alias is on.
+     * Does not flip a healthy single-alias setup — that would drop home shortcuts.
+     */
     fun applyPending(context: Context) {
         ensureMainActivityEnabled(context)
-        val wantBlue = desired(context) == ICON_BLUE
         val orangeEnabled = isEnabled(context, ALIAS_ORANGE)
         val blueEnabled = isEnabled(context, ALIAS_BLUE)
 
-        if (wantBlue && blueEnabled && !orangeEnabled) return
-        if (!wantBlue && orangeEnabled && !blueEnabled) return
+        // Already exactly one launcher alias — leave home-screen shortcuts alone.
+        if (orangeEnabled != blueEnabled) return
 
+        val wantBlue = desired(context) == ICON_BLUE
         val enable = if (wantBlue) ALIAS_BLUE else ALIAS_ORANGE
         val disable = if (wantBlue) ALIAS_ORANGE else ALIAS_BLUE
-        Log.d(TAG, "Applying launcher icon: $enable")
+        Log.d(TAG, "Repairing launcher aliases: enable=$enable")
         setEnabled(context, enable, true)
         setEnabled(context, disable, false)
     }
@@ -62,8 +66,6 @@ object AppIconSwitcher {
     /**
      * Repair state after upgrades from the old MainActivity-as-launcher layout
      * (MainActivity may still be disabled; both or neither aliases enabled).
-     * Does not flip a single valid alias during launch — that waits until Flutter
-     * backgrounds the app so One UI does not kill the starting activity.
      */
     fun migrateIfNeeded(context: Context) {
         ensureMainActivityEnabled(context)
@@ -77,10 +79,7 @@ object AppIconSwitcher {
                 setDesired(context, ICON_ORANGE)
             }
         }
-        // Both enabled (upgrade glitch) or neither (broken) — repair now.
-        if (orangeEnabled == blueEnabled) {
-            applyPending(context)
-        }
+        applyPending(context)
     }
 
     private fun ensureMainActivityEnabled(context: Context) {
