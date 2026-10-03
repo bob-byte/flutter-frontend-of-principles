@@ -75,11 +75,15 @@ class OkHintPopover extends StatelessWidget {
 /// Shows [controller] once per device via SharedPreferences [prefsKey].
 ///
 /// Skips while the road guide is active. Returns whether the tooltip was shown.
+/// When [scrollToKey] is set, scrolls that target into view first (with room
+/// above for an upward coachmark).
 Future<bool> showOkHintOnce({
   required BuildContext context,
   required SuperTooltipController controller,
   required String prefsKey,
   bool skip = false,
+  bool hideKeyboard = true,
+  GlobalKey? scrollToKey,
 }) async {
   if (skip) return false;
   try {
@@ -100,10 +104,27 @@ Future<bool> showOkHintOnce({
   if (!context.mounted) return false;
 
   // Autofocused fields (e.g. empty goal name) raise the IME over the coachmark.
-  final hadFocus = FocusManager.instance.primaryFocus?.hasFocus ?? false;
-  FocusManager.instance.primaryFocus?.unfocus();
-  if (hadFocus) {
-    await Future<void>.delayed(const Duration(milliseconds: 280));
+  // Task composer keeps the keyboard — its AI icon sits above the IME.
+  if (hideKeyboard) {
+    final hadFocus = FocusManager.instance.primaryFocus?.hasFocus ?? false;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (hadFocus) {
+      await Future<void>.delayed(const Duration(milliseconds: 280));
+      if (!context.mounted) return false;
+    }
+  }
+
+  final scrollContext = scrollToKey?.currentContext;
+  if (scrollContext != null) {
+    await Scrollable.ensureVisible(
+      scrollContext,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+      // Keep the button in the lower half so the upward popover has room.
+      alignment: 0.65,
+    );
+    if (!context.mounted) return false;
+    await WidgetsBinding.instance.endOfFrame;
     if (!context.mounted) return false;
   }
 

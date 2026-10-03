@@ -242,6 +242,7 @@ class _TaskEditSheetState extends State<TaskEditSheet> {
       controller: _aiHintController,
       prefsKey: _hasSeenTaskAiAssistHintKey,
       skip: widget.taskId != null,
+      hideKeyboard: false,
     );
   }
 

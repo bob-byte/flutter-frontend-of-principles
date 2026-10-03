@@ -59,6 +59,12 @@ class _EditGoalViewState extends State<EditGoalView> {
   late final TextEditingController _notesController;
   final _recommendHintController = SuperTooltipController();
   final _generateHabitsHintController = SuperTooltipController();
+  final _recommendButtonKey = GlobalKey(
+    debugLabel: 'goalRecommendHintAnchor',
+  );
+  final _generateHabitsButtonKey = GlobalKey(
+    debugLabel: 'goalGenerateHabitsHintAnchor',
+  );
   bool _allowPop = false;
   bool _popResult = false;
   bool _leaving = false;
@@ -95,16 +101,20 @@ class _EditGoalViewState extends State<EditGoalView> {
   }
 
   Future<void> _maybeShowAiHints() async {
+    // AI goal suggestions (and their coachmark) are only for creating a goal.
     final showedRecommend = await showOkHintOnce(
       context: context,
       controller: _recommendHintController,
       prefsKey: _hasSeenGoalRecommendHintKey,
+      scrollToKey: _recommendButtonKey,
+      skip: _vm.isEditing,
     );
     if (!mounted || showedRecommend) return;
     await showOkHintOnce(
       context: context,
       controller: _generateHabitsHintController,
       prefsKey: _hasSeenGoalGenerateHabitsHintKey,
+      scrollToKey: _generateHabitsButtonKey,
     );
   }
 
@@ -343,18 +353,21 @@ class _EditGoalViewState extends State<EditGoalView> {
                             isCompleted: vm.isCompleted,
                             onToggleCompleted: _toggleCompleted,
                           ),
-                          const SizedBox(height: 22),
-                          _GoalRecommendSection(
-                            palette: palette,
-                            selectedArea: vm.selectedLifeArea,
-                            recommendations: vm.goalRecommendations,
-                            isLoading: vm.isRecommendingGoals,
-                            error: vm.recommendGoalsError,
-                            hintController: _recommendHintController,
-                            onSelectArea: vm.selectLifeArea,
-                            onRecommend: _recommendGoals,
-                            onApply: _applyGoalRecommendation,
-                          ),
+                          if (!vm.isEditing) ...[
+                            const SizedBox(height: 22),
+                            _GoalRecommendSection(
+                              palette: palette,
+                              selectedArea: vm.selectedLifeArea,
+                              recommendations: vm.goalRecommendations,
+                              isLoading: vm.isRecommendingGoals,
+                              error: vm.recommendGoalsError,
+                              hintController: _recommendHintController,
+                              buttonKey: _recommendButtonKey,
+                              onSelectArea: vm.selectLifeArea,
+                              onRecommend: _recommendGoals,
+                              onApply: _applyGoalRecommendation,
+                            ),
+                          ],
                           const SizedBox(height: 22),
                           _HabitsSection(
                             palette: palette,
@@ -364,6 +377,7 @@ class _EditGoalViewState extends State<EditGoalView> {
                             generateError: vm.generateError,
                             generateHintController:
                                 _generateHabitsHintController,
+                            generateButtonKey: _generateHabitsButtonKey,
                             onCreate: _createHabit,
                             onGenerate: _generateHabits,
                             onAddRecommendation: _addRecommendation,
@@ -641,6 +655,7 @@ class _GoalRecommendSection extends StatelessWidget {
     required this.isLoading,
     required this.error,
     required this.hintController,
+    required this.buttonKey,
     required this.onSelectArea,
     required this.onRecommend,
     required this.onApply,
@@ -652,6 +667,7 @@ class _GoalRecommendSection extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final SuperTooltipController hintController;
+  final GlobalKey buttonKey;
   final ValueChanged<LifeArea?> onSelectArea;
   final VoidCallback onRecommend;
   final ValueChanged<RecommendedGoal> onApply;
@@ -724,6 +740,7 @@ class _GoalRecommendSection extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         SizedBox(
+          key: buttonKey,
           height: 50,
           width: double.infinity,
           child: Stack(
@@ -887,6 +904,7 @@ class _HabitsSection extends StatelessWidget {
     required this.isGenerating,
     required this.generateError,
     required this.generateHintController,
+    required this.generateButtonKey,
     required this.onCreate,
     required this.onGenerate,
     required this.onAddRecommendation,
@@ -899,6 +917,7 @@ class _HabitsSection extends StatelessWidget {
   final bool isGenerating;
   final String? generateError;
   final SuperTooltipController generateHintController;
+  final GlobalKey generateButtonKey;
   final VoidCallback onCreate;
   final VoidCallback onGenerate;
   final ValueChanged<RecommendedHabit> onAddRecommendation;
@@ -955,6 +974,7 @@ class _HabitsSection extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Stack(
+                  key: generateButtonKey,
                   children: [
                     Positioned.fill(
                       child: IgnorePointer(
