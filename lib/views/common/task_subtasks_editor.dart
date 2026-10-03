@@ -209,65 +209,64 @@ class _SubtaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 6, 8, 6),
-            child: CompletionCheckButton(
-              isDone: item.isDone,
-              palette: palette,
-              size: 20,
-              iconSize: 13,
-              showShadow: false,
-              burstRadius: 34,
-              onToggle: onToggle,
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: CompletionCheckButton(
+            isDone: item.isDone,
+            palette: palette,
+            size: 20,
+            iconSize: 13,
+            // Compact checklist rows; keep a usable hit target without 48px gaps.
+            minTapSize: 32,
+            showShadow: false,
+            burstRadius: 34,
+            onToggle: onToggle,
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              onTapOutside: (_) {},
-              scrollPadding: scrollPadding,
-              keyboardType: TextInputType.text,
-              textCapitalization: TextCapitalization.sentences,
-              // "Next" — never "Done", which dismisses the IME on iOS.
-              textInputAction: TextInputAction.next,
-              // Custom complete handler keeps focus in the checklist.
-              onEditingComplete: onEditingComplete,
-              style: TextStyle(
+        ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            onTapOutside: (_) {},
+            scrollPadding: scrollPadding,
+            keyboardType: TextInputType.text,
+            textCapitalization: TextCapitalization.sentences,
+            // "Next" — never "Done", which dismisses the IME on iOS.
+            textInputAction: TextInputAction.next,
+            // Custom complete handler keeps focus in the checklist.
+            onEditingComplete: onEditingComplete,
+            style: TextStyle(
+              fontSize: 15,
+              color: item.isDone ? palette.textMuted : palette.textPrimary,
+              decoration: item.isDone ? TextDecoration.lineThrough : null,
+              height: 1.25,
+            ),
+            decoration: decoration.copyWith(
+              hintText: strings.taskSubtaskHint,
+              hintStyle: TextStyle(
+                color: palette.textMuted.withValues(alpha: 0.65),
                 fontSize: 15,
-                color: item.isDone ? palette.textMuted : palette.textPrimary,
-                decoration: item.isDone ? TextDecoration.lineThrough : null,
-                height: 1.35,
-              ),
-              decoration: decoration.copyWith(
-                hintText: strings.taskSubtaskHint,
-                hintStyle: TextStyle(
-                  color: palette.textMuted.withValues(alpha: 0.65),
-                  fontSize: 15,
-                ),
-              ),
-              onChanged: onTitleChanged,
-            ),
-          ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onRemove,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.close_rounded,
-                size: 18,
-                color: palette.textMuted.withValues(alpha: 0.8),
               ),
             ),
+            onChanged: onTitleChanged,
           ),
-        ],
-      ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onRemove,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: palette.textMuted.withValues(alpha: 0.8),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
