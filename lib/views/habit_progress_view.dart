@@ -17,6 +17,7 @@ import 'common/app_liquid_background.dart';
 import 'common/app_loading_indicator.dart';
 import 'common/completion_burst.dart';
 import 'common/habit_context_menu.dart';
+import 'common/themed_lottie.dart';
 import 'edit_habit_view.dart';
 import 'habit_detail_view.dart';
 import '../services/dialog_service.dart';
@@ -437,10 +438,28 @@ class _HabitProgressViewState extends State<HabitProgressView> {
     }
 
     if (habits.isEmpty) {
-      return Center(
-        child: Text(
-          vm.habits.isEmpty ? l10n.habitsEmptyList : l10n.habitFiltersEmpty,
-          style: TextStyle(color: palette.textMuted),
+      return Padding(
+        // Match list bottom clearance so content stays above the shell tab bar.
+        padding: EdgeInsets.fromLTRB(24, 0, 24, widget.embedded ? 80 : 24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ThemedLottie(
+                assetPath: 'assets/lottie/checks.json',
+                width: 200,
+                height: 200,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                vm.habits.isEmpty
+                    ? l10n.habitsEmptyList
+                    : l10n.habitFiltersEmpty,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ),
         ),
       );
     }

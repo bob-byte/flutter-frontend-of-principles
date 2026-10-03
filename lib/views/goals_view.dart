@@ -61,7 +61,14 @@ class _GoalsViewState extends State<GoalsView> {
           backgroundColor: Colors.transparent,
           floatingActionButton: Padding(
             key: guide.keys.goalsComposer,
-            padding: EdgeInsets.only(bottom: widget.embedded ? 48 : 0),
+            // Android has no home-indicator lift; raise the FAB above the shell pill.
+            padding: EdgeInsets.only(
+              bottom: widget.embedded
+                  ? (Theme.of(context).platform == TargetPlatform.android
+                        ? 64
+                        : 48)
+                  : 0,
+            ),
             child: FloatingActionButton(
               heroTag: 'goalsAddFab',
               backgroundColor: palette.primary,
@@ -318,12 +325,18 @@ class _GoalsBody extends StatelessWidget {
           return const AppLoadingIndicator();
         }
         if (vm.goals.isEmpty && demoGoal == null) {
-          return _GoalsEmptyState(message: l10n.goalsEmptyList);
+          return _GoalsEmptyState(
+            message: l10n.goalsEmptyList,
+            embedded: embedded,
+          );
         }
         if (displayGoals.isEmpty &&
             !(showUnassigned &&
                 habitsUnassignedToGoals(displayHabits, vm.goals).isNotEmpty)) {
-          return _GoalsEmptyState(message: l10n.goalFiltersEmpty);
+          return _GoalsEmptyState(
+            message: l10n.goalFiltersEmpty,
+            embedded: embedded,
+          );
         }
 
         return _GoalsList(
@@ -617,32 +630,34 @@ class _GoalHabitTile extends StatelessWidget {
 }
 
 class _GoalsEmptyState extends StatelessWidget {
-  const _GoalsEmptyState({required this.message});
+  const _GoalsEmptyState({required this.message, this.embedded = false});
 
   final String message;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Expanded(
-          child: Center(
-            child: ThemedLottie(
+    return Padding(
+      // Match list bottom clearance so content stays above the shell tab bar.
+      padding: EdgeInsets.fromLTRB(24, 0, 24, embedded ? 80 : 24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ThemedLottie(
               assetPath: 'assets/lottie/goals.json',
               width: 200,
               height: 200,
             ),
-          ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
