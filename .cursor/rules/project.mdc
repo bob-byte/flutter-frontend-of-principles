@@ -5,7 +5,12 @@ alwaysApply: true
 
 # Principles
 
-Flutter rewrite of the Principles habit/goal app (install: https://principles.top). Backend is .NET in `backend/`.
+**Current production client** for the Principles habit/goal app (install: https://principles.top). Flutter ships to iOS, Android, and macOS; the .NET MAUI app is the previous native client (kept for reference / parity). Backend is .NET in `backend/`.
+
+## Git
+
+- Host is **GitHub only** (`origin`). Do not fetch, push, or set defaults on Bitbucket or other remotes.
+- **Never commit** (or amend, stash-and-drop, or push) unless the user explicitly asks in the current request. Leave finished work uncommitted and say it is ready to commit.
 
 ## Core loop
 
@@ -13,7 +18,7 @@ Flutter rewrite of the Principles habit/goal app (install: https://principles.to
 2. Attach **habits** that automate progress (optionally via AI recommendations)
 3. Complete habits; inspect detail (progress, streaks, stability)
 4. Use **Tasks** for one-off work and to keep today's habits visible
-5. Use **AI Helper** for support — not the primary recommendation entry point
+5. Use **AI Helper** for support — not the primary recommendation entry point. When chat recommends a concrete goal/habit/task/mission/slogan, the reply may include a trailing `<<<ACTIONS>>>` block; Helper shows tap-to-add cards (goal/habit create immediately, task opens the edit sheet, mission/slogan confirm before overwrite).
 6. Settings (profile, slogan, mission) feed AI habit recommendations
 
 ## Shell UX
@@ -21,11 +26,11 @@ Flutter rewrite of the Principles habit/goal app (install: https://principles.to
 - Tab order: Chat · Goals · **Tasks** (center, default) · Habits · Settings
 - Goals lists habits grouped under each goal
 - Edit Goal and Edit Habit are normal pages (not fullscreen sheets), like Habit Detail. The goal page lists that goal’s habits and can create one or generate habits with AI
-- Edit Slogan and Edit Mission are normal pages from Settings (not dialogs), with optional AI suggestions (`POST /ai/suggest-profile-text`). Signup opens the same pages in draft mode (`openDraft`) and applies the text on register.
+- Edit Slogan and Edit Mission are normal pages from Settings (not dialogs), with optional AI suggestions (`POST /ai/suggest-profile-text`). Signup keeps mission/slogan as optional inline fields.
 - Edit Goal form fields: keep matching `prefixIcon`s on stacked inputs so labels share one horizontal inset. Goal name grows with content (`minHeight: 56`, `minLines: 1`, `maxLines: null`) so long AI titles stay fully visible; notes keep fixed-height `SizedBox` + `expands: true` + `textAlignVertical: TextAlignVertical.center` (same as habit notes on Edit Habit). Do not top-align empty single-line goal name text
 
 - Pre-login: App Benefits carousel
-- Email/password signup verifies ownership before account creation: `GET /api/account/signupcode` emails a code (same confirm dialog as forget-password); only then `POST /api/account/authentication`. Google/Apple auth already prove email via the IdP.
+- Email/password signup verifies ownership before account creation: `GET /api/account/signupcode` emails a code (stored hashed server-side; not returned in the API body); the confirm dialog collects digits and `POST /api/account/authentication` sends `code`. Forget-password uses `GET /api/account/code` then `PUT /api/account/password` with `code`. Google/Apple auth already prove email via the IdP.
 - Post-login: spotlight road guide once per device; replay from Settings → About
 - After login/signup, navigate to `HelperView` / `MainShell` so the road guide can run
 - Daily progress reminder (Tasks app bar; API still `habitsreport`): check-in for goals, habits, and tasks; notification opens Tasks today

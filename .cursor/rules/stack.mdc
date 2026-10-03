@@ -8,6 +8,6 @@ alwaysApply: true
 - Flutter / Dart SDK `^3.10.8`, Provider, Dio, sqflite, liquid_glass_widgets
 - l10n: edit `lib/l10n/app_en.arb` and `lib/l10n/app_uk.arb`, then `flutter gen-l10n`
 - Backend: .NET 10 (`SET.WebAPI` in `backend/`); conventions in `backend/.cursor/rules/`; EF migrations in `SET.DAL/Migrations`
-- AI chat/task assist: backend `POST /api/ai/chat` (MAF `ChatClientAgent`; system prompt includes capped habit/goal/task names), `POST /api/ai/parse-task`, and `POST /api/ai/suggest-profile-text` (`AI_API_KEY` on the server only)
+- AI chat/task assist: backend `POST /api/ai/chat` (MAF `ChatClientAgent`; system prompt includes capped habit/goal/task names; optional trailing `<<<ACTIONS>>>` JSON for tap-to-add goal/habit/task/mission/slogan in Helper), `POST /api/ai/parse-task`, and `POST /api/ai/suggest-profile-text` (`AI_API_KEY` on the server only)
 - Home-screen calendar: `home_widget` plus native Android App Widgets / iOS WidgetKit (`group.com.set.principles`)
 - Prefer MCP `user-dart` tools (analyze, format, tests, hot reload) over shell `dart`/`flutter` when available
