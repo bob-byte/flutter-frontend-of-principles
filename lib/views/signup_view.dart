@@ -469,6 +469,7 @@ class _CustomTextField extends StatelessWidget {
         hintStyle: const TextStyle(color: Colors.grey),
         prefixIcon: Icon(prefixIcon, color: Colors.grey),
         suffixIcon: suffixIcon,
+        errorMaxLines: 10,
         filled: true,
         fillColor: Theme.of(
           context,

@@ -282,6 +282,7 @@ class _ForgetPasswordViewState extends State<ForgetPasswordView> {
       hintText: hintText,
       hintStyle: const TextStyle(color: Colors.grey),
       prefixIcon: Icon(prefixIcon, color: Colors.grey),
+      errorMaxLines: 10,
       filled: true,
       fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
       contentPadding: const EdgeInsets.symmetric(vertical: 16),
