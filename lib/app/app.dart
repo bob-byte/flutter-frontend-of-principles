@@ -15,7 +15,6 @@ import '../core/home_widget/home_widget_binder.dart';
 import '../core/input/android_hardware_text_input.dart';
 import '../core/launch_data_loader.dart';
 import '../core/locale/locale_controller.dart';
-import '../core/logging/app_lifecycle_logger.dart';
 import '../core/network/api_client.dart';
 import '../core/network/network_service.dart';
 import '../core/road_guide/main_shell_controller.dart';
@@ -49,6 +48,7 @@ import '../services/database_service.dart';
 import '../services/dialog_service.dart';
 import '../services/goal_service.dart';
 import '../services/habit_service.dart';
+import '../services/helper_chat_action_service.dart';
 import '../services/progress_service.dart';
 import '../services/push_sync_service.dart';
 import '../services/reminder_service.dart';
@@ -161,6 +161,14 @@ class PrinciplesApp extends StatelessWidget {
             network: ctx.read<NetworkService>(),
             queue: ctx.read<SyncQueueService>(),
             executor: ctx.read<LocalRemoteExecutor>(),
+          ),
+        ),
+        Provider(
+          create: (ctx) => HelperChatActionService(
+            goalService: ctx.read<GoalService>(),
+            habitService: ctx.read<HabitService>(),
+            database: ctx.read<DatabaseService>(),
+            userService: ctx.read<UserService>(),
           ),
         ),
         Provider(create: (_) => ProgressService()),
@@ -332,6 +340,7 @@ class PrinciplesApp extends StatelessWidget {
             localeController: ctx.read<LocaleController>(),
             userService: ctx.read<UserService>(),
             localDataCleaner: ctx.read<LocalDataCleaner>(),
+            themeController: ctx.read<ThemeController>(),
             reminderService: ctx.read<ReminderService>(),
           ),
         ),
@@ -383,18 +392,16 @@ class PrinciplesApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               navigatorKey: context.read<DialogService>().navigatorKey,
               builder: (context, child) => AndroidHardwareTextInput(
-                child: AppLifecycleLogger(
-                  child: DeepLinkBinder(
-                    child: HomeWidgetBinder(
-                      child: DeliveredNotificationClearer(
-                        child: VideoSplashOverlay(
-                          key: _videoSplashKey,
-                          child: AppUpdateAlert(
-                            navigatorKey: context
-                                .read<DialogService>()
-                                .navigatorKey,
-                            child: child ?? const SizedBox.shrink(),
-                          ),
+                child: DeepLinkBinder(
+                  child: HomeWidgetBinder(
+                    child: DeliveredNotificationClearer(
+                      child: VideoSplashOverlay(
+                        key: _videoSplashKey,
+                        child: AppUpdateAlert(
+                          navigatorKey: context
+                              .read<DialogService>()
+                              .navigatorKey,
+                          child: child ?? const SizedBox.shrink(),
                         ),
                       ),
                     ),

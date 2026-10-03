@@ -5,12 +5,21 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:principles_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../app/task_navigation.dart';
+import '../core/helper/helper_chat_actions_parser.dart';
 import '../core/input/keyboard.dart';
 import '../core/road_guide/main_shell_metrics.dart';
 import '../core/road_guide/road_guide_controller.dart';
+import '../core/theme/task_theme_palette.dart';
 import '../core/theme/theme_controller.dart';
+import '../models/helper_chat_action.dart';
 import '../services/dialog_service.dart';
+import '../services/helper_chat_action_service.dart';
+import '../viewmodels/goals_viewmodel.dart';
+import '../viewmodels/habit_progress_viewmodel.dart';
 import '../viewmodels/helper_viewmodel.dart';
+import '../viewmodels/settings_viewmodel.dart';
+import '../viewmodels/tasks_viewmodel.dart';
 import 'common/app_alert_dialog.dart';
 import 'common/context_menu_overlay.dart';
 import 'common/helper_chat_sidebar.dart';
@@ -254,6 +263,85 @@ class _HelperBody extends StatelessWidget {
     onSend(vm, l10n);
   }
 
+  Future<void> _applyChatAction({
+    required BuildContext context,
+    required HelperViewModel vm,
+    required ChatMessage message,
+    required HelperChatAction action,
+    required AppLocalizations l10n,
+  }) async {
+    if (message.appliedActionKeys.contains(action.dedupeKey)) return;
+
+    final settings = context.read<SettingsViewModel>();
+    if (action.type == HelperChatActionType.mission &&
+        settings.mission.trim().isNotEmpty) {
+      final ok = await DialogService().showConfirmAsync(
+        title: l10n.helperActionReplaceMissionTitle,
+        msg: l10n.helperActionReplaceMissionMessage,
+      );
+      if (!ok || !context.mounted) return;
+    }
+    if (action.type == HelperChatActionType.slogan &&
+        settings.mainSlogan.trim().isNotEmpty) {
+      final ok = await DialogService().showConfirmAsync(
+        title: l10n.helperActionReplaceSloganTitle,
+        msg: l10n.helperActionReplaceSloganMessage,
+      );
+      if (!ok || !context.mounted) return;
+    }
+
+    final applier = context.read<HelperChatActionService>();
+    late final HelperChatActionApplyResult result;
+    try {
+      result = await applier.apply(action);
+    } catch (_) {
+      if (!context.mounted) return;
+      DialogService().showToast(l10n.genericErrorOccurred);
+      return;
+    }
+    if (!context.mounted) return;
+
+    switch (result.kind) {
+      case HelperChatActionApplyKind.empty:
+        return;
+      case HelperChatActionApplyKind.alreadyExists:
+        vm.markActionApplied(message, action.dedupeKey);
+        DialogService().showToast(l10n.helperActionAlreadyExists);
+        return;
+      case HelperChatActionApplyKind.openedDraft:
+        final draft = result.taskDraft;
+        if (draft == null) return;
+        final saved = await TasksNavigation.openEditTask(
+          context,
+          aiDraft: draft,
+        );
+        if (!context.mounted) return;
+        if (saved != null) {
+          vm.markActionApplied(message, action.dedupeKey);
+          await context.read<TasksViewModel>().load(silent: true);
+          if (!context.mounted) return;
+          DialogService().showToast(l10n.helperActionAdded);
+        }
+        return;
+      case HelperChatActionApplyKind.created:
+        vm.markActionApplied(message, action.dedupeKey);
+        if (action.type == HelperChatActionType.goal) {
+          await context.read<GoalsViewModel>().load(silent: true);
+        } else if (action.type == HelperChatActionType.habit) {
+          await context.read<HabitProgressViewModel>().load(silent: true);
+        }
+        if (!context.mounted) return;
+        DialogService().showToast(l10n.helperActionAdded);
+        return;
+      case HelperChatActionApplyKind.updated:
+        vm.markActionApplied(message, action.dedupeKey);
+        await settings.loadProfile(silent: true);
+        if (!context.mounted) return;
+        DialogService().showToast(l10n.helperActionProfileUpdated);
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -347,6 +435,18 @@ class _HelperBody extends StatelessWidget {
                     itemCount: vm.messages.length,
                     itemBuilder: (_, index) {
                       final msg = vm.messages[index];
+                      final version = vm.versionOf(msg);
+                      final versionSwitcher = version.count > 1
+                          ? _HelperVersionSwitcher(
+                              key: Key('helperVersionSwitcher:$index'),
+                              index: version.index,
+                              count: version.count,
+                              enabled: vm.canSwitchVersion,
+                              previousLabel: l10n.helperPreviousVersion,
+                              nextLabel: l10n.helperNextVersion,
+                              onSwitch: (delta) => vm.switchVersion(msg, delta),
+                            )
+                          : null;
 
                       return Align(
                         alignment: msg.isUser
@@ -359,23 +459,48 @@ class _HelperBody extends StatelessWidget {
                               maxWidth: MediaQuery.sizeOf(context).width * 0.78,
                             ),
                             child: msg.isUser
-                                ? _HelperUserMessageBubble(
-                                    message: msg,
-                                    onLongPress: (anchor) {
-                                      _showUserMessageMenu(
-                                        context: context,
-                                        vm: vm,
-                                        l10n: l10n,
-                                        index: index,
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _HelperUserMessageBubble(
                                         message: msg,
-                                        anchor: anchor,
-                                      );
-                                    },
+                                        onLongPress: (anchor) {
+                                          _showUserMessageMenu(
+                                            context: context,
+                                            vm: vm,
+                                            l10n: l10n,
+                                            index: index,
+                                            message: msg,
+                                            anchor: anchor,
+                                          );
+                                        },
+                                      ),
+                                      ?versionSwitcher,
+                                    ],
                                   )
                                 : _HelperAiMessageBubble(
                                     message: msg,
                                     copyLabel: l10n.copyMessage,
+                                    retryLabel: l10n.retryButton,
+                                    versionSwitcher: versionSwitcher,
                                     onCopied: () => _showCopiedToast(l10n),
+                                    onRetry: vm.canRetry(msg)
+                                        ? () => vm.retryAnswer(
+                                            msg,
+                                            fallbackAnswer:
+                                                l10n.chatFallbackAnswer,
+                                            errorMessage:
+                                                l10n.genericErrorOccurred,
+                                          )
+                                        : null,
+                                    onApplyAction: (action) => _applyChatAction(
+                                      context: context,
+                                      vm: vm,
+                                      message: msg,
+                                      action: action,
+                                      l10n: l10n,
+                                    ),
                                   ),
                           ),
                         ),
@@ -383,6 +508,37 @@ class _HelperBody extends StatelessWidget {
                     },
                   ),
           ),
+          if (vm.isEditing)
+            Padding(
+              key: const Key('helperEditingBanner'),
+              padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_outlined, size: 18, color: palette.textMuted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.helperEditingMessage,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: palette.textMuted,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('helperCancelEdit'),
+                    onPressed: () {
+                      controller.clear();
+                      vm.cancelEdit();
+                    },
+                    tooltip: l10n.cancelButton,
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.close, size: 20, color: palette.textMuted),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             key: context.read<RoadGuideController>().keys.chatInput,
             // Bottom pad is small; [bottomBarClearance] owns the gap to the pill.
@@ -520,20 +676,88 @@ class _HelperUserMessageBubble extends StatelessWidget {
   }
 }
 
+/// `‹ 2/3 ›` pager between versions of an edited prompt or retried reply.
+class _HelperVersionSwitcher extends StatelessWidget {
+  const _HelperVersionSwitcher({
+    super.key,
+    required this.index,
+    required this.count,
+    required this.enabled,
+    required this.previousLabel,
+    required this.nextLabel,
+    required this.onSwitch,
+  });
+
+  final int index;
+  final int count;
+  final bool enabled;
+  final String previousLabel;
+  final String nextLabel;
+  final ValueChanged<int> onSwitch;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.45);
+
+    Widget chevron(IconData icon, String label, int delta, bool canGo) {
+      final active = enabled && canGo;
+      return IconButton(
+        onPressed: active ? () => onSwitch(delta) : null,
+        tooltip: label,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
+        padding: EdgeInsets.zero,
+        icon: Icon(
+          icon,
+          size: 20,
+          color: active ? color : color.withValues(alpha: 0.15),
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        chevron(Icons.chevron_left, previousLabel, -1, index > 1),
+        Text(
+          '$index/$count',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: color,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        chevron(Icons.chevron_right, nextLabel, 1, index < count),
+      ],
+    );
+  }
+}
+
 /// AI reply bubble: selectable body for partial copy; copy icon for full text.
 class _HelperAiMessageBubble extends StatelessWidget {
   const _HelperAiMessageBubble({
     required this.message,
     required this.copyLabel,
+    required this.retryLabel,
+    required this.versionSwitcher,
     required this.onCopied,
+    required this.onRetry,
+    required this.onApplyAction,
   });
 
   final ChatMessage message;
   final String copyLabel;
+  final String retryLabel;
+  final Widget? versionSwitcher;
   final VoidCallback onCopied;
 
+  /// Null hides the retry button (only the latest reply can be regenerated).
+  final VoidCallback? onRetry;
+  final ValueChanged<HelperChatAction> onApplyAction;
+
   Future<void> _copyAll() async {
-    final text = message.text.trim();
+    final text = helperChatDisplayText(message.text).trim();
     if (text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
     onCopied();
@@ -541,34 +765,175 @@ class _HelperAiMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final palette = context.watch<ThemeController>().palette;
     final iconColor = Theme.of(
       context,
     ).colorScheme.onSurface.withValues(alpha: 0.45);
+    final parsed = parseHelperChatActions(
+      message.text,
+      parseActions: message.isComplete,
+    );
+    final displayText = parsed.displayText;
+    final showActions = message.isComplete && parsed.actions.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GlassCard(
-          useOwnLayer: true,
-          padding: const EdgeInsets.all(12),
-          child: SelectableText(
-            message.text,
-            style: Theme.of(context).textTheme.bodyMedium,
+        if (displayText.trim().isNotEmpty)
+          GlassCard(
+            useOwnLayer: true,
+            padding: const EdgeInsets.all(12),
+            child: SelectableText(
+              displayText,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
-        ),
-        if (message.isComplete && message.text.trim().isNotEmpty)
+        if (showActions) ...[
+          const SizedBox(height: 8),
+          for (final action in parsed.actions) ...[
+            _HelperActionCard(
+              palette: palette,
+              action: action,
+              applied: message.appliedActionKeys.contains(action.dedupeKey),
+              actionLabel: _actionLabel(l10n, action.type),
+              onApply: () => onApplyAction(action),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+        if (message.isComplete && displayText.trim().isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: IconButton(
-              onPressed: _copyAll,
-              tooltip: copyLabel,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
-              icon: Icon(Icons.copy_outlined, size: 20, color: iconColor),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ?versionSwitcher,
+                if (onRetry != null)
+                  IconButton(
+                    key: const Key('helperRetryAnswer'),
+                    onPressed: onRetry,
+                    tooltip: retryLabel,
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(Icons.refresh, size: 20, color: iconColor),
+                  ),
+                IconButton(
+                  onPressed: _copyAll,
+                  tooltip: copyLabel,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  padding: EdgeInsets.zero,
+                  icon: Icon(Icons.copy_outlined, size: 20, color: iconColor),
+                ),
+              ],
             ),
           ),
       ],
+    );
+  }
+
+  static String _actionLabel(AppLocalizations l10n, HelperChatActionType type) {
+    return switch (type) {
+      HelperChatActionType.goal => l10n.helperActionAddGoal,
+      HelperChatActionType.habit => l10n.helperActionAddHabit,
+      HelperChatActionType.task => l10n.helperActionAddTask,
+      HelperChatActionType.mission => l10n.helperActionSetMission,
+      HelperChatActionType.slogan => l10n.helperActionSetSlogan,
+    };
+  }
+}
+
+class _HelperActionCard extends StatelessWidget {
+  const _HelperActionCard({
+    required this.palette,
+    required this.action,
+    required this.applied,
+    required this.actionLabel,
+    required this.onApply,
+  });
+
+  final TasksUiPalette palette;
+  final HelperChatAction action;
+  final bool applied;
+  final String actionLabel;
+  final VoidCallback onApply;
+
+  IconData get _icon => switch (action.type) {
+    HelperChatActionType.goal => Icons.flag_outlined,
+    HelperChatActionType.habit => Icons.replay_circle_filled_outlined,
+    HelperChatActionType.task => Icons.check_circle_outline,
+    HelperChatActionType.mission => Icons.explore_outlined,
+    HelperChatActionType.slogan => Icons.format_quote_outlined,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = action.reason.trim().isNotEmpty
+        ? action.reason.trim()
+        : (action.goalName?.trim().isNotEmpty == true
+              ? action.goalName!.trim()
+              : '');
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: palette.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: palette.primary.withValues(
+            alpha: palette.isDark ? 0.35 : 0.22,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(_icon, color: palette.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  action.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: palette.textPrimary,
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: palette.textMuted,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: applied ? null : onApply,
+            child: Text(
+              applied
+                  ? AppLocalizations.of(context)!.helperActionAdded
+                  : actionLabel,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -14,6 +14,7 @@ class AiConversationStorage {
 
   final LocalDb? _localDb;
   static const _prefsKey = 'ai_conversations_v1';
+  static const _branchesPrefsKey = 'ai_conversation_branches_v1';
   static final _random = Random.secure();
 
   bool get _useWebStorage => kIsWeb || _localDb == null;
@@ -136,7 +137,52 @@ class AiConversationStorage {
     });
   }
 
+  /// Device-only version tree JSON for [conversationId] (never synced).
+  Future<String?> loadBranches(String conversationId) async {
+    if (_useWebStorage) {
+      return (await _loadWebBranches())[conversationId];
+    }
+    final db = await _database;
+    final rows = await db.query(
+      'ai_conversation_branches',
+      columns: ['treeJson'],
+      where: 'conversationId = ?',
+      whereArgs: [conversationId],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first['treeJson'] as String?;
+  }
+
+  /// Stores [treeJson] for [conversationId]; null removes it.
+  Future<void> saveBranches(String conversationId, String? treeJson) async {
+    if (_useWebStorage) {
+      final all = await _loadWebBranches();
+      if (treeJson == null) {
+        if (all.remove(conversationId) == null) return;
+      } else {
+        all[conversationId] = treeJson;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_branchesPrefsKey, jsonEncode(all));
+      return;
+    }
+    final db = await _database;
+    if (treeJson == null) {
+      await db.delete(
+        'ai_conversation_branches',
+        where: 'conversationId = ?',
+        whereArgs: [conversationId],
+      );
+      return;
+    }
+    await db.insert('ai_conversation_branches', {
+      'conversationId': conversationId,
+      'treeJson': treeJson,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
   Future<void> deleteConversation(String id) async {
+    await saveBranches(id, null);
     if (_useWebStorage) {
       final all = await _loadWeb();
       final index = all.indexWhere((c) => c.id == id);
@@ -164,6 +210,7 @@ class AiConversationStorage {
   }
 
   Future<void> purgeDeleted(String id) async {
+    await saveBranches(id, null);
     if (_useWebStorage) {
       final all = await _loadWeb();
       all.removeWhere((c) => c.id == id);
@@ -209,6 +256,18 @@ class AiConversationStorage {
                 : int.tryParse('${item['serverId'] ?? ''}'),
           ),
     ];
+  }
+
+  Future<Map<String, String>> _loadWebBranches() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_branchesPrefsKey);
+    if (raw == null || raw.isEmpty) return {};
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) return {};
+    return {
+      for (final entry in decoded.entries)
+        if (entry.value is String) '${entry.key}': entry.value as String,
+    };
   }
 
   Future<void> _saveWeb(List<AiConversation> conversations) async {

@@ -32,6 +32,13 @@ class AiConversationService {
   Future<AiConversation?> getConversation(String id) =>
       _local.getConversation(id);
 
+  /// Local-only prompt/reply version tree (see [AiConversationStorage]).
+  Future<String?> loadBranches(String conversationId) =>
+      _local.loadBranches(conversationId);
+
+  Future<void> saveBranches(String conversationId, String? treeJson) =>
+      _local.saveBranches(conversationId, treeJson);
+
   Future<AiConversation> saveConversation(
     AiConversation conversation, {
     bool enqueueSync = true,

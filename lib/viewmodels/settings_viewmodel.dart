@@ -6,8 +6,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config/app_store.dart';
+import '../core/config/principles_site.dart';
 import '../core/locale/locale_controller.dart';
 import '../core/sync/local_data_cleaner.dart';
+import '../core/theme/theme_controller.dart';
 import '../models/app_notification_sound.dart';
 import '../models/user.dart';
 import '../services/reminder_service.dart';
@@ -20,21 +22,16 @@ class SettingsViewModel extends ChangeNotifier {
     required LocaleController localeController,
     required UserService userService,
     required LocalDataCleaner localDataCleaner,
+    required ThemeController themeController,
     ReminderService? reminderService,
   }) : _settingsService = settingsService,
        _localeController = localeController,
        _userService = userService,
        _localDataCleaner = localDataCleaner,
+       _themeController = themeController,
        _reminderService = reminderService;
 
-  static final Uri _aboutUri = Uri.parse(AppStoreIds.aboutSite);
   static final Uri _telegramUri = Uri.parse('https://t.me/principles_app');
-  static final Uri _privacyPolicyUri = Uri.parse(
-    'https://principles.top/privacypolicy',
-  );
-  static final Uri _userAgreementUri = Uri.parse(
-    'https://principles.top/useragreement',
-  );
   static const contactEmailAddress = 'batsbohdan@gmail.com';
   static final Uri _contactEmailUri = Uri.parse('mailto:$contactEmailAddress');
   static const _androidPackageName = AppStoreIds.androidPackageName;
@@ -44,6 +41,7 @@ class SettingsViewModel extends ChangeNotifier {
   final LocaleController _localeController;
   final UserService _userService;
   final LocalDataCleaner _localDataCleaner;
+  final ThemeController _themeController;
   final ReminderService? _reminderService;
 
   User _user = User();
@@ -182,7 +180,10 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Future<void> openAboutSite() {
-    return launchUrl(_aboutUri, mode: LaunchMode.externalApplication);
+    return launchUrl(
+      PrinciplesSite.home(_themeController.uiTheme),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   Future<void> openTelegramChannel() {
@@ -190,11 +191,17 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Future<void> openPrivacyPolicy() {
-    return launchUrl(_privacyPolicyUri, mode: LaunchMode.externalApplication);
+    return launchUrl(
+      PrinciplesSite.privacyPolicy(_themeController.uiTheme),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   Future<void> openUserAgreement() {
-    return launchUrl(_userAgreementUri, mode: LaunchMode.externalApplication);
+    return launchUrl(
+      PrinciplesSite.userAgreement(_themeController.uiTheme),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   Future<bool> openContactEmail() async {
@@ -246,7 +253,7 @@ class SettingsViewModel extends ChangeNotifier {
   }
 
   Uri get _rateUri {
-    if (kIsWeb) return _aboutUri;
+    if (kIsWeb) return PrinciplesSite.home(_themeController.uiTheme);
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return Uri.parse(
@@ -258,7 +265,7 @@ class SettingsViewModel extends ChangeNotifier {
           'https://apps.apple.com/app/id$_appStoreId?action=write-review',
         );
       default:
-        return _aboutUri;
+        return PrinciplesSite.home(_themeController.uiTheme);
     }
   }
 

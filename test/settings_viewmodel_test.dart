@@ -6,6 +6,7 @@ import 'package:principles_app/core/locale/locale_controller.dart';
 import 'package:principles_app/core/storage/local_db.dart';
 import 'package:principles_app/core/storage/secure_store.dart';
 import 'package:principles_app/core/sync/local_data_cleaner.dart';
+import 'package:principles_app/core/theme/theme_controller.dart';
 import 'package:principles_app/models/app_notification_sound.dart';
 import 'package:principles_app/models/user.dart';
 import 'package:principles_app/services/auth_service.dart';
@@ -49,6 +50,7 @@ void main() {
         goalService: GoalService(authService),
         secureStore: secureStore,
       ),
+      themeController: ThemeController(),
     );
   });
 

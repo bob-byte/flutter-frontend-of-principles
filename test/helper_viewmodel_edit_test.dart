@@ -131,6 +131,81 @@ void main() {
     },
   );
 
+  test('editing a prompt keeps the old thread as a version', () async {
+    await vm.ask('First', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+    await vm.ask('Second', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+
+    await vm.prepareEditUserMessage(0);
+    await vm.ask('First v2', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+
+    expect(vm.messages.map((m) => m.text), ['First v2', 'Answer']);
+    expect(vm.versionOf(vm.messages[0]), (index: 2, count: 2));
+
+    await vm.switchVersion(vm.messages[0], -1);
+    expect(vm.messages.map((m) => m.text), [
+      'First',
+      'Answer',
+      'Second',
+      'Answer',
+    ]);
+    expect(vm.versionOf(vm.messages[0]), (index: 1, count: 2));
+  });
+
+  test('cancelEdit restores the hidden turns', () async {
+    await vm.ask('First', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+
+    await vm.prepareEditUserMessage(0);
+    expect(vm.isEditing, isTrue);
+    expect(vm.messages, isEmpty);
+
+    vm.cancelEdit();
+    expect(vm.isEditing, isFalse);
+    expect(vm.messages.map((m) => m.text), ['First', 'Answer']);
+  });
+
+  test('retry adds a reply version and keeps the previous one', () async {
+    await vm.ask('Hello', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+    final first = vm.messages[1];
+
+    await vm.retryAnswer(first, fallbackAnswer: 'fallback', errorMessage: 'e');
+    await waitUntilIdle();
+
+    expect(vm.messages, hasLength(2));
+    expect(identical(vm.messages[1], first), isFalse);
+    expect(vm.versionOf(vm.messages[1]), (index: 2, count: 2));
+
+    final body = requests.last.data as Map;
+    expect((body['messages'] as List).cast<Map>(), [
+      {'role': 'user', 'content': 'Hello'},
+    ]);
+
+    await vm.switchVersion(vm.messages[1], -1);
+    expect(identical(vm.messages[1], first), isTrue);
+  });
+
+  test('versions survive reopening the chat', () async {
+    await vm.ask('First', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+    await vm.prepareEditUserMessage(0);
+    await vm.ask('First v2', fallbackAnswer: 'fallback', errorMessage: 'error');
+    await waitUntilIdle();
+    final id = vm.activeConversationId!;
+
+    vm.startNewChat();
+    await vm.openConversation(id);
+
+    expect(vm.messages.first.text, 'First v2');
+    expect(vm.versionOf(vm.messages.first), (index: 2, count: 2));
+
+    final synced = await conversationService.getConversation(id);
+    expect(synced!.messages.map((m) => m.content), ['First v2', 'Answer']);
+  });
+
   test('prepareEditUserMessage rejects non-user indices', () async {
     await vm.ask('Hello', fallbackAnswer: 'fallback', errorMessage: 'error');
     await waitUntilIdle();
